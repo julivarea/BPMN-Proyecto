@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # "sh" evita depender del bit de ejecución de mvnw (se pierde al commitear desde Windows).
+      - run: sh ./mvnw -B verify

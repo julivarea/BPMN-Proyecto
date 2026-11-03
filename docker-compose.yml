@@ -1,0 +1,60 @@
+# Entorno local completo: PostgreSQL (BD del motor + BD de la institución) y servidor Flowable 6.8.
+# Antes de levantarlo: ./mvnw -pl proceso package   (genera proceso/target/proceso.jar)
+name: gtpn-cursos
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: flowable
+      POSTGRES_USER: ${POSTGRES_USER:-flowable}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowable}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro # solo corre la primera vez que se crea el volumen
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432" # la web y app-materiales corren fuera de Docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flowable} -d flowable"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  flowable:
+    image: flowable/flowable-ui:6.8.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowable
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-flowable}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-flowable}
+      # Para listeners/delegates que escriben en la BD de la institución.
+      INSTITUCION_DB_URL: jdbc:postgresql://postgres:5432/institucion
+      INSTITUCION_DB_USER: ${POSTGRES_USER:-flowable}
+      INSTITUCION_DB_PASSWORD: ${POSTGRES_PASSWORD:-flowable}
+    ports:
+      - "127.0.0.1:${FLOWABLE_PORT:-8080}:8080"
+    volumes:
+      # Nuestras clases (listeners, delegates) quedan en el classpath del motor.
+      - type: bind
+        source: ./proceso/target/proceso.jar
+        target: /app/WEB-INF/lib/proceso.jar
+        read_only: true
+        bind:
+          create_host_path: false # si falta el jar, falla con un error claro en vez de crear una carpeta
+
+  pgadmin:
+    image: dpage/pgadmin4
+    profiles: [herramientas] # opcional: docker compose --profile herramientas up -d
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "127.0.0.1:5050:80"
+
+volumes:
+  postgres_data:

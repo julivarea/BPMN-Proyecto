@@ -1,0 +1,10 @@
+server:
+  port: 8081 # 8080 lo usa Flowable
+
+spring:
+  application:
+    name: web-institucion
+  datasource:
+    url: ${INSTITUCION_DB_URL:jdbc:postgresql://localhost:5432/institucion}
+    username: ${INSTITUCION_DB_USER:flowable}
+    password: ${INSTITUCION_DB_PASSWORD:flowable}
