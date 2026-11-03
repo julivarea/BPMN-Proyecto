@@ -1,0 +1,13 @@
+# Finales de línea LF en el repo (los scripts .sh fallan con CRLF), salvo los scripts de Windows.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jar binary
+
+# Material de la cátedra: se versiona tal cual se recibió.
+docs/enunciado/** -text
+docs/referencia/** -text
