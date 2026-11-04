@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:flowable="http://flowable.org/bpmn"
+             id="definicionesOrganizarCurso"
+             targetNamespace="http://unrc.edu.ar/gtpn/cursos">
+  <!-- TODO: Implementación pendiente. Modelo ejecutable del proceso, a partir de
+       docs/referencia/diagrama-profesor.bpmn (Figura 1 del enunciado). -->
+
+  <collaboration id="colaboracionCursos">
+    <participant id="poolInstitucion" name="Institución de capacitación" processRef="organizarCurso"/>
+  </collaboration>
+
+  <process id="organizarCurso" name="Organizar curso de capacitación" isExecutable="true">
+    <laneSet id="carriles">
+      <lane id="carrilAdministracion" name="Administración"/>
+      <lane id="carrilDocentes" name="Docentes"/>
+    </laneSet>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagramaCursos">
+    <bpmndi:BPMNPlane id="planoCursos" bpmnElement="colaboracionCursos">
+      <bpmndi:BPMNShape id="poolInstitucion_di" bpmnElement="poolInstitucion" isHorizontal="true">
+        <dc:Bounds x="155" y="80" width="1505" height="1910"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="carrilAdministracion_di" bpmnElement="carrilAdministracion" isHorizontal="true">
+        <dc:Bounds x="185" y="80" width="1475" height="1740"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="carrilDocentes_di" bpmnElement="carrilDocentes" isHorizontal="true">
+        <dc:Bounds x="185" y="1820" width="1475" height="170"/>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
