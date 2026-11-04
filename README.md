@@ -49,7 +49,7 @@ bash scripts/desplegar-proceso.sh   # 5. despliega el BPMN y el DMN de proceso/s
 
 Listo: la UI de Flowable está en <http://localhost:8080/flowable-ui>.
 
-### Cuentas de prueba
+### Cuentas del personal
 
 Son cuentas locales de desarrollo; las crea `scripts/setup-identidades.sh`.
 
@@ -68,8 +68,8 @@ Con el entorno levantado:
 
 ```bash
 ./mvnw -pl web spring-boot:run                 # sitio web en http://localhost:8081
-./mvnw -pl app-materiales compile exec:java    # app de escritorio de materiales
-./mvnw -pl app-comunicaciones compile exec:java
+./mvnw -pl app-materiales compile exec:java     # app de escritorio de materiales
+./mvnw -pl app-comunicaciones compile exec:java # app de escritorio de comunicaciones de la empresa
 ```
 
 ### Día a día
