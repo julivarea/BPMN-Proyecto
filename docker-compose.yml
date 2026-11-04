@@ -4,7 +4,9 @@ name: gtpn-cursos
 
 services:
   postgres:
-    image: postgres:15
+    # bookworm y no la imagen por defecto (trixie): trixie no trae nombres de zona horaria viejos como
+    # "America/Buenos_Aires", que reportan Java en Windows y Linux, y Postgres rechaza la conexión.
+    image: postgres:15-bookworm
     restart: unless-stopped
     environment:
       POSTGRES_DB: flowable
