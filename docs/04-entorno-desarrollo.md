@@ -8,10 +8,12 @@
 ## Levantar el entorno
 
 ```bash
-./mvnw -pl proceso package           # 1. jar con nuestras clases para el motor
+./mvnw -pl proceso clean package     # 1. jar con nuestras clases para el motor
 docker compose up -d                 # 2. Postgres + Flowable (la primera vez tarda 1-2 minutos)
-bash scripts/setup-identidades.sh    # 3. usuarios, grupos y privilegios (se puede repetir)
-bash scripts/desplegar-proceso.sh    # 4. despliega los BPMN y DMN de proceso/src/main/resources/procesos
+# 3. esperar a que Flowable responda antes de seguir
+until curl -sf -u admin:test http://localhost:8080/flowable-ui/process-api/repository/deployments >/dev/null; do sleep 5; done
+bash scripts/setup-identidades.sh    # 4. usuarios, grupos y privilegios (se puede repetir)
+bash scripts/desplegar-proceso.sh    # 5. despliega los BPMN y DMN de proceso/src/main/resources/procesos
 ```
 
 - UI de Flowable: <http://localhost:8080/flowable-ui> (`admin` / `test`).
@@ -21,8 +23,8 @@ Aplicaciones (con el entorno levantado):
 
 ```bash
 ./mvnw -pl web spring-boot:run                  # sitio en http://localhost:8081
-./mvnw -pl app-materiales compile exec:java
-./mvnw -pl app-comunicaciones compile exec:java
+./mvnw -pl app-materiales compile exec:java     # app de escritorio de materiales
+./mvnw -pl app-comunicaciones compile exec:java # app de escritorio de comunicaciones de la empresa
 ```
 
 ## Usuarios de prueba
@@ -45,7 +47,7 @@ Contraseña de todo el personal: `clave123` (se cambia con `CLAVE_DEMO=... bash 
 |-----|---------|
 | Compilar y correr todos los tests | `./mvnw verify` |
 | Solo los tests del proceso (sin Docker) | `./mvnw -pl proceso verify` |
-| Cambié Java del módulo `proceso` | `./mvnw -pl proceso package && docker compose restart flowable` |
+| Cambié Java del módulo `proceso` | `./mvnw -pl proceso clean package && docker compose restart flowable` |
 | Cambié un BPMN o un DMN | `bash scripts/desplegar-proceso.sh` |
 | Logs del servidor | `docker compose logs -f flowable` |
 | pgAdmin en <http://localhost:5050> | `docker compose --profile herramientas up -d` |
