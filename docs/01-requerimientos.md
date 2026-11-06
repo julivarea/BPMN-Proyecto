@@ -1,6 +1,6 @@
 # 01 · Requerimientos
 
-> **Fuente de verdad:** [`enunciado/ProyectoCursos_V2.pdf`](enunciado/ProyectoCursos_V2.pdf). Este documento lo
+> **Fuente de verdad:** [`enunciado/ProyectoCursos_V3.pdf`](enunciado/ProyectoCursos_V3.pdf). Este documento lo
 > resume y lo numera para poder referenciarlo; si algo de acá contradice al PDF, manda el PDF. Todo desvío del
 > enunciado se documenta y se justifica.
 
@@ -15,7 +15,9 @@ propuesta, prepara el curso (inscripciones, materiales y recursos en paralelo), 
    - un **sitio web** (sección pública, empresas, administración y docentes) que usa la **API REST** de Flowable;
    - una **app de escritorio de materiales** que usa la **API Java** de Flowable;
    - una **app de escritorio de comunicaciones**, con interfaz gráfica, que simula a la empresa usando la **API REST**.
-4. **Entregar** el código, las instrucciones y un informe breve, y **defender** 11 escenarios de demostración.
+4. **Analizar las ejecuciones del proceso** con el historial de Flowable: tres consultas (resultados, duración de las
+   ramas de la preparación, tareas por persona) y un análisis breve de minería de procesos de la etapa de negociación.
+5. **Entregar** el código, las instrucciones y un informe breve, y **defender** 11 escenarios de demostración.
 
 El enunciado no fija lenguajes ni frameworks para el sitio y las apps. Exige Flowable, la API REST para el sitio y la
 app de comunicaciones, la API Java (con un componente Java) para la app de materiales, y que estas dos últimas sean
@@ -109,6 +111,27 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 | X-03 | App de comunicaciones con interfaz gráfica: elegir una solicitud y simular, por **API REST** y sobre la instancia correspondiente, la aceptación (con fecha acordada), el rechazo, la solicitud de modificaciones (con observaciones), el envío de la nómina y la cancelación durante la preparación. | 4.2.2 |
 | X-04 | Mostrar solo las comunicaciones habilitadas en el estado actual. La negociación y el envío de la nómina se simulan solo desde esta app (no en el sitio). | 4.2.2 |
 
+### Análisis de las ejecuciones del proceso (§4.3)
+
+Consultas sobre el historial de ejecuciones de Flowable. Pueden incorporarse a la app de materiales o mostrarse por
+consola, sin interfaz gráfica.
+
+| ID | Requisito | § |
+|----|-----------|---|
+| H-01 | Tabla con la cantidad y el porcentaje de solicitudes terminadas con cada resultado: curso finalizado, cancelación, rechazo de la propuesta, solicitud no viable, cierre por falta de respuesta. Porcentajes sobre el total de instancias terminadas. | 4.3.1 |
+| H-02 | Para los cursos que completaron normalmente la preparación, duración promedio de cada rama: inscripciones, materiales y recursos. Cada rama se mide desde su activación hasta su finalización; la de recursos termina cuando se completaron todas las acciones seleccionadas. Se excluyen las preparaciones interrumpidas por cancelación. | 4.3.2 |
+| H-03 | Tabla con la cantidad de tareas de usuario completadas por cada administrativo y docente. Se excluyen las tareas pendientes y las interrumpidas o canceladas. | 4.3.3 |
+
+### Minería de procesos (§4.4)
+
+Análisis breve, con PM4Py u otra herramienta, de la **etapa de negociación** (la previa a la preparación del curso).
+
+| ID | Requisito | § |
+|----|-----------|---|
+| M-01 | Generar un CSV a partir de las actividades históricas de Flowable, con el script provisto por la cátedra (`exportar_history.py`) adaptado al proceso. | 4.4 |
+| M-02 | Obtener una representación gráfica del comportamiento observado e identificar los tres recorridos más frecuentes (o todos, si hay menos de tres), con la cantidad y el porcentaje de instancias de cada uno. Puede usarse el script provisto (`analizar.py`). | 4.4 |
+| M-03 | Comparar los resultados con la etapa de negociación del modelo BPMN y redactar una conclusión breve sobre coincidencias, diferencias y limitaciones del análisis. | 4.4 |
+
 ### Entrega y defensa (§5)
 
 | ID | Entregable |
@@ -119,6 +142,7 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 | E-04 | Instrucciones para configurar usuarios y grupos y ejecutar la solución. |
 | E-05 | Informe breve: variables, listeners y decisiones de implementación. |
 | E-06 | Código de las tres aplicaciones externas e instrucciones para configurarlas y ejecutarlas. |
+| E-07 | Minería de procesos: el CSV utilizado, el código o las instrucciones para reproducir el análisis y una captura de los resultados (§4.4). |
 
 ## 3. Escenarios de la defensa
 

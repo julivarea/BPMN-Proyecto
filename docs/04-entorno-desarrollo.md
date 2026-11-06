@@ -55,3 +55,19 @@ Contraseña de todo el personal: `clave123` (se cambia con `CLAVE_DEMO=... bash 
 | Borrar **todos** los datos y empezar de cero | `docker compose down -v` y repetir "Levantar el entorno" |
 
 Los puertos y las credenciales de Postgres se cambian en `.env` (ver `.env.example`).
+
+## Minería de procesos (§4.4)
+
+Los scripts de la cátedra (`exportar_history.py`, `analizar.py`) usan Python con PM4Py. El entorno se prepara una
+sola vez, dentro de `mineria/`:
+
+```bash
+sudo apt install python3-venv graphviz     # en Windows: Python 3 y Graphviz desde sus instaladores
+cd mineria
+python3 -m venv .venv
+source .venv/bin/activate                  # en Windows: .venv\Scripts\activate
+pip install pm4py pandas requests
+```
+
+Con el entorno levantado y algunas instancias ejecutadas, se exporta el historial a CSV y se analiza con esos
+scripts. La carpeta `.venv/` no se commitea.

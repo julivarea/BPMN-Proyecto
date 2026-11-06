@@ -154,7 +154,28 @@ Reglas:
 Logs del servidor: `docker compose logs -f flowable`. Reiniciar todo desde cero (**borra instancias, usuarios y la
 BD de la institución**): `docker compose down -v`, después `docker compose up -d`, el setup y el despliegue.
 
-## 8. Referencias
+## 8. Historial: consultas (§4.3) y minería de procesos (§4.4)
+
+Flowable guarda en su BD el historial de cada instancia, también de las terminadas: actividades (con inicio, fin y
+duración), tareas (con quién las completó) y variables. Con el nivel de historial por defecto del servidor ya
+quedan registrados. ✔
+
+| Consulta | API Java (`HistoryService`) | API REST |
+|----------|-----------------------------|----------|
+| Instancias terminadas y su resultado (§4.3.1) | `createHistoricProcessInstanceQuery().processDefinitionKey("organizarCurso").finished().includeProcessVariables()` → variable `resultado` | `GET /history/historic-process-instances?processDefinitionKey=organizarCurso&finished=true&includeProcessVariables=true` |
+| Actividades de una instancia, con inicio y fin (§4.3.2, §4.4) | `createHistoricActivityInstanceQuery().processInstanceId(id).orderByHistoricActivityInstanceStartTime().asc()` | `GET /history/historic-activity-instances?processInstanceId={id}` |
+| Tareas completadas por persona (§4.3.3) | `createHistoricTaskInstanceQuery().processDefinitionKey("organizarCurso").finished()`, agrupando por `getAssignee()` | `GET /history/historic-task-instances?processDefinitionKey=organizarCurso&finished=true` |
+
+Cuidados:
+- **Tareas completadas vs. canceladas:** una tarea interrumpida (por ejemplo, por la cancelación del curso) también
+  figura como terminada, pero con `deleteReason` distinto de `null`. Para §4.3.3 se cuentan solo las que tienen
+  `deleteReason == null`.
+- **Duración de las ramas (§4.3.2):** se calcula con el inicio de la primera actividad de la rama y el fin de la
+  última, buscándolas por ID. Los IDs de cada rama están en [06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §10.
+- **Minería (§4.4):** el CSV usa una fila por actividad con el caso (la instancia), la actividad y el momento. Por
+  eso los nombres de las actividades del modelo tienen que ser claros: son los que aparecen en el gráfico.
+
+## 9. Referencias
 
 - Flowable 6.8 – BPMN: <https://www.flowable.com/open-source/docs/bpmn/ch07b-BPMN-Constructs> (eventos, compensación,
   subprocesos de evento) y <https://www.flowable.com/open-source/docs/bpmn/ch07a-BPMN-Introduction>.

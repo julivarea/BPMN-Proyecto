@@ -36,12 +36,15 @@ flowchart LR
 | App materiales | `app-materiales/` | Login + tareas *Preparar materiales*: ver, reclamar, completar. | **API Java** sobre la BD del motor (§4.2.1) |
 | App comunicaciones | `app-comunicaciones/` | Simula los mensajes de la empresa; solo muestra los habilitados. | **API REST** (§4.2.2) |
 | PostgreSQL | `docker-compose.yml`, `db/` | BD `flowable` (motor) y BD `institucion` (empresas, cursos, propuestas). | — |
+| Consultas históricas | `app-materiales/` | Las tres consultas del §4.3: resultados de las solicitudes, duración de las ramas de la preparación y tareas completadas por persona. | **API Java** (`HistoryService`) sobre la BD del motor |
+| Minería de procesos | `mineria/` | Scripts Python de la cátedra adaptados: exportar a CSV el historial de la etapa de negociación y analizarlo con PM4Py (§4.4). | Lee el historial de Flowable (el script de la cátedra usa `requests`, es decir, la API REST) |
 
 ## 2. Tecnologías y por qué
 
 El enunciado no fija tecnologías para el sitio ni para las apps (ver 01-requerimientos §1). El criterio fue: lo más
 moderno que sea **compatible con Flowable 6.8** y que mantenga el código simple. Todo en **Java**, para que el grupo
-use un solo lenguaje y porque la app de materiales igual tiene que ser Java.
+use un solo lenguaje y porque la app de materiales igual tiene que ser Java. La única excepción es la minería de
+procesos (§4.4), que usa los scripts Python que provee la cátedra.
 
 | Pieza | Elección | Motivo | Descartado |
 |-------|----------|--------|------------|
@@ -60,6 +63,8 @@ use un solo lenguaje y porque la app de materiales igual tiene que ser Java.
 | BD | **PostgreSQL 15** en Docker | La recomienda el anexo B de la práctica 4; la comparten el servidor y la app de materiales. | H2 (ver abajo). |
 | Tests del proceso | JUnit 5 + `@FlowableTest` + H2 en memoria | Corren sin Docker y en CI (práctica 5). | — |
 | CI | GitHub Actions: `./mvnw verify` en cada push | Avisa enseguida si algo rompe el build o los tests. | — |
+| Consultas históricas (§4.3) | En la **app de materiales**, con `HistoryService` | El §4.3 lo permite, y esa app ya tiene el motor embebido y acceso a la BD del motor. | Una app de consola aparte: otro módulo más que mantener. |
+| Minería de procesos (§4.4) | **Python + PM4Py + pandas**, en `mineria/` con su propio entorno virtual | Son los scripts y la herramienta que provee el enunciado. | — |
 
 ## 3. Trabajo en grupo y datos compartidos
 
@@ -100,7 +105,7 @@ proceso/src/main/java/ar/edu/unrc/gtpn/proceso/
   recursos/        ReservarAulaDelegate, LiberarAulaDelegate, ...
   asignacion/      AsignarAdministrativoConMenosTareasListener
   estado/          RegistrarResultadoDelCursoListener
-proceso/src/main/resources/procesos/   organizar-curso.bpmn20.xml, viabilidad.dmn
+proceso/src/main/resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
 proceso/src/test/java/...              un test por escenario del proceso
 
 web/src/main/java/ar/edu/unrc/gtpn/web/
@@ -114,7 +119,11 @@ web/src/main/java/ar/edu/unrc/gtpn/web/
 web/src/main/resources/templates/<funcionalidad>/*.html
 
 app-materiales/…/materiales/        MotorFlowable, servicio de tareas, ventanas
+app-materiales/…/materiales/historial/  una clase por consulta del §4.3 (resultados, ramas, tareas por persona)
 app-comunicaciones/…/comunicaciones/ FlowableRest, enum Comunicacion (mensaje + datos), ventanas
+
+mineria/                            exportar_history.py y analizar.py (de la cátedra, adaptados),
+                                    CSV generado, capturas y conclusión (§4.4)
 ```
 
 ## 6. Puertos

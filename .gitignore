@@ -16,3 +16,6 @@ target/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Entorno de Python de la minería de procesos
+.venv/

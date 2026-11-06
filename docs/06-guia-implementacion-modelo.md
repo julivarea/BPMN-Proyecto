@@ -181,3 +181,15 @@ por REST con `curl` (ver [03-guia-flowable.md](03-guia-flowable.md), §3).
 
 - **Falta de aulas (escenario 7):** cuando el profesor defina qué pasa, *Reservar aula* lanzará un error de negocio
   (`BpmnError`) y se agregará su manejo en el modelo.
+
+## 10. Lo que necesita el análisis del historial (§4.3, §4.4)
+
+Las consultas del §4.3 y la minería del §4.4 leen el historial de Flowable, así que dependen de cómo se implementa el
+modelo:
+
+| Requisito | Qué tiene que garantizar el modelo |
+|-----------|------------------------------------|
+| Resultados de las solicitudes (§4.3.1) | Toda instancia terminada tiene `resultado` con uno de los cinco valores finales. `FINALIZADO`, `CANCELADO`, `RECHAZADO`, `NO_VIABLE` y `SIN_RESPUESTA` se corresponden uno a uno con las categorías del enunciado |
+| Duración de las ramas (§4.3.2) | Cada rama se identifica por los IDs de su primera y su última actividad: **inscripciones** = inicio de `nominaRecibida` → fin de `confeccionarListaDefinitiva`; **materiales** = inicio → fin de `prepararMateriales`; **recursos** = inicio de `evaluarRecursos` → fin de `recursosListos` (el inclusivo de cierre, que se completa cuando terminaron todas las acciones elegidas). Solo cuentan las instancias que pasaron por `preparacionCompleta`, lo que excluye las canceladas |
+| Tareas por persona (§4.3.3) | Las tareas quedan asignadas a un usuario al completarse: las de grupo se reclaman antes, como pide el §2 |
+| Minería de la negociación (§4.4) | La etapa de negociación va desde `solicitudRecibida` hasta *Habilitar acceso a la empresa* o hasta un fin anterior (no viable o solicitud archivada). Los nombres de esas actividades tienen que ser claros y únicos, porque son los que aparecen en el gráfico y en los recorridos |

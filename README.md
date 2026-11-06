@@ -24,6 +24,7 @@ organización de cursos de capacitación para empresas, con un sitio web y dos a
 ├── app-comunicaciones/  App de escritorio: simulación de comunicaciones de la empresa (API REST de Flowable)
 ├── db/                  Base de datos de la institución
 ├── scripts/             Configuración de usuarios y grupos, y despliegue del proceso
+├── mineria/             Minería de procesos de la etapa de negociación (Python + PM4Py)
 └── docs/                Documentación, enunciado y diagrama de referencia
 ```
 
@@ -90,7 +91,7 @@ Usuarios de prueba, pgAdmin, puertos y más comandos: [docs/04-entorno-desarroll
 
 | Documento | Contenido |
 |-----------|-----------|
-| [Enunciado](docs/enunciado/ProyectoCursos_V2.pdf) | Enunciado del proyecto |
+| [Enunciado](docs/enunciado/ProyectoCursos_V3.pdf) | Enunciado del proyecto |
 | [Diagrama de la cátedra](docs/referencia/diagrama-profesor.bpmn) | Diagrama BPMN propuesto por el profesor |
 | [Requerimientos](docs/01-requerimientos.md) | Qué pide el enunciado, con IDs de requisitos y escenarios de la defensa |
 | [Arquitectura](docs/02-arquitectura.md) | Componentes, tecnologías elegidas y cómo se comunican |
