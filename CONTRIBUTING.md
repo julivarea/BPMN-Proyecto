@@ -27,7 +27,7 @@
 ## Reglas del proyecto
 
 - **Enunciado primero.** Si algo no está claro o hay que desviarse del enunciado, se documenta y se justifica en
-  [docs/decisiones.md](docs/decisiones.md), en el mismo commit que el cambio.
+  [docs/05-decisiones.md](docs/05-decisiones.md), en el mismo commit que el cambio.
 - **Modelo BPMN: un solo editor a la vez.** Asignarse el issue antes de tocarlo, revisar el `git diff` (IDs, tildes,
   atributos `flowable:`) y correr `./mvnw -pl proceso verify`. Ver [docs/03-guia-flowable.md §2](docs/03-guia-flowable.md).
 - **IDs de tareas, mensajes y variables del modelo:** la web y las apps los usan; cambiarlos rompe a otros, así que se

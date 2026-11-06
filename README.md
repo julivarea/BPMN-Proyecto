@@ -96,5 +96,7 @@ Usuarios de prueba, pgAdmin, puertos y más comandos: [docs/04-entorno-desarroll
 | [Arquitectura](docs/02-arquitectura.md) | Componentes, tecnologías elegidas y cómo se comunican |
 | [Guía de Flowable](docs/03-guia-flowable.md) | Conceptos, cómo editar el modelo, API REST y API Java, errores comunes |
 | [Entorno de desarrollo](docs/04-entorno-desarrollo.md) | Instalación, usuarios de prueba y comandos |
-| [Decisiones](docs/decisiones.md) | Interpretaciones y desvíos del enunciado, justificados |
+| [Decisiones](docs/05-decisiones.md) | Interpretaciones del enunciado y cambios respecto del diagrama de la cátedra |
+| [Implementación del modelo](docs/06-guia-implementacion-modelo.md) | Variables, mensajes, condiciones, timers, listeners y delegates del modelo |
+| [Base de datos](docs/07-base-de-datos.md) | Esquema de la base de la institución y quién escribe cada dato |
 | [Cómo trabajamos](CONTRIBUTING.md) | Issues, ramas, commits y convenciones de código |
