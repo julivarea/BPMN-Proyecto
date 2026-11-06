@@ -53,7 +53,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 
 ## 4. Elemento por elemento
 
-### Proceso y acuerdo (§1.1)
+### Proceso y negociación de curso (§1.1)
 
 | Elemento | ID | Configuración |
 |----------|----|---------------|
@@ -80,7 +80,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | recibir aceptación de propuesta | `aceptacionRecibida` | `messageRef` → `aceptacionPropuesta` |
 | Habilitar acceso a la empresa | `habilitarAccesoEmpresa` | Service task → `HabilitarAccesoEmpresaDelegate` |
 
-### Preparación (§1.2, §1.3)
+### Preparación de curso (§1.2, §1.3)
 
 | Elemento | ID | Configuración |
 |----------|----|---------------|
@@ -107,7 +107,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 
 Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-decisiones, limitación 5).
 
-### Desarrollo y cierre (§1.4)
+### Desarrollo de curso (§1.4)
 
 | Elemento | ID | Configuración |
 |----------|----|---------------|

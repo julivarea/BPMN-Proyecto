@@ -46,25 +46,25 @@ moderno que sea **compatible con Flowable 6.8** y que mantenga el código simple
 use un solo lenguaje y porque la app de materiales igual tiene que ser Java. La única excepción es la minería de
 procesos (§4.4), que usa los scripts Python que provee la cátedra.
 
-| Pieza | Elección | Motivo | Descartado |
-|-------|----------|--------|------------|
-| Motor | Flowable **6.8.0** (imagen oficial) | Lo usa la cátedra; trae la UI de Flowable que pide §4.1.3. La app de materiales tiene que usar la misma versión del motor, porque trabaja sobre la misma BD. | Flowable 7/8: no tienen las apps de UI open source. Embeber 6.8 en Spring Boot 4: incompatible (6.8 usa Spring 5/`javax`; Boot 4 usa Spring 7/`jakarta`). |
-| Extensiones del motor | Java, `--release 11` | La imagen corre Java 11.0.15: un jar compilado para 17+ no carga. | — |
-| JDK de desarrollo | **Java 21 LTS** (Temurin) | LTS, records, `switch` con patrones, text blocks. Compila también el módulo `proceso` para Java 11. | — |
-| Build | Maven multi-módulo + **Maven Wrapper** | Es lo que se usa en las prácticas; el wrapper fija Maven 3.9.16 para los cuatro. | Gradle: otra herramienta más para aprender. |
-| Web | **Spring Boot 4.1** + **Thymeleaf** (HTML renderizado en el servidor) | Un solo proyecto, sin build de frontend ni CORS ni tokens. Formularios y sesión resueltos. | SPA (React/Vite) + API: duplica el stack y la autenticación para un sitio de formularios. |
-| Acceso a BD (web) | `JdbcClient` + SQL | 4 tablas: SQL explícito y legible. | JPA/Hibernate: demasiado mecanismo para este tamaño. |
-| Esquema de la institución | **Flyway** (`web/src/main/resources/db/migration`) | Cada integrante actualiza su BD solo con hacer pull y levantar la web. | Scripts SQL a mano: se desincronizan entre las cuatro máquinas. |
-| Cliente REST (web) | `RestClient` de Spring | Viene con Spring Boot. | Feign, WebClient: no hacen falta. |
-| Seguridad (web) | Spring Security con dos formas de entrar: personal contra Flowable y empresas contra la BD (BCrypt) | Cumple A-08 y W-03. | Sesiones hechas a mano: riesgoso. |
-| PDF | OpenPDF (se agrega al implementar W-07) | Simple, licencia LGPL/MPL. | iText 7+: AGPL. |
-| Apps de escritorio | **Swing** (JDK) | Sin dependencias; alcanza para listas, formularios y botones. Opcional: FlatLaf para un aspecto moderno (una sola dependencia). | JavaFX: módulos y plugin extra. |
-| HTTP (app comunicaciones) | `java.net.http.HttpClient` + Jackson | El JDK alcanza; Jackson para JSON. | — |
-| BD | **PostgreSQL 15** en Docker | La recomienda el anexo B de la práctica 4; la comparten el servidor y la app de materiales. | H2 (ver abajo). |
-| Tests del proceso | JUnit 5 + `@FlowableTest` + H2 en memoria | Corren sin Docker y en CI (práctica 5). | — |
-| CI | GitHub Actions: `./mvnw verify` en cada push | Avisa enseguida si algo rompe el build o los tests. | — |
-| Consultas históricas (§4.3) | En la **app de materiales**, con `HistoryService` | El §4.3 lo permite, y esa app ya tiene el motor embebido y acceso a la BD del motor. | Una app de consola aparte: otro módulo más que mantener. |
-| Minería de procesos (§4.4) | **Python + PM4Py + pandas**, en `mineria/` con su propio entorno virtual | Son los scripts y la herramienta que provee el enunciado. | — |
+| Pieza | Elección | Motivo |
+|-------|----------|--------|
+| Motor | Flowable **6.8.0** (imagen oficial) | Lo usa la cátedra y trae la UI de Flowable que pide §4.1.3. La app de materiales usa la misma versión del motor, porque trabaja sobre la misma BD. |
+| Extensiones del motor | Java, `--release 11` | La imagen corre Java 11.0.15, así que el jar tiene que estar compilado para esa versión. |
+| JDK de desarrollo | **Java 21 LTS** (Temurin) | Versión LTS, con records, `switch` con patrones y text blocks. Compila también el módulo `proceso` para Java 11. |
+| Build | Maven multi-módulo + **Maven Wrapper** | Es lo que se usa en las prácticas; el wrapper fija Maven 3.9.16 para todo el grupo. |
+| Web | **Spring Boot 4.1** + **Thymeleaf** (HTML renderizado en el servidor) | Un solo proyecto para pantallas y lógica: formularios, sesión y seguridad resueltos por el framework. |
+| Acceso a BD (web) | `JdbcClient` + SQL | Son 4 tablas: SQL explícito y legible. |
+| Esquema de la institución | **Flyway** (`web/src/main/resources/db/migration`) | Cada integrante actualiza su BD solo con hacer pull y levantar la web, y todos quedan con el mismo esquema. |
+| Cliente REST (web) | `RestClient` de Spring | Viene con Spring Boot. |
+| Seguridad (web) | Spring Security con dos formas de entrar: personal contra Flowable y empresas contra la BD (BCrypt) | Cumple A-08 y W-03 con un mecanismo probado. |
+| PDF | OpenPDF (se agrega al implementar W-07) | Simple, con licencia LGPL/MPL. |
+| Apps de escritorio | **Swing** (JDK) | Viene con el JDK y alcanza para listas, formularios y botones. Opcional: FlatLaf para un aspecto moderno (una sola dependencia). |
+| HTTP (app comunicaciones) | `java.net.http.HttpClient` + Jackson | El cliente HTTP del JDK alcanza; Jackson para JSON. |
+| BD | **PostgreSQL 15** en Docker | La recomienda el anexo B de la práctica 4. La comparten el servidor y la app de materiales, y los datos persisten en un volumen. |
+| Tests del proceso | JUnit 5 + `@FlowableTest` + H2 en memoria | Corren sin Docker y en CI (práctica 5). |
+| CI | GitHub Actions: `./mvnw verify` en cada push | Avisa enseguida si algo rompe el build o los tests. |
+| Consultas históricas (§4.3) | En la **app de materiales**, con `HistoryService` | El §4.3 lo permite, y esa app ya tiene el motor embebido y acceso a la BD del motor. |
+| Minería de procesos (§4.4) | **Python + PM4Py + pandas**, en `mineria/` con su propio entorno virtual | Son los scripts y la herramienta que provee el enunciado. |
 
 ## 3. Trabajo en grupo y datos compartidos
 
@@ -72,9 +72,8 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
   solicitudes) son locales a cada máquina.
 - **Lo que se comparte es la definición del sistema, en git:** el modelo BPMN y la regla DMN, las migraciones de la
   BD, los scripts de usuarios y despliegue, y el código. Con eso cualquiera reconstruye un entorno idéntico en minutos.
-- **No conviene compartir una BD del motor en la nube.** Cada motor conectado ejecutaría los timers y jobs de todos,
-  con versiones distintas del jar: timers que se disparan en la máquina de otro, errores de clases que no existen.
-  Para la defensa se usa **una sola máquina**.
+- **Cada integrante usa su propio motor y su propia BD:** así los timers y jobs de cada uno se ejecutan solo en su
+  máquina, con su versión del código. Para la defensa se usa **una sola máquina**.
 - **Datos de prueba:** se generan usando el sistema (formulario web + app de comunicaciones). Si hacen falta fijos,
   se agrega una migración `V…__datos_prueba.sql`.
 

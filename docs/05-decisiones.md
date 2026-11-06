@@ -72,8 +72,7 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
 
 2. **La compensación no espera a las tareas de usuario.** Si hay que *Liberar equipamiento* (tarea de usuario),
    Flowable crea la tarea y sigue sin esperarla: *Notificar cierre* se ejecuta antes de que alguien la complete.
-   El proceso sí termina recién cuando se completa. **Se acepta** y se menciona en el informe; esperarla obligaría a
-   agregar mensajes internos, más complejo que el beneficio.
+   El proceso sí termina recién cuando se completa. **Se acepta** y se menciona en el informe.
 
 3. **No se pueden usar eventos intermedios de envío de mensaje.** Flowable 6.8 rechaza el despliegue si el modelo
    tiene un evento intermedio que *lanza* un mensaje. **Solución:** los envíos a la empresa (*Enviar propuesta*,
