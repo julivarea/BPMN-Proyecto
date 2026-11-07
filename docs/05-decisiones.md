@@ -26,8 +26,12 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
    propuesta"), y se corrigieron la ortografía ("Notificar Desición" → "Comunicar imposibilidad de realizar el
    curso") y las mayúsculas. Es la guía G6 de etiquetas verbo-objeto.
 
-5. **"Habilitar acceso de la empresa" pasa de script task a service task.** Tiene que crear o reutilizar la
-   cuenta de la empresa en la base de la institución (§4.1.2). Eso se implementa en Java, no en un script.
+5. **Todas las tareas automáticas son service tasks con una clase Java.** Las script tasks del diagrama
+   (*Habilitar acceso de la empresa*, *Comunicar imposibilidad de realizar el curso*, *Enviar propuesta*, *Enviar
+   recordatorio*, *Enviar confirmación*, *Notificar cierre* y *Liberar aula virtual*) pasan a service tasks, igual que
+   *Reservar aula* y *Liberar aula*. Así todo el código del proceso queda en un solo lugar y en un solo lenguaje
+   (el módulo `proceso`), con tests, y el modelo no depende de scripts escritos dentro del XML. Las notificaciones a
+   la empresa comparten una misma clase, configurada en cada tarea con su asunto.
 
 6. **La compensación final pasa de evento de fin a evento intermedio seguido de un fin.** "Liberar recursos" es
    ahora un evento intermedio de compensación, seguido del fin "Curso finalizado". En Flowable 6.8 el evento de
@@ -50,9 +54,8 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
 
 - **Falta de aulas físicas (escenario 7 de la defensa).** No se modela por ahora: el enunciado no dice qué pasa
   después de la excepción. Se consulta al profesor.
-- **Ajustes al implementar en Flowable 6.8:** ver la sección siguiente.
 
-## Limitaciones de Flowable 6.8 y soluciones propuestas
+## Limitaciones de Flowable 6.8 y soluciones
 
 Comportamientos del motor (y de su editor) que se probaron en el entorno del proyecto y afectan al modelo.
 
@@ -62,13 +65,13 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
    - la compensación lanzada desde adentro del subproceso de evento no compensa nada;
    - el fin de error no llega al borde de error y la instancia queda trabada.
 
-   **Solución:** el subproceso de evento solo marca `resultado = CANCELADO` y termina, con lo que *Preparar curso*
-   se corta. Después del subproceso se agrega un XOR "¿Preparación cancelada?":
+   **Solución (aplicada en el modelo):** el subproceso de evento solo marca `resultado = CANCELADO` y termina, con
+   lo que *Preparar curso* se corta. Después del subproceso va un XOR "¿Preparación cancelada?":
    - **No:** *Enviar confirmación*, el camino normal.
    - **Sí:** compensación "Liberar recursos", lanzada afuera del subproceso, donde sí funciona y libera solo los
      recursos ya gestionados; después *Notificar cierre* y fin.
 
-   Desaparecen el fin de error y el borde de error.
+   El modelo ya no tiene fin de error ni borde de error.
 
 2. **La compensación no espera a las tareas de usuario.** Si hay que *Liberar equipamiento* (tarea de usuario),
    Flowable crea la tarea y sigue sin esperarla: *Notificar cierre* se ejecuta antes de que alguien la complete.

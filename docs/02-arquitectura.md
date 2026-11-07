@@ -36,7 +36,7 @@ flowchart LR
 | App materiales | `app-materiales/` | Login + tareas *Preparar materiales*: ver, reclamar, completar. | **API Java** sobre la BD del motor (§4.2.1) |
 | App comunicaciones | `app-comunicaciones/` | Simula los mensajes de la empresa; solo muestra los habilitados. | **API REST** (§4.2.2) |
 | PostgreSQL | `docker-compose.yml`, `db/` | BD `flowable` (motor) y BD `institucion` (empresas, cursos, propuestas). | — |
-| Consultas históricas | `app-materiales/` | Las tres consultas del §4.3: resultados de las solicitudes, duración de las ramas de la preparación y tareas completadas por persona. | **API Java** (`HistoryService`) sobre la BD del motor |
+| Consultas históricas (parte de la app de materiales) | `app-materiales/`, paquete `historial` | Las tres consultas del §4.3: resultados de las solicitudes, duración de las ramas de la preparación y tareas completadas por persona. | **API Java** (`HistoryService`) sobre la BD del motor |
 | Minería de procesos | `mineria/` | Scripts Python de la cátedra adaptados: exportar a CSV el historial de la etapa de negociación y analizarlo con PM4Py (§4.4). | Lee el historial de Flowable (el script de la cátedra usa `requests`, es decir, la API REST) |
 
 ## 2. Tecnologías y por qué
@@ -94,35 +94,43 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
 
 ## 5. Organización del código (propuesta)
 
-Paquetes por **funcionalidad**, no por capa técnica:
+Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan de `ar/edu/unrc/gtpn/` en cada módulo.
 
 ```
-proceso/src/main/java/ar/edu/unrc/gtpn/proceso/
-  viabilidad/      ContarCursosEnEjecucionListener
-  notificacion/    NotificarEmpresaDelegate
-  acceso/          HabilitarAccesoEmpresaDelegate
-  recursos/        ReservarAulaDelegate, LiberarAulaDelegate, ...
-  asignacion/      AsignarAdministrativoConMenosTareasListener
-  estado/          RegistrarResultadoDelCursoListener
-proceso/src/main/resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
-proceso/src/test/java/...              un test por escenario del proceso
-
-web/src/main/java/ar/edu/unrc/gtpn/web/
-  solicitud/       formulario público (controller, servicio, repositorio)
-  empresa/         portal de empresas
-  administracion/  tareas del personal administrativo
-  docentes/        tareas del equipo docente
-  propuesta/       versiones y PDF
-  flowable/        cliente REST de Flowable (único lugar que conoce URLs y JSON de Flowable)
-  seguridad/       configuración de Spring Security
-web/src/main/resources/templates/<funcionalidad>/*.html
-
-app-materiales/…/materiales/        MotorFlowable, servicio de tareas, ventanas
-app-materiales/…/materiales/historial/  una clase por consulta del §4.3 (resultados, ramas, tareas por persona)
-app-comunicaciones/…/comunicaciones/ FlowableRest, enum Comunicacion (mensaje + datos), ventanas
-
-mineria/                            exportar_history.py y analizar.py (de la cátedra, adaptados),
-                                    CSV generado, capturas y conclusión (§4.4)
+.
+├── proceso/
+│   └── src/
+│       ├── main/
+│       │   ├── java/…/proceso/
+│       │   │   ├── viabilidad/       ContarCursosEnEjecucionListener
+│       │   │   ├── notificacion/     NotificarEmpresaDelegate
+│       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate
+│       │   │   ├── recursos/         ReservarAulaDelegate, LiberarAulaDelegate, LiberarAulaVirtualDelegate
+│       │   │   ├── asignacion/       AsignarAdministrativoConMenosTareasListener
+│       │   │   └── estado/           RegistrarResultadoDelCursoListener
+│       │   └── resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
+│       └── test/java/…/proceso/      un test por escenario del proceso
+├── web/
+│   └── src/main/
+│       ├── java/…/web/
+│       │   ├── solicitud/            formulario público (controller, servicio, repositorio)
+│       │   ├── empresa/              portal de empresas
+│       │   ├── administracion/       tareas del personal administrativo
+│       │   ├── docentes/             tareas del equipo docente
+│       │   ├── propuesta/            versiones y PDF
+│       │   ├── flowable/             cliente REST de Flowable (único lugar que conoce URLs y JSON de Flowable)
+│       │   └── seguridad/            configuración de Spring Security
+│       └── resources/
+│           ├── templates/<funcionalidad>/   páginas Thymeleaf
+│           └── db/migration/                migraciones Flyway de la BD de la institución
+├── app-materiales/
+│   └── src/main/java/…/materiales/
+│       ├── MaterialesApp, MotorFlowable, servicio de tareas, ventanas
+│       └── historial/                consultas del §4.3 (ConsultasHistoricas)
+├── app-comunicaciones/
+│   └── src/main/java/…/comunicaciones/
+│       └── ComunicacionesApp, FlowableRest, enum Comunicacion (mensaje + datos), ventanas
+└── mineria/                          exportar_history.py y analizar.py adaptados, CSV, capturas y conclusión (§4.4)
 ```
 
 ## 6. Puertos

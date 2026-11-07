@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             id="definicionesViabilidad" name="Viabilidad"
+             namespace="http://unrc.edu.ar/gtpn/cursos">
+  <!-- Regla de negocio de viabilidad (enunciado 3.1). No poner comentarios antes de <definitions>:
+       Flowable 6.8 detecta la versión de DMN leyendo el primer nodo del archivo. -->
+  <decision id="viabilidad" name="Viabilidad de la solicitud">
+    <decisionTable id="tablaViabilidad" hitPolicy="UNIQUE">
+      <input id="entradaCursosEnEjecucion" label="Cursos en ejecución">
+        <inputExpression id="expresionCursosEnEjecucion" typeRef="number">
+          <text>cursosEnEjecucion</text>
+        </inputExpression>
+      </input>
+      <output id="salidaEsViable" name="esViable" label="Es viable" typeRef="boolean"/>
+      <!-- TODO: Implementación pendiente (reglas según el enunciado 3.1) -->
+    </decisionTable>
+  </decision>
+</definitions>

@@ -13,7 +13,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | IDs de elementos | camelCase con significado (`registrarYElaborarPropuesta`, no `Activity_15h2gcg`). **Obligatorio** en tareas de usuario, eventos de mensaje y timers: la web y las apps los usan. Recomendado en el resto. |
 | Nombres de mensajes | camelCase, declarados como `<message>` y referenciados con `messageRef` |
 | Variables | camelCase y tipos simples: texto, número, booleano, fecha ISO-8601 o JSON. Nunca objetos Java: la web y las apps no podrían leerlos. |
-| Tareas automáticas | Service tasks con clase Java (`flowable:class`). Las script tasks del diagrama se convierten en service tasks: el código queda en Java, testeable y versionado. |
+| Tareas automáticas | Service tasks con clase Java (`flowable:class`). El modelo no tiene script tasks: todo el código queda en Java, testeable y versionado. |
 | Clases Java | Paquete `ar.edu.unrc.gtpn.proceso.<funcionalidad>`, en el módulo `proceso` |
 | Usuarios y grupos | `jefe_admin`, `administrativo` (grupo `administracion`); `jefe_docente`, `docente1`, `docente2` (grupo `docentes`) |
 
@@ -99,9 +99,10 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | Liberar equipamiento (compensación) | `liberarEquipamiento` | User task, `candidateGroups = administracion` |
 | Inclusivo de cierre | `recursosListos` | — |
 | Preparación de curso completa | `preparacionCompleta` | — |
-| Cancelación (subproceso de evento) | `cancelacion` | Inicio `cancelacionRecibida`, `messageRef` → `cancelacionCurso`. Reemplazar compensación + fin de error por un fin con listener `start`: `resultado = 'CANCELADO'` (ver 05-decisiones) |
-| Borde de error de Preparar curso | — | Se elimina. Su función pasa al XOR siguiente |
-| XOR nuevo después de Preparar curso | `gatewayPreparacionCancelada` | **Sí** → `${resultado == 'CANCELADO'}` → compensación "Liberar recursos" → *Notificar cierre* → fin. **No** → flujo por defecto → *Enviar confirmación* |
+| Cancelación (subproceso de evento) | `cancelacion` | Inicio `cancelacionRecibida`, `messageRef` → `cancelacionCurso` |
+| Preparación cancelada (fin del subproceso de evento) | `preparacionCancelada` | Execution listener `start` (expresión): `resultado = 'CANCELADO'` |
+| ¿Preparación cancelada? | `gatewayPreparacionCancelada` | **SI** → `${resultado == 'CANCELADO'}` → compensación "Liberar recursos" → *Notificar cierre* → fin. **NO** → flujo por defecto (ya marcado en el modelo) → *Enviar confirmación* |
+| Liberar recursos (cancelación) | `liberarRecursosCancelacion` | — |
 | Notificar cierre | `notificarCierre` | Service task → `NotificarEmpresaDelegate` |
 | Fin por cancelación | `finCancelacion` | El resultado ya es `CANCELADO` |
 
