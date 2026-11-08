@@ -11,6 +11,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | Clave del proceso | `organizarCurso` |
 | `businessKey` de cada instancia | id del curso en la BD de la institución (lo envía la web al iniciar) |
 | IDs de elementos | camelCase con significado (`registrarYElaborarPropuesta`, no `Activity_15h2gcg`). **Obligatorio** en tareas de usuario, eventos de mensaje y timers: la web y las apps los usan. Recomendado en el resto. |
+| IDs de flechas | `flujo_<origen>_<destino>` con los IDs de los elementos (`flujo_evaluarViabilidad_gatewayEsViable`). Asociaciones de compensación: `asociacion_<evento>_<tarea>` |
 | Nombres de mensajes | camelCase, declarados como `<message>` y referenciados con `messageRef` |
 | Variables | camelCase y tipos simples: texto, número, booleano, fecha ISO-8601 o JSON. Nunca objetos Java: la web y las apps no podrían leerlos. |
 | Tareas automáticas | Service tasks con clase Java (`flowable:class`). El modelo no tiene script tasks: todo el código queda en Java, testeable y versionado. |
@@ -84,7 +85,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 
 | Elemento | ID | Configuración |
 |----------|----|---------------|
-| Preparar curso | `prepararCurso` | Subproceso embebido |
+| Preparar curso | `prepararCurso` | Subproceso embebido. Inicio `inicioPrepararCurso`, fin `finPrepararCurso` |
 | Paralelo de inicio | `iniciarPreparacion` | — |
 | recibir nómina de inscripciones | `nominaRecibida` | `messageRef` → `nominaParticipantes` |
 | Confeccionar lista definitiva | `confeccionarListaDefinitiva` | `candidateGroups = administracion` + Task listener `create` → `AsignarAdministrativoConMenosTareasListener` (la deja asignada). Formulario: `listaDefinitiva` |
@@ -92,10 +93,13 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | Evaluar recursos | `evaluarRecursos` | `candidateGroups = administracion`. Formulario: `requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento` |
 | Inclusivo de recursos | `seleccionarRecursos` | **Aula física** → `${requiereAula}`, **Aula virtual** → `${requiereAulaVirtual}`, **Equipamiento** → `${requiereEquipamiento}`. Sin flujo por defecto: la web exige al menos una opción y, si no hubiera ninguna, Flowable corta con error |
 | Reservar aula | `reservarAula` | Service task → `ReservarAulaDelegate` |
+| Borde de compensación de Reservar aula | `compensarReservaAula` | — |
 | Liberar aula (compensación) | `liberarAula` | Service task → `LiberarAulaDelegate` |
 | Solicitar aula virtual | `solicitarAulaVirtual` | `candidateGroups = administracion` |
+| Borde de compensación de Solicitar aula virtual | `compensarAulaVirtual` | — |
 | Liberar aula virtual (compensación) | `liberarAulaVirtual` | Service task → `LiberarAulaVirtualDelegate` |
 | Contratar equipamiento | `contratarEquipamiento` | `candidateGroups = administracion` |
+| Borde de compensación de Contratar equipamiento | `compensarEquipamiento` | — |
 | Liberar equipamiento (compensación) | `liberarEquipamiento` | User task, `candidateGroups = administracion` |
 | Inclusivo de cierre | `recursosListos` | — |
 | Preparación de curso completa | `preparacionCompleta` | — |
@@ -125,7 +129,7 @@ Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-
 
 | Timer | Configuración | Nota |
 |-------|---------------|------|
-| 5 días | `timeDuration = ${plazoRespuesta}` | `P5D` en serio; `PT2M` en la demo (§3.5 permite reducir plazos) |
+| 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `proceso.plazo-respuesta`: `P5D` en serio; en la demo, `PROCESO_PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Sin esta variable la instancia falla al llegar al timer: si se inicia desde la Task app, agregarla antes (03-guia-flowable §2) |
 | fecha programada | `timeDate = ${fechaInicioCurso}` | Fecha ISO-8601 fijada al aceptar. Si ya pasó, se dispara enseguida (útil para la demo) |
 
 ## 6. Regla de negocio
@@ -162,10 +166,13 @@ Reglas para estas clases:
 Las asignaciones de resultado, contadores y versiones son expresiones de una línea en el propio XML
 (`${execution.setVariable('resultado', 'RECHAZADO')}`): no necesitan clase.
 
-## 8. Formularios para la UI de Flowable
+## 8. Campos de formulario
 
-Mientras la web no esté hecha, las tareas que cargan datos se completan desde la Task app de Flowable. Para eso
-necesitan campos de formulario (*form properties*) con el mismo nombre que la variable:
+Las tareas que cargan datos declaran campos de formulario (*form properties*) con el mismo nombre que la variable.
+Documentan qué datos completa cada tarea, pero la Task app de Flowable 6.8 **no los muestra**: solo muestra los
+formularios hechos con el editor de formularios de Flowable. Hasta que esté la web, esas tareas se completan con
+*Complete* en la Task app, agregando antes los datos como variables de la instancia desde la app Admin (ver
+[03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de Flowable").
 
 | Tarea | Campos |
 |-------|--------|
@@ -176,7 +183,7 @@ necesitan campos de formulario (*form properties*) con el mismo nombre que la va
 | Elaborar informe de resultados | `informeResultados` (texto) |
 
 Los mensajes de la empresa no se pueden enviar desde la Task app: hasta tener la app de comunicaciones, se envían
-por REST con `curl` (ver [03-guia-flowable.md](03-guia-flowable.md), §3).
+desde la app Admin (ver [03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de Flowable").
 
 ## 9. Pendiente
 

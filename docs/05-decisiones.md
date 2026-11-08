@@ -91,9 +91,20 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
    compensation event could not be found"). **Solución:** no tocar esas tres asociaciones en el editor y revisar
    el XML exportado antes de commitear. Si se rompen, se corrigen en el XML y se reimporta.
 
-6. **La importación al editor de Flowable puede romper conexiones.** Puede dejar flechas sin destino, eventos de
-   borde sin enganchar a su tarea o data objects sin nombre (Flowable rechaza el despliegue). **Solución:** revisar
-   el XML exportado y que los tests del proceso lo cubran.
+6. **La importación al editor de Flowable puede romper conexiones.** Al importar un XML pasa lo siguiente:
+   - puede dejar flechas sin destino, eventos de borde sin enganchar a su tarea o data objects sin nombre (Flowable
+     rechaza el despliegue);
+   - engancha todas las flechas al centro de sus figuras, así que aparecen codos o diagonales donde el centro no
+     está alineado con la flecha;
+   - pierde la referencia de *Evaluar viabilidad* a la tabla `viabilidad`, porque el editor solo la conserva si
+     apunta a una tabla de decisión creada en el propio editor. Al guardar se borra y Flowable rechaza el despliegue.
+
+   **Solución:**
+   - importar solo cuando el archivo del repo cambió, y seguir trabajando sobre ese modelo en el editor;
+   - después de importar, enderezar las flechas en el editor;
+   - crear en el editor una tabla de decisión vacía con key `viabilidad` y elegirla en *Decision table reference*.
+     Las reglas reales están en `viabilidad.dmn` del repo: esa tabla del editor no se exporta;
+   - revisar el XML exportado y que los tests del proceso lo cubran.
 
 7. **Flowable no controla quién completa una tarea.** Cualquier usuario con acceso a la API REST puede completar
    una tarea asignada a otro. **Solución:** la web y la app de materiales verifican, antes de llamar al motor, que

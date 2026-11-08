@@ -39,6 +39,35 @@ Lo que quede en el Modeler de Flowable de cada uno es local y se pierde.
 arrancaron, así que para probar un cambio hay que iniciar una instancia nueva. Si quedaron instancias viejas
 inservibles, se borran desde la UI (Admin) o se reinicia todo (§7).
 
+### Probar desde la UI de Flowable
+
+Mientras no estén la web y las apps, el proceso se recorre desde <http://localhost:8080/flowable-ui> con `admin` /
+`test`. Se usan dos apps: **Task** (iniciar y completar tareas) y **Admin** (ver y manejar las instancias).
+
+1. **Iniciar una solicitud.** Task → *Processes* → *Start a process* → **Institución** → *Start*. Así la instancia
+   arranca sin `plazoRespuesta` (en el uso real lo manda la web): agregarla en el paso 2 **antes** de completar la
+   primera tarea, o falla al llegar al timer (§7).
+2. **Process instances.** Admin → *Process Engine* → *Process instances* → elegir la instancia:
+   - *Show process diagram*: el diagrama con las actividades en curso resaltadas;
+   - *Variables*: las variables de la instancia. Con *Add variable* se agregan o se corrigen (por ejemplo,
+     `plazoRespuesta`, tipo `string`, valor `P5D`);
+   - *Tasks*: las tareas abiertas y a quién están asignadas;
+   - también permite borrar la instancia.
+3. **Completar tareas.** Task, entrando con el usuario asignado (por ejemplo `jefe_admin` / `clave123`) → la tarea →
+   *Complete*. Los campos de formulario no se muestran (guía 06 §8): si la tarea carga datos, se agregan antes como
+   variables de la instancia (paso 2).
+4. **Event subscriptions** (mensajes de la empresa). Admin → *Process Engine* → *Event subscriptions*: hay una
+   suscripción por cada mensaje que una instancia está esperando (`aceptacionPropuesta`, `rechazoPropuesta`,
+   `modificacionesPropuesta`, `nominaParticipantes`, `cancelacionCurso`). Elegir la de la instancia → *Trigger event*.
+   El mensaje llega sin datos: las variables que trae (`fechaInicioCurso`, `observacionesEmpresa`, `participantes`) se
+   agregan antes en la instancia. No disparar `solicitudCapacitacion`, que es la suscripción de inicio del proceso.
+5. **Jobs** (timers). Admin → *Process Engine* → *Jobs*, con el filtro *Job type*:
+   - *Timer job*: los timers pendientes y cuándo vencen. Abrir uno → *Move job* lo hace vencer en el momento (así se
+     prueba el plazo de 5 días sin esperar);
+   - *Deadletter job*: los jobs que fallaron, con el error.
+
+Las mismas acciones por REST están en §3 (las usan la web y la app de comunicaciones).
+
 ## 3. API REST (sitio web y app de comunicaciones)
 
 Base: `http://localhost:8080/flowable-ui/process-api`. Autenticación HTTP Basic con un usuario de Flowable que tenga
@@ -149,6 +178,7 @@ Reglas:
 | `cvc-complex-type…` al desplegar | Orden inválido en el XML: las `association` van al final del subproceso | Reordenar (o guardar desde el Modeler) |
 | `Cannot find the declaration of element 'definitions'` (DMN) | Comentario antes de `<definitions>` | Mover el comentario adentro |
 | 403 en la REST con un usuario del personal | Falta el privilegio `access-rest-api` | `bash scripts/setup-identidades.sh` |
+| `Unknown property used in expression: ${plazoRespuesta}` al completar una tarea | La instancia se inició sin `plazoRespuesta` (por ejemplo, desde la Task app) | Agregarla en Admin → la instancia → *Add variable* (§2, "Probar desde la UI de Flowable") |
 | La consulta del listener no ve la instancia actual | Se insertó en la misma transacción y todavía no se escribió | Filtrar por ID igual (ya se hace) |
 
 Logs del servidor: `docker compose logs -f flowable`. Reiniciar todo desde cero (**borra instancias, usuarios y la

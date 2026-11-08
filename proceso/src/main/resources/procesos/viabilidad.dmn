@@ -12,7 +12,14 @@
         </inputExpression>
       </input>
       <output id="salidaEsViable" name="esViable" label="Es viable" typeRef="boolean"/>
-      <!-- TODO: Implementación pendiente (reglas según el enunciado 3.1) -->
+      <rule id="reglaHayCupo">
+        <inputEntry id="entradaMenosDeCinco"><text>&lt; 5</text></inputEntry>
+        <outputEntry id="salidaViable"><text>true</text></outputEntry>
+      </rule>
+      <rule id="reglaSinCupo">
+        <inputEntry id="entradaCincoOMas"><text>&gt;= 5</text></inputEntry>
+        <outputEntry id="salidaNoViable"><text>false</text></outputEntry>
+      </rule>
     </decisionTable>
   </decision>
 </definitions>
