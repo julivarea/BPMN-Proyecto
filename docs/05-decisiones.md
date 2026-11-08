@@ -85,11 +85,13 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
 4. **Business rule task.** En Flowable es para reglas Drools. **Solución:** *Evaluar viabilidad* pasa a ser una
    *decision task* (tarea de servicio de tipo DMN), que es lo que pide el §3.1.
 
-5. **Compensaciones dibujadas en el editor de Flowable.** Si en el editor se dibujan o se mueven las asociaciones
-   entre los eventos de compensación y las tareas *Liberar…*, al exportar quedan como flechas de secuencia. El
-   modelo se despliega igual, pero **falla al ejecutar la compensación** ("Parent activity for boundary
-   compensation event could not be found"). **Solución:** no tocar esas tres asociaciones en el editor y revisar
-   el XML exportado antes de commitear. Si se rompen, se corrigen en el XML y se reimporta.
+5. **El editor de Flowable rompe las compensaciones al guardar.** Cada vez que se guarda el modelo en el editor,
+   las tres asociaciones entre los eventos de compensación y las tareas *Liberar…* se exportan como flechas de
+   secuencia (conservan su id `asociacion_…`). El modelo se despliega igual, pero **falla al ejecutar la
+   compensación** ("Parent activity for boundary compensation event could not be found"). **Solución:** después de
+   cada export, en el XML convertir esas tres `<sequenceFlow id="asociacion_…">` en
+   `<association … associationDirection="None">` y moverlas al final del subproceso *Preparar curso*, después de
+   todas sus flechas (si quedan antes, Flowable rechaza el despliegue). Revisar el `git diff` antes de commitear.
 
 6. **La importación al editor de Flowable puede romper conexiones.** Al importar un XML pasa lo siguiente:
    - puede dejar flechas sin destino, eventos de borde sin enganchar a su tarea o data objects sin nombre (Flowable

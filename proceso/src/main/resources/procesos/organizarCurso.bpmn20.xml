@@ -209,22 +209,63 @@
       <intermediateCatchEvent id="nominaRecibida" name="recibir nómina de inscripciones">
         <messageEventDefinition messageRef="nominaParticipantes"></messageEventDefinition>
       </intermediateCatchEvent>
-      <userTask id="confeccionarListaDefinitiva" name="Confeccionar lista definitiva" flowable:formFieldValidation="true"></userTask>
-      <userTask id="prepararMateriales" name="Preparar materiales" flowable:formFieldValidation="true"></userTask>
-      <userTask id="evaluarRecursos" name="Evaluar recursos" flowable:formFieldValidation="true"></userTask>
+      <userTask id="confeccionarListaDefinitiva" name="Confeccionar lista definitiva" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <flowable:formProperty id="listaDefinitiva" name="listaDefinitiva" type="string" required="true"></flowable:formProperty>
+          <flowable:taskListener event="create" class="ar.edu.unrc.gtpn.proceso.asignacion.AsignarAdministrativoConMenosTareasListener"></flowable:taskListener>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
+      <userTask id="prepararMateriales" name="Preparar materiales" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
+      <userTask id="evaluarRecursos" name="Evaluar recursos" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <flowable:formProperty id="requiereAula" name="requiereAula" type="boolean" required="true"></flowable:formProperty>
+          <flowable:formProperty id="requiereAulaVirtual" name="requiereAulaVirtual" type="boolean" required="true"></flowable:formProperty>
+          <flowable:formProperty id="requiereEquipamiento" name="requiereEquipamiento" type="boolean" required="true"></flowable:formProperty>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <inclusiveGateway id="seleccionarRecursos"></inclusiveGateway>
-      <serviceTask id="reservarAula" name="Reservar aula" flowable:expression="${true}"></serviceTask>
-      <userTask id="solicitarAulaVirtual" name="Solicitar aula virtual" flowable:formFieldValidation="true"></userTask>
+      <serviceTask id="reservarAula" name="Reservar aula" flowable:class="ar.edu.unrc.gtpn.proceso.recursos.ReservarAulaDelegate"></serviceTask>
+      <userTask id="solicitarAulaVirtual" name="Solicitar aula virtual" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <boundaryEvent id="compensarReservaAula" attachedToRef="reservarAula" cancelActivity="false">
         <compensateEventDefinition></compensateEventDefinition>
       </boundaryEvent>
-      <serviceTask id="liberarAula" name="Liberar aula" isForCompensation="true" flowable:expression="${true}"></serviceTask>
-      <serviceTask id="liberarAulaVirtual" name="Liberar aula virtual" isForCompensation="true" flowable:expression="${true}"></serviceTask>
-      <userTask id="contratarEquipamiento" name="Contratar equipamiento" flowable:formFieldValidation="true"></userTask>
+      <serviceTask id="liberarAula" name="Liberar aula" isForCompensation="true" flowable:class="ar.edu.unrc.gtpn.proceso.recursos.LiberarAulaDelegate"></serviceTask>
+      <serviceTask id="liberarAulaVirtual" name="Liberar aula virtual" isForCompensation="true" flowable:class="ar.edu.unrc.gtpn.proceso.recursos.LiberarAulaVirtualDelegate"></serviceTask>
+      <userTask id="contratarEquipamiento" name="Contratar equipamiento" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <boundaryEvent id="compensarEquipamiento" attachedToRef="contratarEquipamiento" cancelActivity="false">
         <compensateEventDefinition></compensateEventDefinition>
       </boundaryEvent>
-      <userTask id="liberarEquipamiento" name="Liberar equipamiento" isForCompensation="true" flowable:formFieldValidation="true"></userTask>
+      <userTask id="liberarEquipamiento" name="Liberar equipamiento" isForCompensation="true" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <inclusiveGateway id="recursosListos"></inclusiveGateway>
       <parallelGateway id="preparacionCompleta" name="Preparación de curso completa"></parallelGateway>
       <endEvent id="finPrepararCurso"></endEvent>
@@ -232,7 +273,11 @@
         <startEvent id="cancelacionRecibida" name="recibir cancelación" isInterrupting="true">
           <messageEventDefinition messageRef="cancelacionCurso"></messageEventDefinition>
         </startEvent>
-        <endEvent id="preparacionCancelada" name="Preparación cancelada"></endEvent>
+        <endEvent id="preparacionCancelada" name="Preparación cancelada">
+          <extensionElements>
+            <flowable:executionListener event="start" expression="${execution.setVariable('resultado', 'CANCELADO')}"></flowable:executionListener>
+          </extensionElements>
+        </endEvent>
         <sequenceFlow id="flujo_cancelacionRecibida_preparacionCancelada" sourceRef="cancelacionRecibida" targetRef="preparacionCancelada"></sequenceFlow>
       </subProcess>
       <boundaryEvent id="compensarAulaVirtual" attachedToRef="solicitarAulaVirtual" cancelActivity="false">
@@ -240,10 +285,6 @@
       </boundaryEvent>
       <sequenceFlow id="flujo_inicioPrepararCurso_iniciarPreparacion" sourceRef="inicioPrepararCurso" targetRef="iniciarPreparacion"></sequenceFlow>
       <sequenceFlow id="flujo_nominaRecibida_confeccionarListaDefinitiva" sourceRef="nominaRecibida" targetRef="confeccionarListaDefinitiva"></sequenceFlow>
-      <sequenceFlow id="flujo_evaluarRecursos_seleccionarRecursos" sourceRef="evaluarRecursos" targetRef="seleccionarRecursos"></sequenceFlow>
-      <sequenceFlow id="flujo_seleccionarRecursos_solicitarAulaVirtual" name="Aula virtual" sourceRef="seleccionarRecursos" targetRef="solicitarAulaVirtual"></sequenceFlow>
-      <sequenceFlow id="flujo_seleccionarRecursos_reservarAula" name="Aula física" sourceRef="seleccionarRecursos" targetRef="reservarAula"></sequenceFlow>
-      <sequenceFlow id="flujo_seleccionarRecursos_contratarEquipamiento" name="Equipamiento" sourceRef="seleccionarRecursos" targetRef="contratarEquipamiento"></sequenceFlow>
       <sequenceFlow id="flujo_contratarEquipamiento_recursosListos" sourceRef="contratarEquipamiento" targetRef="recursosListos"></sequenceFlow>
       <sequenceFlow id="flujo_solicitarAulaVirtual_recursosListos" sourceRef="solicitarAulaVirtual" targetRef="recursosListos"></sequenceFlow>
       <sequenceFlow id="flujo_reservarAula_recursosListos" sourceRef="reservarAula" targetRef="recursosListos"></sequenceFlow>
@@ -254,6 +295,16 @@
       <sequenceFlow id="flujo_iniciarPreparacion_evaluarRecursos" name="RECURSOS" sourceRef="iniciarPreparacion" targetRef="evaluarRecursos"></sequenceFlow>
       <sequenceFlow id="flujo_iniciarPreparacion_prepararMateriales" name="MATERIALES" sourceRef="iniciarPreparacion" targetRef="prepararMateriales"></sequenceFlow>
       <sequenceFlow id="flujo_recursosListos_preparacionCompleta" name="Todos los recursos seleccionados disponibles" sourceRef="recursosListos" targetRef="preparacionCompleta"></sequenceFlow>
+      <sequenceFlow id="flujo_evaluarRecursos_seleccionarRecursos" sourceRef="evaluarRecursos" targetRef="seleccionarRecursos"></sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_reservarAula" name="Aula física" sourceRef="seleccionarRecursos" targetRef="reservarAula">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAula}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_solicitarAulaVirtual" name="Aula virtual" sourceRef="seleccionarRecursos" targetRef="solicitarAulaVirtual">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAulaVirtual}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_contratarEquipamiento" name="Equipamiento" sourceRef="seleccionarRecursos" targetRef="contratarEquipamiento">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereEquipamiento}]]></conditionExpression>
+      </sequenceFlow>
       <association id="asociacion_compensarEquipamiento_liberarEquipamiento" sourceRef="compensarEquipamiento" targetRef="liberarEquipamiento" associationDirection="None"></association>
       <association id="asociacion_compensarAulaVirtual_liberarAulaVirtual" sourceRef="compensarAulaVirtual" targetRef="liberarAulaVirtual" associationDirection="None"></association>
       <association id="asociacion_compensarReservaAula_liberarAula" sourceRef="compensarReservaAula" targetRef="liberarAula" associationDirection="None"></association>
@@ -262,6 +313,14 @@
     <intermediateThrowEvent id="liberarRecursosCancelacion" name="Liberar recursos">
       <compensateEventDefinition></compensateEventDefinition>
     </intermediateThrowEvent>
+    <userTask id="definirDocente" name="Definir docente que realizará el curso" flowable:formFieldValidation="true"></userTask>
+    <intermediateCatchEvent id="fechaProgramada" name="fecha programada">
+      <timerEventDefinition>
+        <timeDate>${fechaInicioCurso}</timeDate>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+    <userTask id="desarrollarCurso" name="Desarrollar curso" flowable:formFieldValidation="true"></userTask>
+    <userTask id="elaborarInformeResultados" name="Elaborar informe de resultados" flowable:formFieldValidation="true"></userTask>
     <sequenceFlow id="flujo_enviarConfirmacion_definirDocente" sourceRef="enviarConfirmacion" targetRef="definirDocente"></sequenceFlow>
     <sequenceFlow id="flujo_solicitudRecibida_evaluarViabilidad" sourceRef="solicitudRecibida" targetRef="evaluarViabilidad"></sequenceFlow>
     <sequenceFlow id="flujo_evaluarViabilidad_gatewayEsViable" sourceRef="evaluarViabilidad" targetRef="gatewayEsViable"></sequenceFlow>
@@ -307,14 +366,6 @@
     <sequenceFlow id="flujo_gatewayPreparacionCancelada_liberarRecursosCancelacion" name="SI" sourceRef="gatewayPreparacionCancelada" targetRef="liberarRecursosCancelacion">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${resultado == 'CANCELADO'}]]></conditionExpression>
     </sequenceFlow>
-    <userTask id="definirDocente" name="Definir docente que realizará el curso" flowable:formFieldValidation="true"></userTask>
-    <intermediateCatchEvent id="fechaProgramada" name="fecha programada">
-      <timerEventDefinition>
-        <timeDate>${fechaInicioCurso}</timeDate>
-      </timerEventDefinition>
-    </intermediateCatchEvent>
-    <userTask id="desarrollarCurso" name="Desarrollar curso" flowable:formFieldValidation="true"></userTask>
-    <userTask id="elaborarInformeResultados" name="Elaborar informe de resultados" flowable:formFieldValidation="true"></userTask>
     <sequenceFlow id="flujo_definirDocente_fechaProgramada" sourceRef="definirDocente" targetRef="fechaProgramada"></sequenceFlow>
     <sequenceFlow id="flujo_fechaProgramada_desarrollarCurso" sourceRef="fechaProgramada" targetRef="desarrollarCurso"></sequenceFlow>
     <sequenceFlow id="flujo_desarrollarCurso_elaborarInformeResultados" sourceRef="desarrollarCurso" targetRef="elaborarInformeResultados"></sequenceFlow>
