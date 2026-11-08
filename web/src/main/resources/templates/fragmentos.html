@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!-- Partes comunes de todas las páginas. Se incluyen con th:replace="~{fragmentos :: nombre}". -->
+<head th:fragment="cabecera(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' · Institución de capacitación'">Institución de capacitación</title>
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+
+<!-- seccion: "inicio", "empresas", "administracion", "docentes" o "" (ninguna). Marca el enlace de la página actual. -->
+<header class="encabezado" th:fragment="encabezado(seccion)">
+    <div class="encabezado-contenido">
+        <a class="marca" th:href="@{/}">Institución de capacitación</a>
+        <nav aria-label="Secciones del sitio">
+            <a th:href="@{/}" th:aria-current="${seccion == 'inicio'} ? 'page'">Inicio</a>
+            <a th:href="@{/empresas}" th:aria-current="${seccion == 'empresas'} ? 'page'">Empresas</a>
+            <a th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Administración</a>
+            <a th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Docentes</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Mensajes para el usuario: los controllers los pasan como atributos "mensaje" y "error"
+     (con RedirectAttributes.addFlashAttribute si la página viene de un redirect). -->
+<div th:fragment="mensajes">
+    <p class="mensaje" th:if="${mensaje}" th:text="${mensaje}"></p>
+    <p class="error" th:if="${error}" th:text="${error}"></p>
+</div>
+
+</body>
+</html>

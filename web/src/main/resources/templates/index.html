@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Institución de capacitación</title>
-</head>
+<head th:replace="~{fragmentos :: cabecera('Inicio')}"></head>
 <body>
+<header th:replace="~{fragmentos :: encabezado('inicio')}"></header>
 <main>
-    <h1>Institución de capacitación</h1>
-    <p>Sitio en construcción.</p>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+    <h1>Inicio</h1>
+    <p>Solicitudes de cursos de capacitación para empresas.</p>
 </main>
 </body>
 </html>

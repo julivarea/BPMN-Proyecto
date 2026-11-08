@@ -1,0 +1,121 @@
+package ar.edu.unrc.gtpn.web.flowable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+/**
+ * Único punto de la web que habla con Flowable: el resto del código no conoce URLs ni el formato JSON de la API REST
+ * (docs/03-guia-flowable.md §3).
+ */
+@Component
+public class ClienteFlowable {
+
+    // Flowable devuelve 10 resultados por defecto; 500 alcanza para el proyecto. Paginar si algún día sobra.
+    private static final int MAXIMO_RESULTADOS = 500;
+
+    private static final ParameterizedTypeReference<Pagina<Tarea>> PAGINA_DE_TAREAS = new ParameterizedTypeReference<>() {
+    };
+    private static final ParameterizedTypeReference<List<Variable>> LISTA_DE_VARIABLES = new ParameterizedTypeReference<>() {
+    };
+
+    private final RestClient http;
+
+    public ClienteFlowable(RestClient.Builder builder, FlowableProperties propiedades) {
+        this.http = builder
+                .baseUrl(propiedades.url())
+                .defaultHeaders(cabeceras -> cabeceras.setBasicAuth(propiedades.usuario(), propiedades.clave()))
+                .build();
+    }
+
+    /** Inicia una instancia del proceso con su mensaje de inicio y devuelve su ID. */
+    public String iniciarPorMensaje(String mensaje, String businessKey, Map<String, Object> variables) {
+        var pedido = Map.of("message", mensaje, "businessKey", businessKey, "variables", comoLista(variables));
+        return http.post().uri("/runtime/process-instances")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(pedido)
+                .retrieve()
+                .body(Instancia.class)
+                .id();
+    }
+
+    /** Tareas pendientes asignadas al usuario. */
+    public List<Tarea> tareasAsignadas(String usuario) {
+        return tareas("assignee", usuario);
+    }
+
+    /** Tareas pendientes que el usuario puede reclamar por pertenecer a sus grupos. */
+    public List<Tarea> tareasDisponibles(String usuario) {
+        return tareas("candidateUser", usuario);
+    }
+
+    /** Asigna la tarea al usuario. */
+    public void reclamar(String tareaId, String usuario) {
+        accionSobreTarea(tareaId, Map.of("action", "claim", "assignee", usuario));
+    }
+
+    /**
+     * Completa la tarea con las variables dadas. Flowable no controla quién la completa: antes de llamar a este método
+     * hay que verificar que la tarea sea del usuario (05-decisiones, limitación 7).
+     */
+    public void completar(String tareaId, Map<String, Object> variables) {
+        accionSobreTarea(tareaId, Map.of("action", "complete", "variables", comoLista(variables)));
+    }
+
+    /** Variables de una instancia en curso. */
+    public Map<String, Object> variables(String instanciaId) {
+        List<Variable> variables = http.get().uri("/runtime/process-instances/{id}/variables", instanciaId)
+                .retrieve()
+                .body(LISTA_DE_VARIABLES);
+        // HashMap y no Collectors.toMap: una variable puede valer null, y toMap no lo admite.
+        Map<String, Object> porNombre = new HashMap<>();
+        variables.forEach(variable -> porNombre.put(variable.name(), variable.value()));
+        return porNombre;
+    }
+
+    private List<Tarea> tareas(String filtro, String usuario) {
+        return http.get()
+                .uri(uri -> uri.path("/runtime/tasks")
+                        .queryParam(filtro, usuario)
+                        .queryParam("size", MAXIMO_RESULTADOS)
+                        .build())
+                .retrieve()
+                .body(PAGINA_DE_TAREAS)
+                .data();
+    }
+
+    private void accionSobreTarea(String tareaId, Map<String, Object> pedido) {
+        http.post().uri("/runtime/tasks/{id}", tareaId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(pedido)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    private static List<Variable> comoLista(Map<String, Object> variables) {
+        return variables.entrySet().stream()
+                .map(variable -> new Variable(variable.getKey(), variable.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    /** Formato de Flowable para las variables: una lista de pares nombre y valor. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Variable(String name, Object value) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Pagina<T>(List<T> data) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Instancia(String id) {
+    }
+}

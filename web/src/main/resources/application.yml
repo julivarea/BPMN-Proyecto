@@ -8,3 +8,9 @@ spring:
     url: ${INSTITUCION_DB_URL:jdbc:postgresql://localhost:5432/institucion}
     username: ${INSTITUCION_DB_USER:flowable}
     password: ${INSTITUCION_DB_PASSWORD:flowable}
+
+# API REST de Flowable. Las credenciales son de la cuenta técnica con la que la web habla con el motor.
+flowable:
+  url: ${FLOWABLE_URL:http://localhost:8080/flowable-ui}/process-api
+  usuario: ${FLOWABLE_USUARIO:admin}
+  clave: ${FLOWABLE_CLAVE:test}

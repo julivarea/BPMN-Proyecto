@@ -47,6 +47,7 @@ Contraseña de todo el personal: `clave123` (se cambia con `CLAVE_DEMO=... bash 
 |-----|---------|
 | Compilar y correr todos los tests | `./mvnw verify` |
 | Solo los tests del proceso (sin Docker) | `./mvnw -pl proceso verify` |
+| Probar el cliente REST de la web contra el Flowable de Docker | `FLOWABLE_DOCKER=si ./mvnw -pl web verify` |
 | Cambié Java del módulo `proceso` | `./mvnw -pl proceso clean package && docker compose restart flowable` |
 | Cambié un BPMN o un DMN | `bash scripts/desplegar-proceso.sh` |
 | Logs del servidor | `docker compose logs -f flowable` |
