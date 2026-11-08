@@ -10,6 +10,9 @@
   <message id="nominaParticipantes" name="nominaParticipantes"></message>
   <message id="cancelacionCurso" name="cancelacionCurso"></message>
   <process id="organizarCurso" name="Institución" isExecutable="true">
+    <extensionElements>
+      <flowable:executionListener event="end" class="ar.edu.unrc.gtpn.proceso.estado.RegistrarResultadoDelCursoListener"></flowable:executionListener>
+    </extensionElements>
     <laneSet id="laneSet_organizarCurso">
       <lane id="carrilAdministracion" name="Administración">
         <flowNodeRef>revisarPropuesta</flowNodeRef>
@@ -177,7 +180,7 @@
         </flowable:field>
       </extensionElements>
     </serviceTask>
-    <serviceTask id="enviarConfirmacion" name="Enviar confirmación" flowable:class="ar.edu.unrc.gtpn.proceso.notificacion.NotificarEmpresaDelegate">
+    <serviceTask id="enviarConfirmacion" name="Enviar confirmación" flowable:async="true" flowable:class="ar.edu.unrc.gtpn.proceso.notificacion.NotificarEmpresaDelegate">
       <extensionElements>
         <flowable:field name="asunto">
           <flowable:string><![CDATA[Confirmación del curso]]></flowable:string>
@@ -187,9 +190,17 @@
     <intermediateThrowEvent id="liberarRecursos" name="Liberar recursos">
       <compensateEventDefinition></compensateEventDefinition>
     </intermediateThrowEvent>
-    <endEvent id="finCursoFinalizado" name="Curso finalizado"></endEvent>
+    <endEvent id="finCursoFinalizado" name="Curso finalizado">
+      <extensionElements>
+        <flowable:executionListener event="start" expression="${execution.setVariable('resultado', 'FINALIZADO')}"></flowable:executionListener>
+      </extensionElements>
+    </endEvent>
     <serviceTask id="habilitarAccesoEmpresa" name="Habilitar acceso a la empresa" flowable:class="ar.edu.unrc.gtpn.proceso.acceso.HabilitarAccesoEmpresaDelegate"></serviceTask>
-    <userTask id="enviarInformeYArchivarExpediente" name="Enviar informe y archivar expediente" flowable:formFieldValidation="true"></userTask>
+    <userTask id="enviarInformeYArchivarExpediente" name="Enviar informe y archivar expediente" flowable:assignee="jefe_admin" flowable:formFieldValidation="true">
+      <extensionElements>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
     <endEvent id="finCancelacion" name="Fin por cancelación"></endEvent>
     <endEvent id="finNoViable" name="fin por no ser viable">
       <extensionElements>
@@ -313,14 +324,28 @@
     <intermediateThrowEvent id="liberarRecursosCancelacion" name="Liberar recursos">
       <compensateEventDefinition></compensateEventDefinition>
     </intermediateThrowEvent>
-    <userTask id="definirDocente" name="Definir docente que realizará el curso" flowable:formFieldValidation="true"></userTask>
+    <userTask id="definirDocente" name="Definir docente que realizará el curso" flowable:assignee="jefe_docente" flowable:formFieldValidation="true">
+      <extensionElements>
+        <flowable:formProperty id="docenteAsignado" name="docenteAsignado" type="string" required="true"></flowable:formProperty>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
     <intermediateCatchEvent id="fechaProgramada" name="fecha programada">
       <timerEventDefinition>
         <timeDate>${fechaInicioCurso}</timeDate>
       </timerEventDefinition>
     </intermediateCatchEvent>
-    <userTask id="desarrollarCurso" name="Desarrollar curso" flowable:formFieldValidation="true"></userTask>
-    <userTask id="elaborarInformeResultados" name="Elaborar informe de resultados" flowable:formFieldValidation="true"></userTask>
+    <userTask id="desarrollarCurso" name="Desarrollar curso" flowable:assignee="${docenteAsignado}" flowable:formFieldValidation="true">
+      <extensionElements>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
+    <userTask id="elaborarInformeResultados" name="Elaborar informe de resultados" flowable:assignee="jefe_docente" flowable:formFieldValidation="true">
+      <extensionElements>
+        <flowable:formProperty id="informeResultados" name="informeResultados" type="string" required="true"></flowable:formProperty>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
     <sequenceFlow id="flujo_enviarConfirmacion_definirDocente" sourceRef="enviarConfirmacion" targetRef="definirDocente"></sequenceFlow>
     <sequenceFlow id="flujo_solicitudRecibida_evaluarViabilidad" sourceRef="solicitudRecibida" targetRef="evaluarViabilidad"></sequenceFlow>
     <sequenceFlow id="flujo_evaluarViabilidad_gatewayEsViable" sourceRef="evaluarViabilidad" targetRef="gatewayEsViable"></sequenceFlow>
