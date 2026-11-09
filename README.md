@@ -101,4 +101,5 @@ Usuarios de prueba, pgAdmin, puertos y más comandos: [docs/04-entorno-desarroll
 | [Implementación del modelo](docs/06-guia-implementacion-modelo.md) | Variables, mensajes, condiciones, timers, listeners y delegates del modelo |
 | [Base de datos](docs/07-base-de-datos.md) | Esquema de la base de la institución y quién escribe cada dato |
 | [Sitio web](docs/08-web.md) | Cómo está armada la web, conexión con Flowable, reglas para reclamar y completar tareas, tests |
+| [App de materiales](docs/09-app-materiales.md) | Motor embebido y su configuración, login, tareas *Preparar materiales*, consultas del §4.3 |
 | [Cómo trabajamos](CONTRIBUTING.md) | Issues, ramas, commits y convenciones de código |
