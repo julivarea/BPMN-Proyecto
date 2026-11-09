@@ -18,34 +18,61 @@ Con el entorno Docker levantado ([04-entorno-desarrollo.md](04-entorno-desarroll
 
 ## 2. Organización
 
-Paquetes por funcionalidad ([02-arquitectura.md](02-arquitectura.md) §5). Lo que existe hoy:
+Paquetes por funcionalidad ([02-arquitectura.md](02-arquitectura.md) §5): cada paquete agrupa el controller, el
+servicio y, si accede a la base, el repositorio de una funcionalidad, y sus páginas van en `templates/<funcionalidad>/`.
+Todos los archivos del módulo:
 
 ```
-web/src/main/
-├── java/ar/edu/unrc/gtpn/web/
-│   ├── WebApplication.java       arranque
-│   ├── Secciones.java            URL → página de inicio de cada sección
-│   ├── flowable/                 cliente REST de Flowable (§4)
-│   └── seguridad/                login del personal y reglas de acceso (§5)
-└── resources/
-    ├── application.yml           puerto, base de la institución y conexión con Flowable
-    ├── db/migration/             migraciones Flyway (§6)
-    ├── static/css/estilos.css    estilos de todo el sitio
-    └── templates/
-        ├── fragmentos.html       partes comunes de las páginas (§3)
-        ├── index.html            sección pública
-        ├── login.html            login del personal
-        ├── empresa/  administracion/  docentes/   una carpeta por sección
-        └── error.html            página de error
+web/
+├── pom.xml                                Spring Boot 4.1: web, Thymeleaf, seguridad, cliente REST, JDBC, Flyway
+└── src/
+    ├── main/
+    │   ├── java/ar/edu/unrc/gtpn/web/
+    │   │   ├── WebApplication.java        arranque de Spring Boot; lee las propiedades de application.yml
+    │   │   ├── Secciones.java             URL → página de las secciones sin controller propio: /, /empresas, /login (§3)
+    │   │   ├── flowable/                  conexión con Flowable (§4)
+    │   │   │   ├── ClienteFlowable.java       único lugar que llama a la API REST de Flowable
+    │   │   │   ├── FlowableProperties.java    URL y cuenta técnica (propiedades flowable.* de application.yml)
+    │   │   │   └── Tarea.java                 una tarea pendiente: nombre, clave, asignado, fecha y solicitud
+    │   │   ├── seguridad/                 login del personal y reglas de acceso (§5)
+    │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña contra Flowable; grupos → roles
+    │   │   │   └── SeguridadConfig.java               qué rol requiere cada ruta, página de login y salida
+    │   │   └── tareas/                    bandeja de tareas (§4)
+    │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
+    │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
+    │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
+    │   └── resources/
+    │       ├── application.yml            puerto 8081, base de la institución y conexión con Flowable
+    │       ├── db/migration/
+    │       │   └── V1__esquema_inicial.sql    tablas empresa, cuenta_empresa, curso y propuesta (§6)
+    │       ├── static/css/
+    │       │   └── estilos.css            estilos de todo el sitio: colores, encabezado, tablas, formularios (§3)
+    │       └── templates/                 páginas Thymeleaf
+    │           ├── fragmentos.html        partes comunes: cabecera, encabezado con navegación y sesión, mensajes (§3)
+    │           ├── index.html             inicio (sección pública)
+    │           ├── login.html             login del personal (§5)
+    │           ├── error.html             página de error (404, 403, 500…)
+    │           ├── empresa/
+    │           │   └── inicio.html        sección de empresas (se completa en #28 y #29)
+    │           └── tareas/
+    │               └── bandeja.html       bandeja: tareas asignadas y disponibles, con su solicitud (§4)
+    └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
+        ├── flowable/
+        │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
+        │   └── ClienteFlowableContraDockerTest.java   el cliente contra el Flowable real (solo con FLOWABLE_DOCKER=si)
+        ├── seguridad/
+        │   ├── AutenticacionContraFlowableTest.java   grupos → roles y credenciales incorrectas
+        │   └── SeguridadTest.java                     reglas de acceso de las secciones y login
+        └── tareas/
+            ├── BandejaDeTareasTest.java               reglas para reclamar y completar
+            └── BandejaControllerTest.java             la bandeja desde el navegador
 ```
-
-Cada funcionalidad nueva va en su paquete (`solicitud/`, `propuesta/`…) con su controller, su servicio
-y, si accede a la base, su repositorio. Sus páginas van en `templates/<funcionalidad>/`.
 
 ## 3. Páginas
 
 **Secciones.** El sitio tiene cuatro: pública (`/`), empresas (`/empresas`), administración (`/administracion`) y
-docentes (`/docentes`). `Secciones.java` asocia cada URL con su página de inicio. Cuando una sección tenga su propio
+docentes (`/docentes`). Administración y Docentes muestran la bandeja de tareas del usuario (§4), que es lo que hace
+el personal en el sitio. Las otras dos las asocia `Secciones.java` con su página; cuando una tenga su propio
 controller, se saca su línea de ahí.
 
 **Fragmentos.** Toda página arranca así, con las partes comunes de `fragmentos.html`:
@@ -75,10 +102,14 @@ controller, se saca su línea de ahí.
 resultado viaja como *flash attribute*:
 
 ```java
-@PostMapping("/administracion/tareas/{id}/completar")
-String completar(@PathVariable String id, RedirectAttributes redirect) {
-    …
-    redirect.addFlashAttribute("mensaje", "Tarea completada");
+@PostMapping("/tareas/{id}/evaluar-recursos")
+String evaluarRecursos(@PathVariable String id, Principal usuario, …, RedirectAttributes redirect) {
+    try {
+        bandeja.completar(usuario.getName(), id, Map.of("requiereAula", …));
+        redirect.addFlashAttribute("mensaje", "Completaste la tarea.");
+    } catch (AccionNoPermitida error) {
+        redirect.addFlashAttribute("error", error.getMessage());
+    }
     return "redirect:/administracion";
 }
 ```
@@ -102,6 +133,7 @@ falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HT
 | `iniciarPorMensaje(mensaje, businessKey, variables)` | `POST /runtime/process-instances` | Formulario de solicitud: inicia la instancia y devuelve su ID |
 | `tareasAsignadas(usuario)` | `GET /runtime/tasks?assignee=…` | Tareas del usuario |
 | `tareasDisponibles(usuario)` | `GET /runtime/tasks?candidateUser=…` | Tareas de sus grupos que puede reclamar |
+| `tarea(tareaId)` | `GET /runtime/tasks/{id}` | Leer una tarea para verificar a quién está asignada |
 | `reclamar(tareaId, usuario)` | `POST /runtime/tasks/{id}` (`claim`) | Asignarse una tarea de grupo |
 | `completar(tareaId, variables)` | `POST /runtime/tasks/{id}` (`complete`) | Completar una tarea con sus datos |
 | `variables(instanciaId)` | `GET /runtime/process-instances/{id}/variables` | Leer los datos de una instancia |
@@ -130,15 +162,29 @@ validarlas. Todas las operaciones las hace el cliente con la cuenta técnica.
 ### Reclamar y completar tareas
 
 Como todas las llamadas usan la cuenta técnica, **Flowable no sabe qué persona está usando la web**, y además no impide
-completar una tarea ajena ([05-decisiones.md](05-decisiones.md), limitación 7). Por eso la web aplica las reglas del
-§2 (A-06) antes de llamar al cliente:
+completar una tarea ajena ([05-decisiones.md](05-decisiones.md), limitación 7). Por eso las reglas del §2 (A-06) las
+aplica la web, en un solo lugar: **`tareas/BandejaDeTareas`**.
 
-1. **Tarea asignada:** solo la completa su asignado (`tarea.asignado()` igual al usuario logueado).
-2. **Tarea de grupo:** primero se reclama (`reclamar(tarea, usuario)`) y recién entonces se completa.
-3. **Nunca se completa una tarea sin asignado.** Lo que registra a la persona en el historial es la asignación, y de
-   eso dependen las consultas de tareas por persona (§4.3.3).
+| Método | Regla |
+|--------|-------|
+| `reclamar(usuario, tareaId)` | Solo una tarea disponible para los grupos del usuario. Si otro la reclamó antes (Flowable responde 409), lo informa |
+| `completar(usuario, tareaId, variables)` | Solo el asignado completa su tarea: una tarea de grupo se reclama antes. *Preparar materiales* no se completa desde la web (se hace en la app de materiales, §4.2.1) |
 
-Estas verificaciones van en un solo servicio, el de la bandeja de tareas (#7), y las demás pantallas lo usan.
+Si una regla no se cumple, el servicio lanza `AccionNoPermitida` con un mensaje para el usuario, y no llama a Flowable.
+**Toda pantalla que reclame o complete una tarea lo hace a través de `BandejaDeTareas`**, nunca llamando a
+`ClienteFlowable` directamente: así nadie puede completar una tarea ajena, aunque arme la URL a mano. Lo que registra a
+la persona en el historial es la asignación, y de eso dependen las consultas de tareas por persona (§4.3.3).
+
+**La bandeja** es la página de las secciones de Administración (`/administracion`) y de Docentes (`/docentes`): muestra
+las tareas asignadas al usuario, con *Completar*, y las disponibles para sus grupos, con *Reclamar*. Cada tarea indica
+la **solicitud** a la que pertenece (la `businessKey` de su instancia, que es el ID del curso). *Preparar materiales*
+aparece sin botones, con la indicación de la app de materiales. Los botones envían a `/tareas/{id}/reclamar` y
+`/tareas/{id}/completar` y vuelven a la sección de la que se vino.
+
+**Tareas que cargan datos.** El *Completar* de la bandeja no envía variables. Una tarea que necesita datos para que el
+proceso siga (por ejemplo *Evaluar recursos*) tiene su propia pantalla con formulario, que llama a
+`bandeja.completar(usuario, tarea, variables)`; la bandeja la enlaza en lugar de mostrar el botón genérico. Mientras esa
+pantalla no exista, si se completa sin datos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
 
 ## 5. Login del personal
 
@@ -161,6 +207,7 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 |------|----------|
 | `/administracion/**` | Rol `ADMINISTRACION` |
 | `/docentes/**` | Rol `DOCENTES` |
+| `/tareas/**` (reclamar y completar) | Rol `ADMINISTRACION` o `DOCENTES` |
 | Todo lo demás | Nada (la sección de empresas tendrá su propio login, #28) |
 
 - Sin sesión iniciada, una sección protegida redirige a `/login`, y después del login vuelve a la página pedida.
@@ -192,6 +239,8 @@ un formulario sin `th:action` es rechazado con un 403.
 | `ClienteFlowableTest` | Que cada método del cliente arme bien la llamada y lea bien la respuesta, contra un servidor HTTP simulado (`MockRestServiceServer`) | `./mvnw -pl web verify` (también en CI) |
 | `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
+| `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
+| `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, solicitud de cada tarea, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
 
 Al agregar un método al cliente, se agrega su test en `ClienteFlowableTest`: qué URL y qué JSON se esperan, y qué se
@@ -204,7 +253,6 @@ Las funcionalidades se construyen sobre esta base, en los issues de cada milesto
 
 | Issue | Qué agrega |
 |-------|------------|
-| #7 | Bandeja de tareas con las reglas de §4 |
 | #12 | Formulario público de solicitud: guarda empresa y curso e inicia la instancia |
 | #13, #14 | Registrar y revisar la propuesta, con su PDF |
 | #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |

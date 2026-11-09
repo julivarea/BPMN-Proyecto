@@ -26,6 +26,9 @@ public class ClienteFlowable {
 
     private static final ParameterizedTypeReference<Pagina<Tarea>> PAGINA_DE_TAREAS = new ParameterizedTypeReference<>() {
     };
+    private static final ParameterizedTypeReference<Pagina<Instancia>> PAGINA_DE_INSTANCIAS =
+            new ParameterizedTypeReference<>() {
+            };
     private static final ParameterizedTypeReference<Pagina<Grupo>> PAGINA_DE_GRUPOS = new ParameterizedTypeReference<>() {
     };
     private static final ParameterizedTypeReference<List<Variable>> LISTA_DE_VARIABLES = new ParameterizedTypeReference<>() {
@@ -81,7 +84,12 @@ public class ClienteFlowable {
         return tareas("candidateUser", usuario);
     }
 
-    /** Asigna la tarea al usuario. */
+    /** Una tarea pendiente. Si no existe (o ya se completó), Flowable responde 404. */
+    public Tarea tarea(String tareaId) {
+        return http.get().uri("/runtime/tasks/{id}", tareaId).retrieve().body(Tarea.class);
+    }
+
+    /** Asigna la tarea al usuario. Si otro la reclamó antes, Flowable responde 409. */
     public void reclamar(String tareaId, String usuario) {
         accionSobreTarea(tareaId, Map.of("action", "claim", "assignee", usuario));
     }
@@ -105,8 +113,9 @@ public class ClienteFlowable {
         return porNombre;
     }
 
+    /** Tareas pendientes según el filtro, cada una con la solicitud (businessKey) a la que pertenece. */
     private List<Tarea> tareas(String filtro, String usuario) {
-        return http.get()
+        List<Tarea> tareas = http.get()
                 .uri(uri -> uri.path("/runtime/tasks")
                         .queryParam(filtro, usuario)
                         .queryParam("size", MAXIMO_RESULTADOS)
@@ -114,6 +123,29 @@ public class ClienteFlowable {
                 .retrieve()
                 .body(PAGINA_DE_TAREAS)
                 .data();
+        if (tareas.isEmpty()) {
+            return tareas;
+        }
+        // La API de tareas no trae la businessKey: se toma de las instancias en curso, con una sola llamada.
+        Map<String, String> solicitudPorInstancia = solicitudesEnCurso();
+        return tareas.stream()
+                .map(tarea -> tarea.conSolicitud(solicitudPorInstancia.get(tarea.instanciaId())))
+                .collect(Collectors.toList());
+    }
+
+    /** ID de cada instancia en curso del proceso → su businessKey. */
+    private Map<String, String> solicitudesEnCurso() {
+        List<Instancia> instancias = http.get()
+                .uri(uri -> uri.path("/runtime/process-instances")
+                        .queryParam("processDefinitionKey", "organizarCurso")
+                        .queryParam("size", MAXIMO_RESULTADOS)
+                        .build())
+                .retrieve()
+                .body(PAGINA_DE_INSTANCIAS)
+                .data();
+        Map<String, String> porId = new HashMap<>();
+        instancias.forEach(instancia -> porId.put(instancia.id(), instancia.businessKey()));
+        return porId;
     }
 
     private void accionSobreTarea(String tareaId, Map<String, Object> pedido) {
@@ -140,7 +172,7 @@ public class ClienteFlowable {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Instancia(String id) {
+    record Instancia(String id, String businessKey) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

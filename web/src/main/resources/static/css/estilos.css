@@ -91,6 +91,35 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
     cursor: pointer;
 }
 
+/* Botones */
+.boton, .tabla button {
+    display: inline-block;
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: var(--encabezado);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.boton:hover, .tabla button:hover { opacity: 0.9; }
+
+/* Tablas */
+.tabla { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; background: #fff; table-layout: fixed; }
+/* Mismo ancho de columnas en todas las tablas de tareas: solicitud, tarea, creada, acción. */
+.tabla th:nth-child(1) { width: 18%; }
+.tabla th:nth-child(2) { width: 28%; }
+.tabla th:nth-child(3) { width: 20%; }
+.tabla td:nth-child(3) { white-space: nowrap; }
+.tabla th, .tabla td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e3e7ef; text-align: left; }
+.tabla th { font-size: 0.85rem; color: #5b6478; text-transform: uppercase; letter-spacing: 0.03em; }
+.tabla .accion { text-align: right; }
+.nota { color: #5b6478; font-size: 0.9rem; }
+
+h2 { margin-top: 2rem; font-size: 1.15rem; }
+
 main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem; }
 
 .mensaje, .error { padding: 0.6rem 0.9rem; border-radius: 0.5rem; }

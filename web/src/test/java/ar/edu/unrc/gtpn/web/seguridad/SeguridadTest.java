@@ -20,10 +20,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
+import ar.edu.unrc.gtpn.web.tareas.BandejaDeTareas;
 
 /** Reglas de acceso de las secciones del personal (issue #6), sin Flowable: el cliente es un doble. */
 @WebMvcTest
-@Import({SeguridadConfig.class, AutenticacionContraFlowable.class})
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, BandejaDeTareas.class})
 class SeguridadTest {
 
     @Autowired

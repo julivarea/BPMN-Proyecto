@@ -8,6 +8,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,19 +73,23 @@ class ClienteFlowableTest {
     }
 
     @Test
-    void tareasAsignadasDevuelveLasTareasDelUsuario() {
+    void tareasAsignadasDevuelveLasTareasDelUsuarioConSuSolicitud() {
         servidor.expect(requestTo(URL + "/runtime/tasks?assignee=jefe_admin&size=500"))
                 .andRespond(withSuccess("""
                         {"data": [{"id": "t1", "name": "Registrar y elaborar propuesta",
                                    "taskDefinitionKey": "registrarYElaborarPropuesta",
                                    "processInstanceId": "instancia-1", "assignee": "jefe_admin",
-                                   "priority": 50}],
+                                   "createTime": "2026-11-09T10:00:00.000Z", "priority": 50}],
                          "total": 1}""", MediaType.APPLICATION_JSON));
+        servidor.expect(requestTo(URL + "/runtime/process-instances?processDefinitionKey=organizarCurso&size=500"))
+                .andRespond(withSuccess("""
+                        {"data": [{"id": "instancia-1", "businessKey": "42"}], "total": 1}""",
+                        MediaType.APPLICATION_JSON));
 
         List<Tarea> tareas = cliente.tareasAsignadas("jefe_admin");
 
         assertEquals(List.of(new Tarea("t1", "Registrar y elaborar propuesta", "registrarYElaborarPropuesta",
-                "instancia-1", "jefe_admin")), tareas);
+                "instancia-1", "jefe_admin", OffsetDateTime.parse("2026-11-09T10:00:00Z"), "42")), tareas);
     }
 
     @Test
@@ -94,6 +99,17 @@ class ClienteFlowableTest {
                         {"data": [], "total": 0}""", MediaType.APPLICATION_JSON));
 
         assertEquals(List.of(), cliente.tareasDisponibles("administrativo"));
+    }
+
+    @Test
+    void tareaDevuelveUnaTareaPorSuId() {
+        servidor.expect(requestTo(URL + "/runtime/tasks/t1"))
+                .andRespond(withSuccess("""
+                        {"id": "t1", "name": "Archivar solicitud", "taskDefinitionKey": "archivarSolicitud",
+                         "processInstanceId": "instancia-1", "assignee": "jefe_admin",
+                         "createTime": "2026-11-09T10:00:00.000Z"}""", MediaType.APPLICATION_JSON));
+
+        assertEquals("jefe_admin", cliente.tarea("t1").asignado());
     }
 
     @Test

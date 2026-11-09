@@ -18,6 +18,7 @@ public class SeguridadConfig {
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/administracion/**").hasRole(ADMINISTRACION)
                         .requestMatchers("/docentes/**").hasRole(DOCENTES)
+                        .requestMatchers("/tareas/**").hasAnyRole(ADMINISTRACION, DOCENTES)
                         // La sección de empresas se protege con su propio login (issue #28).
                         .anyRequest().permitAll())
                 .formLogin(login -> login.loginPage("/login"))

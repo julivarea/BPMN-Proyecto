@@ -15,8 +15,6 @@ public class Secciones implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registro) {
         registro.addViewController("/").setViewName("index");
         registro.addViewController("/empresas").setViewName("empresa/inicio");
-        registro.addViewController("/administracion").setViewName("administracion/inicio");
-        registro.addViewController("/docentes").setViewName("docentes/inicio");
         registro.addViewController("/login").setViewName("login");
     }
 }
