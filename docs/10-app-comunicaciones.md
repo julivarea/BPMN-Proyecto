@@ -1,0 +1,100 @@
+# 10 · App de comunicaciones
+
+Cómo está armada la aplicación de escritorio que simula a la empresa (§4.2.2) y cómo se le agregan las comunicaciones.
+La API REST de Flowable está en [03-guia-flowable.md](03-guia-flowable.md) §3.
+
+## 1. Para qué sirve
+
+La empresa se comunica con la institución durante la negociación y la preparación del curso. Esta app **simula a la
+empresa**: se elige una solicitud y se envía la comunicación que corresponda (§4.2.2, X-03):
+
+| Comunicación | Mensaje | Datos que lleva |
+|--------------|---------|-----------------|
+| Aceptación de la propuesta | `aceptacionPropuesta` | `fechaInicioCurso` (fecha acordada) |
+| Rechazo de la propuesta | `rechazoPropuesta` | — |
+| Solicitud de modificaciones | `modificacionesPropuesta` | `observacionesEmpresa` |
+| Nómina de participantes | `nominaParticipantes` | `participantes` |
+| Cancelación del curso | `cancelacionCurso` | — |
+
+Solo se pueden enviar las comunicaciones **habilitadas en el estado actual** de la solicitud (X-04): por ejemplo, la
+aceptación solo mientras el proceso espera la respuesta a una propuesta. La negociación y la nómina se simulan solo
+desde esta app, no desde el sitio. Los nombres de los mensajes y de las variables son los de
+[06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §3.
+
+## 2. Cómo se conecta
+
+Como la empresa está afuera de la institución, la app usa la **API REST** del servidor Flowable, igual que la web: no
+tiene motor propio ni acceso a la base. Usa el cliente HTTP del JDK (`java.net.http`) y Jackson para el JSON.
+
+La conexión se toma de las mismas variables de entorno que la web, con valores por defecto para el entorno Docker:
+
+| Variable | Por defecto |
+|----------|-------------|
+| `FLOWABLE_URL` (sin `/process-api`) | `http://localhost:8080/flowable-ui` |
+| `FLOWABLE_USUARIO` | `admin` |
+| `FLOWABLE_CLAVE` | `test` |
+
+Usa una cuenta técnica porque la empresa no es un usuario de Flowable: es una simulación de lo que llegaría desde
+afuera.
+
+## 3. Levantarla
+
+Con el entorno Docker levantado ([04-entorno-desarrollo.md](04-entorno-desarrollo.md)):
+
+```bash
+./mvnw -pl app-comunicaciones compile exec:java
+```
+
+Muestra las solicitudes en curso (las instancias activas de `organizarCurso`), identificadas por su `businessKey`.
+*Actualizar* vuelve a consultar. El aspecto es el mismo que el de la app de materiales (FlatLaf, un 25 % más grande; se
+cambia agregando, por ejemplo, `-Dflatlaf.uiScale=1.5` al comando).
+
+## 4. Organización
+
+```
+app-comunicaciones/src/main/java/ar/edu/unrc/gtpn/comunicaciones/
+├── ComunicacionesApp.java      arranque y aspecto
+├── FlowableRest.java           cliente REST de Flowable (§5)
+├── Solicitud.java              una solicitud en curso: instancia, businessKey y fecha de inicio
+└── VentanaDeSolicitudes.java   lista de solicitudes; acá se agregan las comunicaciones (§6)
+```
+
+## 5. El cliente REST
+
+`FlowableRest` es el **único lugar de la app que conoce las URLs y el JSON de Flowable**. Expone métodos con nombres
+del dominio (hoy, `solicitudesEnCurso()`) y por dentro todos pasan por `enviar(metodo, ruta, cuerpo)`, que:
+
+- agrega la autenticación básica con la cuenta técnica;
+- convierte el cuerpo a JSON y la respuesta a un árbol JSON;
+- lanza `ErrorDeFlowable`, con el código y el mensaje de Flowable, si la respuesta no es 2xx.
+
+Para una operación nueva se agrega un método que llame a `enviar` con su ruta (`GET`, `POST` o `PUT`) y su test en
+`FlowableRestTest`. Las listas piden hasta 500 resultados, porque Flowable devuelve 10 por defecto.
+
+## 6. Comunicaciones habilitadas y envío (#16, #23)
+
+- **Qué comunicaciones existen:** un `enum Comunicacion` con el nombre del mensaje y los datos que pide cada una (la
+  tabla de §1).
+- **Cuáles están habilitadas:** una comunicación está habilitada si la instancia tiene una ejecución esperando su
+  mensaje: `GET /runtime/executions?processInstanceId={id}&messageEventSubscriptionName={mensaje}`. Lista vacía = no
+  habilitada. La ventana muestra un botón por comunicación y habilita solo esos.
+- **Enviar:** se piden los datos de la comunicación y se entrega el mensaje a esa ejecución con
+  `PUT /runtime/executions/{executionId}` y `{"action": "messageEventReceived", "messageName": …, "variables": […]}`.
+  Después se vuelve a consultar, porque las comunicaciones habilitadas cambian.
+
+Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowable
+([03-guia-flowable.md](03-guia-flowable.md) §2, "Probar desde la UI de Flowable").
+
+## 7. Tests
+
+| Test | Qué prueba | Cómo se corre |
+|------|------------|---------------|
+| `FlowableRestTest` | Que el cliente arme bien las llamadas (ruta y autenticación), lea bien las respuestas e informe los errores, contra un servidor HTTP simulado (el del JDK) | `./mvnw -pl app-comunicaciones verify` (también en CI) |
+| `FlowableRestContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las solicitudes en curso | `FLOWABLE_DOCKER=si ./mvnw -pl app-comunicaciones verify`, con el entorno levantado |
+
+## 8. Lo que falta
+
+| Issue | Qué agrega |
+|-------|------------|
+| #16 | Comunicaciones de la negociación: aceptación, rechazo y modificaciones, solo si están habilitadas |
+| #23 | Comunicaciones de la preparación: nómina y cancelación |
