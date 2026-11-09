@@ -103,16 +103,36 @@ resultado viaja como *flash attribute*:
 
 ```java
 @PostMapping("/tareas/{id}/evaluar-recursos")
-String evaluarRecursos(@PathVariable String id, Principal usuario, …, RedirectAttributes redirect) {
+String evaluarRecursos(@PathVariable String id, @RequestParam String seccion, Principal usuario, …,
+        RedirectAttributes redirect) {
     try {
         bandeja.completar(usuario.getName(), id, Map.of("requiereAula", …));
         redirect.addFlashAttribute("mensaje", "Completaste la tarea.");
     } catch (AccionNoPermitida error) {
         redirect.addFlashAttribute("error", error.getMessage());
     }
-    return "redirect:/administracion";
+    return "redirect:/" + seccion; // validada contra las secciones conocidas, como en BandejaController
 }
 ```
+
+**Pantallas de tarea.** Cada tarea que carga datos se completa en su **propia pantalla** (no en un popup sobre la
+bandeja). Todas siguen la misma convención:
+
+1. **Ruta:** `/tareas/{id}/<tarea>` (por ejemplo `/tareas/{id}/evaluar-recursos`): el `GET` muestra el formulario y el
+   `POST` completa. Están bajo `/tareas/**`, así que ya requieren un rol del personal (§5).
+2. **Se abre desde la bandeja:** en lugar del *Completar* genérico, la fila de esa tarea muestra un botón que lleva a
+   su pantalla. La bandeja sabe qué tareas tienen pantalla por su clave (`tarea.clave()`, por ejemplo
+   `evaluarRecursos`), y le pasa la sección de origen en el parámetro `seccion`, como a los demás botones.
+3. **Botón para volver:** arriba a la izquierda, "← Volver a la bandeja", que lleva a la sección de origen
+   (`/administracion` o `/docentes`).
+4. **Antes de mostrar el formulario** se verifica que la tarea sea del usuario logueado. Si no, se vuelve a la bandeja
+   con el error.
+5. **Al enviar**, completa con `bandeja.completar(usuario, tarea, variables)`, nunca con el cliente directo, y vuelve a
+   la sección de origen con el mensaje, como en el ejemplo anterior.
+
+Las tareas que no cargan datos (*Archivar solicitud*, *Desarrollar curso*) no necesitan pantalla: alcanza el
+*Completar* de la bandeja. *Solicitar aula virtual*, *Contratar equipamiento* y *Liberar equipamiento* pueden hacerse
+desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
 
 **Errores.** Cualquier error no manejado (404, 500…) muestra `error.html` con el diseño del sitio.
 
@@ -182,9 +202,9 @@ aparece sin botones, con la indicación de la app de materiales. Los botones env
 `/tareas/{id}/completar` y vuelven a la sección de la que se vino.
 
 **Tareas que cargan datos.** El *Completar* de la bandeja no envía variables. Una tarea que necesita datos para que el
-proceso siga (por ejemplo *Evaluar recursos*) tiene su propia pantalla con formulario, que llama a
-`bandeja.completar(usuario, tarea, variables)`; la bandeja la enlaza en lugar de mostrar el botón genérico. Mientras esa
-pantalla no exista, si se completa sin datos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
+proceso siga (por ejemplo *Evaluar recursos*) tiene su propia pantalla, según la convención de §3 ("Pantallas de
+tarea"). Mientras esa pantalla no exista, si se completa sin datos, Flowable lo rechaza y la bandeja lo informa con un
+mensaje.
 
 ## 5. Login del personal
 
