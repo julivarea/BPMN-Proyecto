@@ -285,9 +285,9 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 > Esta lista es el checklist técnico del proyecto; al cerrar una tarea hay que actualizarla
 > junto con su issue, código y tests.
 
-- [ ] **#11 · Motor de viabilidad:** reemplazar el `0` fijo por la consulta de instancias
-  abiertas de todas las versiones, excluyendo la instancia actual según la interpretación
-  acordada.
+- [x] **#11 · Motor de viabilidad:** consultar instancias abiertas de todas las versiones
+  con `accesoHabilitado=true`, excluyendo la instancia actual; la prueba cubre el límite de
+  cinco cursos.
 - [ ] **#18 · Asignación por carga:** implementar el `TaskListener` que cuente tareas
   asignadas pendientes y asigne al administrativo con menor carga.
 - [ ] **#17 · Persistencia de acceso:** hacer que `HabilitarAccesoEmpresaDelegate`
