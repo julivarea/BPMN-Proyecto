@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <!-- Partes comunes de todas las páginas. Se incluyen con th:replace="~{fragmentos :: nombre}". -->
 <head th:fragment="cabecera(titulo)">
     <meta charset="UTF-8">
@@ -19,6 +19,12 @@
             <a th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Administración</a>
             <a th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Docentes</a>
         </nav>
+        <!-- Usuario del personal que inició sesión, o el enlace para ingresar. -->
+        <form class="sesion" sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+            <span sec:authentication="name">usuario</span>
+            <button type="submit">Salir</button>
+        </form>
+        <a class="sesion" sec:authorize="!isAuthenticated()" th:href="@{/login}">Ingresar</a>
     </div>
 </header>
 

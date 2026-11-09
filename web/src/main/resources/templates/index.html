@@ -5,6 +5,7 @@
 <header th:replace="~{fragmentos :: encabezado('inicio')}"></header>
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
+    <p class="mensaje" th:if="${param.salida}">Cerraste la sesión.</p>
     <h1>Inicio</h1>
     <p>Solicitudes de cursos de capacitación para empresas.</p>
 </main>

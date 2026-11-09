@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!-- Login del personal con su usuario de Flowable. Spring Security procesa el POST a /login. -->
+<head th:replace="~{fragmentos :: cabecera('Ingresar')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado('')}"></header>
+<main>
+    <h1>Ingresar</h1>
+    <p>Personal de la institución: usuario y contraseña de Flowable.</p>
+    <p class="error" th:if="${param.error}">No se pudo ingresar: revisá el usuario y la contraseña.</p>
+    <form class="formulario" th:action="@{/login}" method="post">
+        <label>Usuario
+            <input type="text" name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>Contraseña
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Ingresar</button>
+    </form>
+</main>
+</body>
+</html>

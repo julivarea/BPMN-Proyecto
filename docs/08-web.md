@@ -25,19 +25,21 @@ web/src/main/
 ├── java/ar/edu/unrc/gtpn/web/
 │   ├── WebApplication.java       arranque
 │   ├── Secciones.java            URL → página de inicio de cada sección
-│   └── flowable/                 cliente REST de Flowable (§4)
+│   ├── flowable/                 cliente REST de Flowable (§4)
+│   └── seguridad/                login del personal y reglas de acceso (§5)
 └── resources/
     ├── application.yml           puerto, base de la institución y conexión con Flowable
-    ├── db/migration/             migraciones Flyway (§5)
+    ├── db/migration/             migraciones Flyway (§6)
     ├── static/css/estilos.css    estilos de todo el sitio
     └── templates/
         ├── fragmentos.html       partes comunes de las páginas (§3)
         ├── index.html            sección pública
+        ├── login.html            login del personal
         ├── empresa/  administracion/  docentes/   una carpeta por sección
         └── error.html            página de error
 ```
 
-Cada funcionalidad nueva va en su paquete (`solicitud/`, `propuesta/`, `seguridad/`…) con su controller, su servicio
+Cada funcionalidad nueva va en su paquete (`solicitud/`, `propuesta/`…) con su controller, su servicio
 y, si accede a la base, su repositorio. Sus páginas van en `templates/<funcionalidad>/`.
 
 ## 3. Páginas
@@ -92,10 +94,11 @@ String completar(@PathVariable String id, RedirectAttributes redirect) {
 
 `flowable/ClienteFlowable` es el **único lugar de la web que conoce las URLs y el JSON de Flowable**. El resto del
 código usa sus métodos, con nombres del dominio, y recibe objetos propios (`Tarea`, mapas de variables). Si hace
-falta algo nuevo de Flowable, se agrega un método acá (§6), no una llamada HTTP en otro lado.
+falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HTTP en otro lado.
 
 | Método | Llamada REST | Para qué |
 |--------|--------------|----------|
+| `gruposDelUsuario(usuario, clave)` | `GET /identity/groups?member=…`, con las credenciales del usuario | Login (§5): valida la contraseña y devuelve los grupos |
 | `iniciarPorMensaje(mensaje, businessKey, variables)` | `POST /runtime/process-instances` | Formulario de solicitud: inicia la instancia y devuelve su ID |
 | `tareasAsignadas(usuario)` | `GET /runtime/tasks?assignee=…` | Tareas del usuario |
 | `tareasDisponibles(usuario)` | `GET /runtime/tasks?candidateUser=…` | Tareas de sus grupos que puede reclamar |
@@ -121,9 +124,8 @@ El cliente usa una **cuenta técnica**, configurada en `application.yml`:
 | `flowable.usuario` | `FLOWABLE_USUARIO` | `admin` |
 | `flowable.clave` | `FLOWABLE_CLAVE` | `test` |
 
-El login del personal (#6) es otra cosa: valida usuario y contraseña con una llamada a Flowable hecha con esas
-credenciales ([02-arquitectura.md](02-arquitectura.md) §4), pero las operaciones las sigue haciendo el cliente con la
-cuenta técnica.
+La única llamada que no usa la cuenta técnica es la del login (§5), que se hace con las credenciales del usuario para
+validarlas. Todas las operaciones las hace el cliente con la cuenta técnica.
 
 ### Reclamar y completar tareas
 
@@ -138,7 +140,43 @@ completar una tarea ajena ([05-decisiones.md](05-decisiones.md), limitación 7).
 
 Estas verificaciones van en un solo servicio, el de la bandeja de tareas (#7), y las demás pantallas lo usan.
 
-## 5. Base de la institución
+## 5. Login del personal
+
+El personal entra con su **usuario y contraseña de Flowable** (§3.3): la base de la institución no guarda cuentas del
+personal ([02-arquitectura.md](02-arquitectura.md) §4).
+
+**Cómo funciona.** El formulario de `/login` lo procesa Spring Security, que le pasa el usuario y la contraseña a
+`seguridad/AutenticacionContraFlowable`. Esa clase le pide a Flowable los grupos del usuario **con sus propias
+credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña:
+
+| Respuesta de Flowable | Resultado |
+|-----------------------|-----------|
+| 200 con los grupos | Ingresa. Cada grupo se convierte en un rol: `administracion` → `ADMINISTRACION`, `docentes` → `DOCENTES` |
+| 401 (contraseña incorrecta) o 403 (sin acceso a la API) | Vuelve a `/login?error` |
+| Sin respuesta (Flowable caído) | Vuelve a `/login?error` |
+
+**Reglas de acceso** (`seguridad/SeguridadConfig`):
+
+| Ruta | Requiere |
+|------|----------|
+| `/administracion/**` | Rol `ADMINISTRACION` |
+| `/docentes/**` | Rol `DOCENTES` |
+| Todo lo demás | Nada (la sección de empresas tendrá su propio login, #28) |
+
+- Sin sesión iniciada, una sección protegida redirige a `/login`, y después del login vuelve a la página pedida.
+- Con sesión pero sin el rol, muestra la página de error con un 403 ("Tu usuario no tiene acceso a esta sección").
+- Una sección o ruta nueva que requiera rol se agrega con una línea en `SeguridadConfig`.
+
+**En las páginas.** El encabezado muestra el usuario y el botón *Salir* cuando hay sesión, o *Ingresar* cuando no
+(atributos `sec:` de Thymeleaf). *Salir* es un formulario `POST /logout`.
+
+**En los controllers.** El usuario logueado se recibe como parámetro: `Principal usuario` y `usuario.getName()`. Es el
+que hay que comparar con el asignado de la tarea (§4).
+
+**Formularios.** Spring Security exige un token CSRF en todo `POST`. Los formularios con `th:action` lo agregan solos;
+un formulario sin `th:action` es rechazado con un 403.
+
+## 6. Base de la institución
 
 - **Esquema:** lo crea Flyway con las migraciones de `db/migration` al arrancar la web. Qué guarda cada tabla y quién
   escribe cada dato: [07-base-de-datos.md](07-base-de-datos.md).
@@ -147,27 +185,28 @@ Estas verificaciones van en un solo servicio, el de la bandeja de tareas (#7), y
 - **Vínculo con el proceso:** el curso se guarda antes de iniciar la instancia. La instancia se inicia con
   `businessKey = curso.id` y su ID se guarda en `curso.process_instance_id`.
 
-## 6. Tests
+## 7. Tests
 
 | Test | Qué prueba | Cómo se corre |
 |------|------------|---------------|
 | `ClienteFlowableTest` | Que cada método del cliente arme bien la llamada y lea bien la respuesta, contra un servidor HTTP simulado (`MockRestServiceServer`) | `./mvnw -pl web verify` (también en CI) |
+| `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
+| `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
 
 Al agregar un método al cliente, se agrega su test en `ClienteFlowableTest`: qué URL y qué JSON se esperan, y qué se
 devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-guia-flowable.md](03-guia-flowable.md)
 §3.
 
-## 7. Lo que falta
+## 8. Lo que falta
 
 Las funcionalidades se construyen sobre esta base, en los issues de cada milestone:
 
 | Issue | Qué agrega |
 |-------|------------|
-| #6 | Login del personal contra Flowable y roles por grupo (paquete `seguridad/`) |
 | #7 | Bandeja de tareas con las reglas de §4 |
 | #12 | Formulario público de solicitud: guarda empresa y curso e inicia la instancia |
 | #13, #14 | Registrar y revisar la propuesta, con su PDF |
 | #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
-| #28, #29 | Login de empresas y portal con sus cursos y su estado |
+| #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |

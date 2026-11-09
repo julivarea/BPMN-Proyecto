@@ -3,6 +3,7 @@ package ar.edu.unrc.gtpn.web.flowable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -23,6 +25,8 @@ public class ClienteFlowable {
     private static final int MAXIMO_RESULTADOS = 500;
 
     private static final ParameterizedTypeReference<Pagina<Tarea>> PAGINA_DE_TAREAS = new ParameterizedTypeReference<>() {
+    };
+    private static final ParameterizedTypeReference<Pagina<Grupo>> PAGINA_DE_GRUPOS = new ParameterizedTypeReference<>() {
     };
     private static final ParameterizedTypeReference<List<Variable>> LISTA_DE_VARIABLES = new ParameterizedTypeReference<>() {
     };
@@ -45,6 +49,26 @@ public class ClienteFlowable {
                 .retrieve()
                 .body(Instancia.class)
                 .id();
+    }
+
+    /**
+     * Grupos del usuario, consultados con sus propias credenciales: así la misma llamada valida la contraseña. Vacío si
+     * las credenciales son incorrectas (401) o el usuario no tiene acceso a la API REST (403).
+     */
+    public Optional<List<String>> gruposDelUsuario(String usuario, String clave) {
+        try {
+            Pagina<Grupo> grupos = http.get()
+                    .uri(uri -> uri.path("/identity/groups")
+                            .queryParam("member", usuario)
+                            .queryParam("size", MAXIMO_RESULTADOS)
+                            .build())
+                    .headers(cabeceras -> cabeceras.setBasicAuth(usuario, clave))
+                    .retrieve()
+                    .body(PAGINA_DE_GRUPOS);
+            return Optional.of(grupos.data().stream().map(Grupo::id).collect(Collectors.toList()));
+        } catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.Forbidden error) {
+            return Optional.empty();
+        }
     }
 
     /** Tareas pendientes asignadas al usuario. */
@@ -117,5 +141,9 @@ public class ClienteFlowable {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Instancia(String id) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Grupo(String id) {
     }
 }

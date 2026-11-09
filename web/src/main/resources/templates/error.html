@@ -7,6 +7,7 @@
 <main>
     <h1>Ocurrió un error</h1>
     <p class="error" th:text="${status} + ' · ' + ${error}">Error</p>
+    <p th:if="${status == 403}">Tu usuario no tiene acceso a esta sección.</p>
     <p><a th:href="@{/}">Volver al inicio</a></p>
 </main>
 </body>

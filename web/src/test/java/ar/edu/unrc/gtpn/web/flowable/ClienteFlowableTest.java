@@ -5,14 +5,17 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -47,6 +50,25 @@ class ClienteFlowableTest {
 
         assertEquals("instancia-1", instancia);
         servidor.verify();
+    }
+
+    @Test
+    void gruposDelUsuarioLosConsultaConLasCredencialesDelPropioUsuario() {
+        servidor.expect(requestTo(URL + "/identity/groups?member=jefe_admin&size=500"))
+                .andExpect(header("Authorization", "Basic amVmZV9hZG1pbjpjbGF2ZTEyMw=="))
+                .andRespond(withSuccess("""
+                        {"data": [{"id": "administracion", "name": "Administración", "type": null}],
+                         "total": 1}""", MediaType.APPLICATION_JSON));
+
+        assertEquals(Optional.of(List.of("administracion")), cliente.gruposDelUsuario("jefe_admin", "clave123"));
+    }
+
+    @Test
+    void gruposDelUsuarioConCredencialesIncorrectasDevuelveVacio() {
+        servidor.expect(requestTo(URL + "/identity/groups?member=jefe_admin&size=500"))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+
+        assertEquals(Optional.empty(), cliente.gruposDelUsuario("jefe_admin", "otra"));
     }
 
     @Test
