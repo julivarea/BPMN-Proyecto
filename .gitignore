@@ -19,3 +19,7 @@ Thumbs.db
 
 # Entorno de Python de la minería de procesos
 .venv/
+
+# Contexto local para IA (./docs-gestion es personal, no se comparte)
+docs-gestion
+.contexto-ia/

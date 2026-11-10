@@ -1,17 +1,62 @@
 package ar.edu.unrc.gtpn.proceso.asignacion;
 
+import java.util.Comparator;
+import java.util.List;
+
+import org.flowable.engine.IdentityService;
+import org.flowable.engine.TaskService;
 import org.flowable.engine.delegate.TaskListener;
+import org.flowable.engine.impl.context.Context;
+import org.flowable.idm.api.User;
 import org.flowable.task.service.delegate.DelegateTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-/** Asigna la tarea al administrativo con menos tareas pendientes (enunciado 3.4). La lógica queda para el issue #18. */
+/** 
+ * Asigna la tarea al administrativo con menos tareas pendientes asignadas (enunciado 3.4).
+ * En caso de empate, aplica como criterio fijo el orden alfabético del ID del usuario.
+ */
 public class AsignarAdministrativoConMenosTareasListener implements TaskListener {
 
     private static final Logger log = LoggerFactory.getLogger(AsignarAdministrativoConMenosTareasListener.class);
+    private static final String GRUPO_ADMINISTRACION = "administracion";
 
     @Override
     public void notify(DelegateTask tarea) {
-        log.info("Tarea {} creada; queda disponible para el grupo administracion", tarea.getName());
+        // Obtenemos los servicios desde el Contexto global de Flowable
+        TaskService taskService = Context.getProcessEngineConfiguration().getTaskService();
+        IdentityService identityService = Context.getProcessEngineConfiguration().getIdentityService();
+
+        // 1. Obtener los miembros del grupo "administracion"
+        List<User> administrativos = identityService.createUserQuery()
+                .memberOfGroup(GRUPO_ADMINISTRACION)
+                .list();
+
+        if (administrativos == null || administrativos.isEmpty()) {
+            log.warn("No hay usuarios registrados en el grupo {}", GRUPO_ADMINISTRACION);
+            return;
+        }
+
+        // 2. Buscar el usuario con menor cantidad de tareas pendientes asignadas.
+        // Criterio de desempate documentado: orden alfabético natural del ID de usuario (user.getId()).
+        User seleccionado = administrativos.stream()
+                .min(Comparator
+                        .comparingLong((User user) -> contarTareasPendientes(taskService, user.getId()))
+                        .thenComparing(User::getId)
+                )
+                .orElseThrow();
+
+        // 3. Asignar la tarea al administrativo seleccionado
+        tarea.setAssignee(seleccionado.getId());
+    }
+
+    /**
+     * Cuenta únicamente las tareas activas pendientes asignadas directamente al usuario.
+     * No computa las tareas que sólo tienen asignado al grupo como candidato.
+     */
+    private long contarTareasPendientes(TaskService taskService, String userId) {
+        return taskService.createTaskQuery()
+                .taskAssignee(userId)
+                .active()
+                .count();
     }
 }
