@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Solicitar capacitación')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado('empresas')}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+    <h1>Solicitar capacitación</h1>
+
+    <form class="formulario" th:action="@{/solicitar}" method="post">
+        <fieldset>
+            <legend>Empresa</legend>
+            <label>CUIT <input name="cuit" required></label>
+            <label>Razón social <input name="razonSocial" required></label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Persona de contacto</legend>
+            <label>Nombre <input name="contactoNombre" required></label>
+            <label>Email <input name="contactoEmail" type="email" required></label>
+            <label>Teléfono (opcional) <input name="contactoTelefono"></label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Capacitación</legend>
+            <label>Temática <input name="nombre" required></label>
+            <label>Descripción <textarea name="descripcion" required></textarea></label>
+            <label>Participantes estimados <input name="participantesEstimados" type="number" min="1" required></label>
+            <label>Fechas preferidas <textarea name="fechasPreferidas" required></textarea></label>
+        </fieldset>
+
+        <button type="submit">Enviar solicitud</button>
+    </form>
+</main>
+</body>
+</html>
