@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Solicitar capacitación')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado('empresas')}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+    <h1>Solicitar capacitación</h1>
+
+    <form class="formulario" th:action="@{/solicitar}" th:object="${solicitud}" method="post">
+        <fieldset>
+            <legend>Empresa</legend>
+            <label>CUIT
+                <input th:field="*{cuit}" required>
+                <span class="error" th:if="${#fields.hasErrors('cuit')}" th:errors="*{cuit}"></span>
+            </label>
+            <label>Razón social
+                <input th:field="*{razonSocial}" required>
+                <span class="error" th:if="${#fields.hasErrors('razonSocial')}" th:errors="*{razonSocial}"></span>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Persona de contacto</legend>
+            <label>Nombre
+                <input th:field="*{contactoNombre}" required>
+                <span class="error" th:if="${#fields.hasErrors('contactoNombre')}" th:errors="*{contactoNombre}"></span>
+            </label>
+            <label>Email
+                <input th:field="*{contactoEmail}" type="email" required>
+                <span class="error" th:if="${#fields.hasErrors('contactoEmail')}" th:errors="*{contactoEmail}"></span>
+            </label>
+            <label>Teléfono (opcional)
+                <input th:field="*{contactoTelefono}">
+                <span class="error" th:if="${#fields.hasErrors('contactoTelefono')}" th:errors="*{contactoTelefono}"></span>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Capacitación</legend>
+            <label>Temática
+                <input th:field="*{nombre}" required>
+                <span class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
+            </label>
+            <label>Descripción
+                <textarea th:field="*{descripcion}" required></textarea>
+                <span class="error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></span>
+            </label>
+            <label>Participantes estimados
+                <input th:field="*{participantesEstimados}" type="number" min="1" required>
+                <span class="error" th:if="${#fields.hasErrors('participantesEstimados')}" th:errors="*{participantesEstimados}"></span>
+            </label>
+            <label>Fechas preferidas
+                <textarea th:field="*{fechasPreferidas}" required></textarea>
+                <span class="error" th:if="${#fields.hasErrors('fechasPreferidas')}" th:errors="*{fechasPreferidas}"></span>
+            </label>
+        </fieldset>
+
+        <button type="submit">Enviar solicitud</button>
+    </form>
+</main>
+</body>
+</html>

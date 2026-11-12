@@ -14,3 +14,8 @@ flowable:
   url: ${FLOWABLE_URL:http://localhost:8080/flowable-ui}/process-api
   usuario: ${FLOWABLE_USUARIO:admin}
   clave: ${FLOWABLE_CLAVE:test}
+
+# Plazo que espera el proceso la respuesta de la empresa antes de cada recordatorio (duración ISO 8601).
+# Para la demo se puede reducir, por ejemplo: PLAZO_RESPUESTA=PT1M
+solicitudes:
+  plazo-respuesta: ${PLAZO_RESPUESTA:P5D}
