@@ -31,7 +31,7 @@ import ar.edu.unrc.gtpn.web.seguridad.AutenticacionContraFlowable;
 import ar.edu.unrc.gtpn.web.seguridad.SeguridadConfig;
 
 /** La bandeja vista desde el navegador: listas, botones, reglas y seguridad, con un doble del cliente de Flowable. */
-@WebMvcTest
+@WebMvcTest(BandejaController.class)
 @Import({SeguridadConfig.class, AutenticacionContraFlowable.class, BandejaDeTareas.class})
 class BandejaControllerTest {
 
