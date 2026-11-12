@@ -24,7 +24,7 @@ Todos los archivos del módulo:
 
 ```
 web/
-├── pom.xml                                Spring Boot 4.1: web, Thymeleaf, seguridad, cliente REST, JDBC, Flyway
+├── pom.xml                                Spring Boot 4.1: web, Thymeleaf, seguridad, cliente REST, JDBC, Flyway, validación
 └── src/
     ├── main/
     │   ├── java/ar/edu/unrc/gtpn/web/
@@ -37,12 +37,21 @@ web/
     │   │   ├── seguridad/                 login del personal y reglas de acceso (§5)
     │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña contra Flowable; grupos → roles
     │   │   │   └── SeguridadConfig.java               qué rol requiere cada ruta, página de login y salida
+    │   │   ├── solicitudes/               formulario público de solicitud de capacitación (§3, §6)
+    │   │   │   ├── SolicitudController.java       página /solicitar: valida, registra y redirige a la confirmación
+    │   │   │   ├── SolicitudFormulario.java       datos del formulario y sus reglas de validación
+    │   │   │   ├── SolicitudesDeCapacitacion.java registra empresa y curso e inicia la instancia, en una transacción
+    │   │   │   ├── SolicitudesRepository.java     SQL de empresa y curso, y la descripción de cada solicitud
+    │   │   │   ├── SolicitudesProperties.java     plazo de respuesta (propiedad solicitudes.plazo-respuesta)
+    │   │   │   ├── Empresa.java                   empresa ya registrada: id y razón social
+    │   │   │   ├── CuitDeOtraEmpresa.java         el CUIT ya existe con otra razón social (05-decisiones)
+    │   │   │   └── SolicitudNoRegistrada.java     Flowable no inició la instancia: no se guarda nada
     │   │   └── tareas/                    bandeja de tareas (§4)
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
     │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
     │   └── resources/
-    │       ├── application.yml            puerto 8081, base de la institución y conexión con Flowable
+    │       ├── application.yml            puerto 8081, base de la institución, conexión con Flowable y plazo de respuesta
     │       ├── db/migration/
     │       │   └── V1__esquema_inicial.sql    tablas empresa, cuenta_empresa, curso y propuesta (§6)
     │       ├── static/css/
@@ -54,8 +63,11 @@ web/
     │           ├── error.html             página de error (404, 403, 500…)
     │           ├── empresa/
     │           │   └── inicio.html        sección de empresas (se completa en #28 y #29)
+    │           ├── solicitudes/
+    │           │   ├── formulario.html    formulario público de solicitud (§3)
+    │           │   └── enviada.html       confirmación de la solicitud
     │           └── tareas/
-    │               └── bandeja.html       bandeja: tareas asignadas y disponibles, con su solicitud (§4)
+    │               └── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
@@ -63,6 +75,9 @@ web/
         ├── seguridad/
         │   ├── AutenticacionContraFlowableTest.java   grupos → roles y credenciales incorrectas
         │   └── SeguridadTest.java                     reglas de acceso de las secciones y login
+        ├── solicitudes/
+        │   ├── SolicitudesDeCapacitacionTest.java     registro, CUIT, razón social distinta, Flowable caído y descripciones
+        │   └── SolicitudControllerTest.java           el formulario desde el navegador: validación, errores y CSRF
         └── tareas/
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
             └── BandejaControllerTest.java             la bandeja desde el navegador
@@ -139,6 +154,10 @@ desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
 **Estilos.** Todo está en `estilos.css`. Los colores son variables al principio del archivo (`--encabezado`,
 `--texto`, `--fondo`), y en pantallas chicas la navegación pasa a una grilla de 2 × 2.
 
+**Formulario de solicitud.** `/solicitar` es pública. Valida los datos en el servidor (`SolicitudFormulario`) y, si hay
+errores, vuelve a mostrar el formulario con lo que se cargó y el error junto a cada campo. Si los datos son válidos,
+registra la solicitud (§6) y redirige a `/solicitar/enviada`, así recargar la confirmación no repite el envío.
+
 ## 4. Conexión con Flowable
 
 ### El cliente
@@ -197,7 +216,8 @@ la persona en el historial es la asignación, y de eso dependen las consultas de
 
 **La bandeja** es la página de las secciones de Administración (`/administracion`) y de Docentes (`/docentes`): muestra
 las tareas asignadas al usuario, con *Completar*, y las disponibles para sus grupos, con *Reclamar*. Cada tarea indica
-la **solicitud** a la que pertenece (la `businessKey` de su instancia, que es el ID del curso). *Preparar materiales*
+la **solicitud** a la que pertenece: la empresa y el curso, buscados en la base con una sola consulta por la
+`businessKey` de su instancia (el ID del curso), o la `businessKey` si la instancia no tiene curso en la base. *Preparar materiales*
 aparece sin botones, con la indicación de la app de materiales. Los botones envían a `/tareas/{id}/reclamar` y
 `/tareas/{id}/completar` y vuelven a la sección de la que se vino.
 
@@ -250,7 +270,8 @@ un formulario sin `th:action` es rechazado con un 403.
 - **Una migración pusheada no se edita.** Los cambios van en una nueva: `V2__descripcion.sql`, `V3__…`.
 - **Acceso:** con `JdbcClient` y SQL explícito, desde el repositorio de cada funcionalidad.
 - **Vínculo con el proceso:** el curso se guarda antes de iniciar la instancia. La instancia se inicia con
-  `businessKey = curso.id` y su ID se guarda en `curso.process_instance_id`.
+  `businessKey = curso.id` y su ID se guarda en `curso.process_instance_id`. Las tres operaciones van en una
+  transacción (`SolicitudesDeCapacitacion`): si Flowable falla, no queda el curso sin instancia (ver 05-decisiones).
 
 ## 7. Tests
 
@@ -260,7 +281,9 @@ un formulario sin `th:action` es rechazado con un 403.
 | `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
-| `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, solicitud de cada tarea, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
+| `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
 
 Al agregar un método al cliente, se agrega su test en `ClienteFlowableTest`: qué URL y qué JSON se esperan, y qué se
@@ -273,7 +296,6 @@ Las funcionalidades se construyen sobre esta base, en los issues de cada milesto
 
 | Issue | Qué agrega |
 |-------|------------|
-| #12 | Formulario público de solicitud: guarda empresa y curso e inicia la instancia |
 | #13, #14 | Registrar y revisar la propuesta, con su PDF |
 | #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
