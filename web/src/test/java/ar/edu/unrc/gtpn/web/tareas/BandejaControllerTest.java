@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
 import ar.edu.unrc.gtpn.web.seguridad.AutenticacionContraFlowable;
 import ar.edu.unrc.gtpn.web.seguridad.SeguridadConfig;
+import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesDeCapacitacion;
 
 /** La bandeja vista desde el navegador: listas, botones, reglas y seguridad, con un doble del cliente de Flowable. */
 @WebMvcTest(BandejaController.class)
@@ -41,6 +43,9 @@ class BandejaControllerTest {
     @MockitoBean
     private ClienteFlowable flowable;
 
+    @MockitoBean
+    private SolicitudesDeCapacitacion solicitudes;
+    
     @Test
     void laSeccionDeAdministracionMuestraLasTareasAsignadasYLasDisponibles() throws Exception {
         when(flowable.tareasAsignadas("administrativo"))
@@ -55,6 +60,17 @@ class BandejaControllerTest {
                 .andExpect(content().string(Matchers.containsString("/tareas/t1/completar")))
                 .andExpect(content().string(Matchers.containsString("Se completa desde la app de materiales")))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("/tareas/t2/reclamar"))));
+    }
+
+    @Test
+    void unaTareaDeUnaSolicitudDelFormularioMuestraLaEmpresaYElCurso() throws Exception {
+        when(flowable.tareasAsignadas("jefe_admin"))
+                .thenReturn(List.of(tarea("t1", "Registrar y elaborar propuesta", "registrarYElaborarPropuesta", "jefe_admin")));
+        when(solicitudes.descripciones(List.of("42"))).thenReturn(Map.of("42", "Acme SA · Excel avanzado"));
+
+        mvc.perform(get("/administracion").with(user("jefe_admin").roles("ADMINISTRACION")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Acme SA · Excel avanzado")));
     }
 
     @Test
