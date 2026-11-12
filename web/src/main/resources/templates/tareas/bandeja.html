@@ -15,7 +15,7 @@
         <thead><tr><th>Solicitud</th><th>Tarea</th><th>Creada</th><th></th></tr></thead>
         <tbody>
         <tr th:each="tarea : ${asignadas}">
-            <td th:text="${tarea.solicitud() ?: '—'}">42</td>
+            <td th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}">42</td>
             <td th:text="${tarea.nombre()}">Archivar solicitud</td>
             <td th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}">01/12/2026 09:00</td>
             <td class="accion">
@@ -36,8 +36,7 @@
         <thead><tr><th>Solicitud</th><th>Tarea</th><th>Creada</th><th></th></tr></thead>
         <tbody>
         <tr th:each="tarea : ${disponibles}">
-            <td th:text="${tarea.solicitud() ?: '—'}">42</td>
-            <td th:text="${tarea.nombre()}">Evaluar recursos</td>
+<td th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}">42</td>            <td th:text="${tarea.nombre()}">Evaluar recursos</td>
             <td th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}">01/12/2026 09:00</td>
             <td class="accion">
                 <form th:if="${bandeja.seCompletaEnLaWeb(tarea)}" th:action="@{/tareas/{id}/reclamar(id=${tarea.id()})}"

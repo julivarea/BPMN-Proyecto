@@ -1,8 +1,10 @@
 package ar.edu.unrc.gtpn.web.tareas;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import ar.edu.unrc.gtpn.web.flowable.Tarea;
+import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesDeCapacitacion;
 
 /**
  * Bandeja de tareas del personal: las asignadas al usuario y las disponibles para sus grupos (W-06). Es lo que muestran
@@ -23,9 +28,11 @@ public class BandejaController {
     private static final Set<String> SECCIONES = Set.of("administracion", "docentes");
 
     private final BandejaDeTareas bandeja;
+    private final SolicitudesDeCapacitacion solicitudes;
 
-    public BandejaController(BandejaDeTareas bandeja) {
+    public BandejaController(BandejaDeTareas bandeja, SolicitudesDeCapacitacion solicitudes) {
         this.bandeja = bandeja;
+        this.solicitudes = solicitudes;
     }
 
     @GetMapping("/administracion")
@@ -64,9 +71,15 @@ public class BandejaController {
     }
 
     private String bandeja(Principal usuario, Model modelo, String seccion) {
+        List<Tarea> asignadas = bandeja.asignadas(usuario.getName());
+        List<Tarea> disponibles = bandeja.disponibles(usuario.getName());
+        List<String> businessKeys = Stream.concat(asignadas.stream(), disponibles.stream())
+                .map(Tarea::solicitud)
+                .toList();
         modelo.addAttribute("seccion", seccion);
-        modelo.addAttribute("asignadas", bandeja.asignadas(usuario.getName()));
-        modelo.addAttribute("disponibles", bandeja.disponibles(usuario.getName()));
+        modelo.addAttribute("asignadas", asignadas);
+        modelo.addAttribute("disponibles", disponibles);
+        modelo.addAttribute("solicitudes", solicitudes.descripciones(businessKeys));
         modelo.addAttribute("bandeja", bandeja);
         return "tareas/bandeja";
     }

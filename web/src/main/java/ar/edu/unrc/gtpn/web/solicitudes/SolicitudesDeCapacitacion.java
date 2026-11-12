@@ -2,6 +2,9 @@ package ar.edu.unrc.gtpn.web.solicitudes;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,5 +68,26 @@ public class SolicitudesDeCapacitacion {
 
     private static String soloDigitos(String cuit) {
         return cuit.replace("-", "");
+    }
+
+        /**
+     * Descripción "Razón social · Curso" de cada solicitud, por su businessKey. Las instancias sin curso en la base (por
+     * ejemplo, iniciadas desde la UI de Flowable) no aparecen: la bandeja muestra su businessKey.
+     */
+    public Map<String, String> descripciones(Collection<String> businessKeys) {
+        List<Long> cursoIds = businessKeys.stream()
+                .filter(SolicitudesDeCapacitacion::esIdDeCurso)
+                .map(Long::valueOf)
+                .distinct()
+                .toList();
+        if (cursoIds.isEmpty()) {
+            return Map.of();
+        }
+        return repositorio.descripcionesPorCurso(cursoIds).entrySet().stream()
+                .collect(Collectors.toMap(entrada -> String.valueOf(entrada.getKey()), Map.Entry::getValue));
+    }
+
+    private static boolean esIdDeCurso(String businessKey) {
+        return businessKey != null && businessKey.matches("\\d+");
     }
 }

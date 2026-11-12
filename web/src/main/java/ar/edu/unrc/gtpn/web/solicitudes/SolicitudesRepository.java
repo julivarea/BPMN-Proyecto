@@ -1,6 +1,9 @@
 package ar.edu.unrc.gtpn.web.solicitudes;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -55,5 +58,20 @@ public class SolicitudesRepository {
             .param("instanciaId", instanciaId)
             .param("cursoId", cursoId)
             .update();
+    }
+
+    /** "Razón social · Curso" de cada curso, por su id. Los ids que no existen en la base no aparecen. */
+    Map<Long, String> descripcionesPorCurso(List<Long> cursoIds) {
+        return jdbc.sql("""
+                SELECT curso.id, empresa.razon_social, curso.nombre
+                FROM curso JOIN empresa ON empresa.id = curso.empresa_id
+                WHERE curso.id IN (:cursoIds)
+                """)
+                .param("cursoIds", cursoIds)
+                .query((fila, numero) -> Map.entry(fila.getLong("id"),
+                        fila.getString("razon_social") + " · " + fila.getString("nombre")))
+                .list()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }
