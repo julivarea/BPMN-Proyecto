@@ -1,5 +1,6 @@
 package ar.edu.unrc.gtpn.web.solicitudes;
 
+import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +27,8 @@ public class SolicitudController {
     }
 
     @PostMapping("/solicitar")
-    String enviar(@Valid @ModelAttribute("solicitud") SolicitudFormulario solicitud, BindingResult errores) {
+    String enviar(@Valid @ModelAttribute("solicitud") SolicitudFormulario solicitud, BindingResult errores,
+            Model modelo) {
         if (errores.hasErrors()) {
             return FORMULARIO;
         }
@@ -34,6 +36,9 @@ public class SolicitudController {
             solicitudes.solicitar(solicitud);
         } catch (CuitDeOtraEmpresa error) {
             errores.rejectValue("razonSocial", "cuitDeOtraEmpresa", error.getMessage());
+            return FORMULARIO;
+        } catch (SolicitudNoRegistrada error) {
+            modelo.addAttribute("error", error.getMessage());
             return FORMULARIO;
         }
         return "redirect:/solicitar/enviada";

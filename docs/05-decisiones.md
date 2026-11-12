@@ -49,6 +49,17 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   el texto del §3.1.
 - **"Aplicación móvil" (§1.4).** *Definir docente* es una tarea de usuario como cualquier otra. El §4 solo pide un
   sitio web y dos apps de escritorio, y el §4.1.4 ubica esta función en el sitio. No cambia el modelo.
+- **CUIT registrado con otra razón social (§4.1.1).** Si una solicitud trae un CUIT que ya existe con otra razón
+  social, se rechaza y se muestra el error junto a ese campo: puede ser un CUIT mal tipeado que la vincularía a otra
+  empresa. La comparación ignora mayúsculas y espacios en los extremos, y el CUIT se guarda solo con dígitos
+  (`30-12345678-9` y `30123456789` son la misma empresa).
+- **Plazo de respuesta configurable (§3.5).** La web inicia cada instancia con la variable `plazoRespuesta`, tomada
+  de `solicitudes.plazo-respuesta` (por defecto `P5D`). Para la demo se reduce sin tocar código:
+  `PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run`.
+- **Registro de la solicitud y su instancia (§4.1.1).** Guardar el curso, iniciar la instancia y guardar su id en el
+  curso van en una sola transacción: si Flowable falla, no queda el curso sin instancia. La transacción no puede
+  deshacer lo hecho en Flowable, así que si fallara el último `UPDATE` quedaría una instancia sin curso. Se acepta
+  porque es una actualización simple sobre una fila recién insertada.  
 
 ## Pendientes
 

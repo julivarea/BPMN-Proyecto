@@ -49,4 +49,11 @@ public class SolicitudesRepository {
                 .query(Long.class)
                 .single();
     }
+
+    void vincularInstancia(long cursoId, String instanciaId) {
+        jdbc.sql("UPDATE curso SET process_instance_id = :instanciaId WHERE id = :cursoId")
+            .param("instanciaId", instanciaId)
+            .param("cursoId", cursoId)
+            .update();
+    }
 }
