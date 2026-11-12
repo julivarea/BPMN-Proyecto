@@ -12,17 +12,30 @@ import jakarta.validation.Valid;
 @Controller
 public class SolicitudController {
 
+    private static final String FORMULARIO = "solicitudes/formulario";
+
+    private final SolicitudesDeCapacitacion solicitudes;
+
+    public SolicitudController(SolicitudesDeCapacitacion solicitudes) {
+        this.solicitudes = solicitudes;
+    }
+
     @GetMapping("/solicitar")
     String formulario(@ModelAttribute("solicitud") SolicitudFormulario solicitud) {
-        return "solicitudes/formulario";
+        return FORMULARIO;
     }
 
     @PostMapping("/solicitar")
     String enviar(@Valid @ModelAttribute("solicitud") SolicitudFormulario solicitud, BindingResult errores) {
         if (errores.hasErrors()) {
-            return "solicitudes/formulario";
+            return FORMULARIO;
         }
-        // Pasos 6 y 7: guardar la solicitud e iniciar la instancia.
+        try {
+            solicitudes.solicitar(solicitud);
+        } catch (CuitDeOtraEmpresa error) {
+            errores.rejectValue("razonSocial", "cuitDeOtraEmpresa", error.getMessage());
+            return FORMULARIO;
+        }
         return "redirect:/solicitar/enviada";
     }
 
