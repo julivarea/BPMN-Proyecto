@@ -18,9 +18,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
-import ar.edu.unrc.gtpn.web.solicitudes.GeneradorPdfPropuesta;
-import ar.edu.unrc.gtpn.web.solicitudes.Propuesta;
-import ar.edu.unrc.gtpn.web.solicitudes.PropuestasRepository;
+import ar.edu.unrc.gtpn.web.propuestas.GeneradorPdfPropuesta;
+import ar.edu.unrc.gtpn.web.propuestas.Propuesta;
+import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 
 @Controller
