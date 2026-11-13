@@ -86,7 +86,25 @@ public class ClienteFlowable {
 
     /** Una tarea pendiente. Si no existe (o ya se completó), Flowable responde 404. */
     public Tarea tarea(String tareaId) {
-        return http.get().uri("/runtime/tasks/{id}", tareaId).retrieve().body(Tarea.class);
+        Tarea tarea = http.get()
+                .uri("/runtime/tasks/{id}", tareaId)
+                .retrieve()
+                .body(Tarea.class);
+
+        if (tarea != null && tarea.instanciaId() != null) {
+            try {
+                Map<?, ?> instancia = http.get()
+                        .uri("/runtime/process-instances/{id}", tarea.instanciaId())
+                        .retrieve()
+                        .body(Map.class);
+                String businessKey = (String) instancia.get("businessKey");
+                return tarea.conSolicitud(businessKey);
+            } catch (Exception ignored) {
+                // Si la instancia ya finalizó o falla la consulta
+            }
+        }
+
+        return tarea;
     }
 
     /** Asigna la tarea al usuario. Si otro la reclamó antes, Flowable responde 409. */
