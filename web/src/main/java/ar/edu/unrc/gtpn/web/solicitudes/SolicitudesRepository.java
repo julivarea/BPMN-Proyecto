@@ -8,7 +8,10 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** Acceso a las tablas empresa y curso para registrar las solicitudes (enunciado §3.2 y §4.1.1). */
+/**
+ * Acceso a las tablas empresa y curso para registrar las solicitudes (enunciado
+ * §3.2 y §4.1.1).
+ */
 @Repository
 public class SolicitudesRepository {
 
@@ -55,12 +58,15 @@ public class SolicitudesRepository {
 
     void vincularInstancia(long cursoId, String instanciaId) {
         jdbc.sql("UPDATE curso SET process_instance_id = :instanciaId WHERE id = :cursoId")
-            .param("instanciaId", instanciaId)
-            .param("cursoId", cursoId)
-            .update();
+                .param("instanciaId", instanciaId)
+                .param("cursoId", cursoId)
+                .update();
     }
 
-    /** "Razón social · Curso" de cada curso, por su id. Los ids que no existen en la base no aparecen. */
+    /**
+     * "Razón social · Curso" de cada curso, por su id. Los ids que no existen en la
+     * base no aparecen.
+     */
     Map<Long, String> descripcionesPorCurso(List<Long> cursoIds) {
         return jdbc.sql("""
                 SELECT curso.id, empresa.razon_social, curso.nombre
@@ -73,5 +79,29 @@ public class SolicitudesRepository {
                 .list()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Optional<Curso> buscarPorId(long id) {
+        return jdbc.sql("""
+                SELECT c.id, c.empresa_id, e.razon_social, c.nombre, c.descripcion,
+                       c.participantes_estimados, c.fechas_preferidas,
+                       c.contacto_nombre, c.contacto_email, c.contacto_telefono
+                FROM curso c
+                JOIN empresa e ON e.id = c.empresa_id
+                WHERE c.id = :id
+                """)
+                .param("id", id)
+                .query((rs, rowNum) -> new Curso(
+                        rs.getLong("id"),
+                        rs.getLong("empresa_id"),
+                        rs.getString("razon_social"),
+                        rs.getString("nombre"),
+                        rs.getString("descripcion"),
+                        rs.getInt("participantes_estimados"),
+                        rs.getString("fechas_preferidas"),
+                        rs.getString("contacto_nombre"),
+                        rs.getString("contacto_email"),
+                        rs.getString("contacto_telefono")))
+                .optional();
     }
 }
