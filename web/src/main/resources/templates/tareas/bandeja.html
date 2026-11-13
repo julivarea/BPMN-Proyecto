@@ -1,54 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<!-- Bandeja de tareas: asignadas al usuario y disponibles para sus grupos. Es la página de las secciones de
+    <!-- Bandeja de tareas: asignadas al usuario y disponibles para sus grupos. Es la página de las secciones de
      Administración y Docentes (seccion = "administracion" o "docentes"). Reglas en BandejaDeTareas. -->
-<head th:replace="~{fragmentos :: cabecera('Mis tareas')}"></head>
-<body>
-<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
-<main>
-    <div th:replace="~{fragmentos :: mensajes}"></div>
-    <h1>Mis tareas</h1>
+    <head th:replace="~{fragmentos :: cabecera('Mis tareas')}"></head>
+    <body>
+        <header
+            th:replace="~{fragmentos :: encabezado(${seccion})}"
+        ></header>
+        <main>
+            <div th:replace="~{fragmentos :: mensajes}"></div>
+            <h1>Mis tareas</h1>
 
-    <h2>Asignadas a vos</h2>
-    <p th:if="${asignadas.isEmpty()}">No tenés tareas asignadas.</p>
-    <table class="tabla" th:unless="${asignadas.isEmpty()}">
-        <thead><tr><th>Solicitud</th><th>Tarea</th><th>Creada</th><th></th></tr></thead>
-        <tbody>
-        <tr th:each="tarea : ${asignadas}">
-            <td th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}">42</td>
-            <td th:text="${tarea.nombre()}">Archivar solicitud</td>
-            <td th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}">01/12/2026 09:00</td>
-            <td class="accion">
-                <form th:if="${bandeja.seCompletaEnLaWeb(tarea)}" th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
-                      method="post">
-                    <input type="hidden" name="seccion" th:value="${seccion}">
-                    <button type="submit">Completar</button>
-                </form>
-                <span th:unless="${bandeja.seCompletaEnLaWeb(tarea)}" class="nota">Se completa desde la app de materiales</span>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <h2>Asignadas a vos</h2>
+            <p th:if="${asignadas.isEmpty()}">
+                No tenés tareas asignadas.
+            </p>
+            <table class="tabla" th:unless="${asignadas.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Solicitud</th>
+                        <th>Tarea</th>
+                        <th>Creada</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tarea : ${asignadas}">
+                        <td
+                            th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}"
+                        >
+                            42
+                        </td>
+                        <td th:text="${tarea.nombre()}">
+                            Archivar solicitud
+                        </td>
+                        <td
+                            th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}"
+                        >
+                            01/12/2026 09:00
+                        </td>
+                        <td class="accion">
+                            <!-- Pantalla propia para elaborar la propuesta -->
+                            <a
+                                th:if="${tarea.clave() == 'registrarYElaborarPropuesta' || tarea.clave() == 'elaborarPropuesta'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'(seccion=${seccion})}"
+                                class="boton"
+                                >Elaborar propuesta</a
+                            >
 
-    <h2>Disponibles para tu grupo</h2>
-    <p th:if="${disponibles.isEmpty()}">No hay tareas disponibles para reclamar.</p>
-    <table class="tabla" th:unless="${disponibles.isEmpty()}">
-        <thead><tr><th>Solicitud</th><th>Tarea</th><th>Creada</th><th></th></tr></thead>
-        <tbody>
-        <tr th:each="tarea : ${disponibles}">
-<td th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}">42</td>            <td th:text="${tarea.nombre()}">Evaluar recursos</td>
-            <td th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}">01/12/2026 09:00</td>
-            <td class="accion">
-                <form th:if="${bandeja.seCompletaEnLaWeb(tarea)}" th:action="@{/tareas/{id}/reclamar(id=${tarea.id()})}"
-                      method="post">
-                    <input type="hidden" name="seccion" th:value="${seccion}">
-                    <button type="submit">Reclamar</button>
-                </form>
-                <span th:unless="${bandeja.seCompletaEnLaWeb(tarea)}" class="nota">Se completa desde la app de materiales</span>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</main>
-</body>
+                            <!-- Completar genérico para las tareas sin pantalla propia que se hacen en la web -->
+                            <form
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
+                                method="post"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="seccion"
+                                    th:value="${seccion}"
+                                />
+                                <button type="submit">
+                                    Completar
+                                </button>
+                            </form>
+
+                            <!-- Indicador para tareas de la app externa -->
+                            <span
+                                th:unless="${bandeja.seCompletaEnLaWeb(tarea)}"
+                                class="nota"
+                                th:text="'Se completa desde la app de materiales'"
+                            ></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Disponibles para tu grupo</h2>
+            <p th:if="${disponibles.isEmpty()}">
+                No hay tareas disponibles para reclamar.
+            </p>
+            <table class="tabla" th:unless="${disponibles.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Solicitud</th>
+                        <th>Tarea</th>
+                        <th>Creada</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tarea : ${disponibles}">
+                        <td
+                            th:text="${tarea.solicitud() == null ? '—' : solicitudes.getOrDefault(tarea.solicitud(), tarea.solicitud())}"
+                        >
+                            42
+                        </td>
+                        <td th:text="${tarea.nombre()}">
+                            Evaluar recursos
+                        </td>
+                        <td
+                            th:text="${#temporals.format(tarea.creadaEnHoraLocal(), 'dd/MM/yyyy HH:mm')}"
+                        >
+                            01/12/2026 09:00
+                        </td>
+                        <td class="accion">
+                            <form
+                                th:if="${bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:action="@{/tareas/{id}/reclamar(id=${tarea.id()})}"
+                                method="post"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="seccion"
+                                    th:value="${seccion}"
+                                />
+                                <button type="submit">
+                                    Reclamar
+                                </button>
+                            </form>
+                            <span
+                                th:unless="${bandeja.seCompletaEnLaWeb(tarea)}"
+                                class="nota"
+                                th:text="'Se completa desde la app de materiales'"
+                            ></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </body>
 </html>

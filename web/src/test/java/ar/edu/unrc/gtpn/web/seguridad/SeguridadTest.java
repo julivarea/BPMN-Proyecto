@@ -20,8 +20,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
+import ar.edu.unrc.gtpn.web.propuestas.GeneradorPdfPropuesta;
+import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesDeCapacitacion;
+import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 import ar.edu.unrc.gtpn.web.tareas.BandejaDeTareas;
+
 /** Reglas de acceso de las secciones del personal (issue #6), sin Flowable: el cliente es un doble. */
 @WebMvcTest
 @Import({SeguridadConfig.class, AutenticacionContraFlowable.class, BandejaDeTareas.class})
@@ -35,6 +39,16 @@ class SeguridadTest {
 
     @MockitoBean
     private SolicitudesDeCapacitacion solicitudes;
+
+    // El @WebMvcTest sin controller levanta todos los controllers: sus repositorios también necesitan doble.
+    @MockitoBean
+    private SolicitudesRepository solicitudesRepository;
+
+    @MockitoBean
+    private PropuestasRepository propuestasRepository;
+
+    @MockitoBean
+    private GeneradorPdfPropuesta generadorPdf;
 
     @Test
     void sinIngresarLaSeccionDeAdministracionPideLogin() throws Exception {

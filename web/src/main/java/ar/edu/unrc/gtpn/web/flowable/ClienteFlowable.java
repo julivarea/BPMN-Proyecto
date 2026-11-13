@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Único punto de la web que habla con Flowable: el resto del código no conoce URLs ni el formato JSON de la API REST
@@ -84,27 +85,29 @@ public class ClienteFlowable {
         return tareas("candidateUser", usuario);
     }
 
-    /** Una tarea pendiente. Si no existe (o ya se completó), Flowable responde 404. */
+    /**
+     * Una tarea pendiente, con la solicitud (businessKey) a la que pertenece. Si no existe (o ya se completó), Flowable
+     * responde 404; si la instancia ya terminó, la tarea queda sin solicitud.
+     */
     public Tarea tarea(String tareaId) {
         Tarea tarea = http.get()
                 .uri("/runtime/tasks/{id}", tareaId)
                 .retrieve()
                 .body(Tarea.class);
 
-        if (tarea != null && tarea.instanciaId() != null) {
-            try {
-                Map<?, ?> instancia = http.get()
-                        .uri("/runtime/process-instances/{id}", tarea.instanciaId())
-                        .retrieve()
-                        .body(Map.class);
-                String businessKey = (String) instancia.get("businessKey");
-                return tarea.conSolicitud(businessKey);
-            } catch (Exception ignored) {
-                // Si la instancia ya finalizó o falla la consulta
-            }
+        if (tarea == null || tarea.instanciaId() == null) {
+            return tarea;
         }
-
-        return tarea;
+        try {
+            Instancia instancia = http.get()
+                    .uri("/runtime/process-instances/{id}", tarea.instanciaId())
+                    .retrieve()
+                    .body(Instancia.class);
+            return tarea.conSolicitud(instancia == null ? null : instancia.businessKey());
+        } catch (RestClientException error) {
+            // La instancia ya terminó o no está disponible: la tarea queda sin solicitud.
+            return tarea;
+        }
     }
 
     /** Asigna la tarea al usuario. Si otro la reclamó antes, Flowable responde 409. */

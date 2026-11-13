@@ -108,8 +108,14 @@ class ClienteFlowableTest {
                         {"id": "t1", "name": "Archivar solicitud", "taskDefinitionKey": "archivarSolicitud",
                          "processInstanceId": "instancia-1", "assignee": "jefe_admin",
                          "createTime": "2026-11-09T10:00:00.000Z"}""", MediaType.APPLICATION_JSON));
+        servidor.expect(requestTo(URL + "/runtime/process-instances/instancia-1"))
+                .andRespond(withSuccess("""
+                        {"id": "instancia-1", "businessKey": "42"}""", MediaType.APPLICATION_JSON));
 
-        assertEquals("jefe_admin", cliente.tarea("t1").asignado());
+        Tarea tarea = cliente.tarea("t1");
+
+        assertEquals("jefe_admin", tarea.asignado());
+        assertEquals("42", tarea.solicitud());
     }
 
     @Test
