@@ -34,6 +34,10 @@ web/
     │   │   │   ├── ClienteFlowable.java       único lugar que llama a la API REST de Flowable
     │   │   │   ├── FlowableProperties.java    URL y cuenta técnica (propiedades flowable.* de application.yml)
     │   │   │   └── Tarea.java                 una tarea pendiente: nombre, clave, asignado, fecha y solicitud
+    │   │   ├── propuestas/                propuesta económica del curso y su PDF (§3, §6)
+    │   │   │   ├── Propuesta.java             una versión de la propuesta: programa, presupuesto y fechas
+    │   │   │   ├── PropuestasRepository.java  última versión de un curso y búsqueda por curso y versión
+    │   │   │   └── GeneradorPdfPropuesta.java el PDF de una propuesta (OpenPDF)
     │   │   ├── seguridad/                 login del personal y reglas de acceso (§5)
     │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña contra Flowable; grupos → roles
     │   │   │   └── SeguridadConfig.java               qué rol requiere cada ruta, página de login y salida
@@ -44,11 +48,13 @@ web/
     │   │   │   ├── SolicitudesRepository.java     SQL de empresa y curso, y la descripción de cada solicitud
     │   │   │   ├── SolicitudesProperties.java     plazo de respuesta (propiedad solicitudes.plazo-respuesta)
     │   │   │   ├── Empresa.java                   empresa ya registrada: id y razón social
+    │   │   │   ├── Curso.java                     curso ya registrado: los datos de la solicitud (§6)
     │   │   │   ├── CuitDeOtraEmpresa.java         el CUIT ya existe con otra razón social (05-decisiones)
     │   │   │   └── SolicitudNoRegistrada.java     Flowable no inició la instancia: no se guarda nada
     │   │   └── tareas/                    bandeja de tareas (§4)
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
+    │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
     │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
     │   └── resources/
     │       ├── application.yml            puerto 8081, base de la institución, conexión con Flowable y plazo de respuesta
@@ -67,7 +73,8 @@ web/
     │           │   ├── formulario.html    formulario público de solicitud (§3)
     │           │   └── enviada.html       confirmación de la solicitud
     │           └── tareas/
-    │               └── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
+    │               ├── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
+    │               └── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
@@ -80,7 +87,8 @@ web/
         │   └── SolicitudControllerTest.java           el formulario desde el navegador: validación, errores y CSRF
         └── tareas/
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
-            └── BandejaControllerTest.java             la bandeja desde el navegador
+            ├── BandejaControllerTest.java             la bandeja desde el navegador
+            └── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
 ```
 
 ## 3. Páginas
@@ -282,6 +290,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
 | `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
@@ -292,11 +301,12 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 
 ## 8. Lo que falta
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone:
+Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrado: #13**, registrar y
+elaborar la propuesta desde la web, con su PDF (`ElaborarPropuestaController`, §3 y §7).
 
 | Issue | Qué agrega |
 |-------|------------|
-| #13, #14 | Registrar y revisar la propuesta, con su PDF |
+| #14 | Revisar la propuesta: aceptar, rechazar o pedir modificaciones, con su PDF |
 | #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
 | #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |

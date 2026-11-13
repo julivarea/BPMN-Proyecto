@@ -152,9 +152,11 @@ datos de propuesta/versiones/recordatorios, `fechaInicioCurso`, `participantes`,
 - `cursosEnEjecucion < 5` → `esViable=true`;
 - `cursosEnEjecucion >= 5` → `esViable=false`.
 
-La entrada debe proceder del motor, no de un formulario. **Estado actual:** el listener
-`ContarCursosEnEjecucionListener` todavía fija el valor en `0`, por lo que la consulta real
-de instancias es un pendiente.
+La entrada debe proceder del motor, no de un formulario. **Estado actual:** el execution listener
+`ContarCursosEnEjecucionListener` corre al inicio de la tarea DMN, cuenta las instancias de
+`organizarCurso` en curso con `accesoHabilitado = true` (sin contar la instancia actual) y escribe
+ese total en `cursosEnEjecucion`, que la tabla consume en la misma decisión. Lo cubre
+`ContarCursosEnEjecucionListenerTest`.
 
 ### Service Tasks y clases
 
@@ -183,7 +185,8 @@ pendientes en los Javadocs.
 - **Execution listener de fin de proceso**:
   `RegistrarResultadoDelCursoListener`; actualmente solo registra un log.
 - **Execution listener de inicio de viabilidad**:
-  `ContarCursosEnEjecucionListener`; actualmente fija `cursosEnEjecucion=0`.
+  `ContarCursosEnEjecucionListener`; cuenta las instancias abiertas con `accesoHabilitado = true`
+  y escribe `cursosEnEjecucion` para la DMN.
 - **Task listener `create` en `Confeccionar lista definitiva`**:
   `AsignarAdministrativoConMenosTareasListener`; actualmente deja la tarea disponible
   para el grupo y no calcula cargas.

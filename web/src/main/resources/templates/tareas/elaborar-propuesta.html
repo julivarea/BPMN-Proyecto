@@ -19,6 +19,14 @@
         <p><strong>Fechas preferidas por empresa:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
     </div>
 
+    <p th:if="${version > 1}">
+        <a th:href="@{/tareas/propuestas/{cursoId}/{version}/pdf(cursoId=${curso.id}, version=${version - 1})}"
+           target="_blank"
+           rel="noopener"
+           >Ver PDF de la propuesta v<span th:text="${version - 1}">1</span></a
+        >
+    </p>
+
     <form th:action="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'}" method="post">
         <input type="hidden" name="seccion" th:value="${seccion}"/>
 
