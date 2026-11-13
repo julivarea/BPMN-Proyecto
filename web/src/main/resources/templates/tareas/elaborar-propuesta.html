@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Elaborar Propuesta')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(seccion)}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+
+    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+
+    <h1>Registrar y elaborar propuesta (Versión <span th:text="${version}">1</span>)</h1>
+
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <h3>Datos de la Solicitud</h3>
+        <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa S.A.</span></p>
+        <p><strong>Curso / Temática:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
+        <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
+        <p><strong>Participantes estimados:</strong> <span th:text="${curso.participantesEstimados}">20</span></p>
+        <p><strong>Fechas preferidas por empresa:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
+    </div>
+
+    <form th:action="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}"/>
+
+        <div style="margin-bottom: 15px;">
+            <label for="programa">Programa sintético del curso:</label><br/>
+            <textarea id="programa" name="programa" rows="6" style="width: 100%;" required th:text="${curso.descripcion}"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="presupuesto">Presupuesto estimado ($):</label><br/>
+            <input type="number" step="0.01" id="presupuesto" name="presupuesto" style="width: 100%;" required/>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="fechasPosibles">Fechas y cronograma propuesto:</label><br/>
+            <textarea id="fechasPosibles" name="fechasPosibles" rows="3" style="width: 100%;" required th:text="${curso.fechasPreferidas}"></textarea>
+        </div>
+
+        <button type="submit" class="boton">Guardar propuesta y completar tarea</button>
+    </form>
+</main>
+</body>
+</html>
