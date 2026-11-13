@@ -18,9 +18,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
-import ar.edu.unrc.gtpn.web.propuestas.GeneradorPdfPropuesta;
-import ar.edu.unrc.gtpn.web.propuestas.Propuesta;
-import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
+import ar.edu.unrc.gtpn.web.solicitudes.GeneradorPdfPropuesta;
+import ar.edu.unrc.gtpn.web.solicitudes.Propuesta;
+import ar.edu.unrc.gtpn.web.solicitudes.PropuestasRepository;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 
 @Controller
@@ -51,6 +51,10 @@ public class ElaborarPropuestaController {
         return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
     }
 
+    private boolean esTareaDePropuesta(String clave) {
+        return "registrarYElaborarPropuesta".equals(clave) || "elaborarPropuesta".equals(clave);
+    }
+
     @GetMapping("/tareas/{id}/elaborar-propuesta")
     public String mostrarFormulario(@PathVariable String id,
                                    @RequestParam(defaultValue = "administracion") String seccion,
@@ -59,7 +63,7 @@ public class ElaborarPropuestaController {
         try {
             Tarea tarea = flowable.tarea(id);
 
-            if (!"elaborarPropuesta".equals(tarea.clave())) {
+            if (!esTareaDePropuesta(tarea.clave())) {
                 redirect.addFlashAttribute("error", "La tarea seleccionada no corresponde a elaborar propuesta.");
                 return "redirect:/" + sec;
             }
@@ -103,7 +107,7 @@ public class ElaborarPropuestaController {
         try {
             Tarea tarea = flowable.tarea(id);
 
-            if (!"elaborarPropuesta".equals(tarea.clave())) {
+            if (!esTareaDePropuesta(tarea.clave())) {
                 throw new AccionNoPermitida("La tarea seleccionada no es de elaborar propuesta.");
             }
 
@@ -114,14 +118,14 @@ public class ElaborarPropuestaController {
             Long cursoId = Long.parseLong(tarea.solicitud());
             int nuevaVersion = propuestasRepository.ultimaVersionDe(cursoId) + 1;
 
-            // 1. Completar en Flowable primero para validar permisos y estado del proceso
+            // 1. Completar en Flowable (valida asignado y permisos antes de guardar)
             bandeja.completar(usuario.getName(), id, Map.of(
                     "presupuesto", presupuesto,
                     "programa", programa,
                     "fechasPosibles", fechasPosibles
             ));
 
-            // 2. Si Flowable completó con éxito, persistir la propuesta en la BD
+            // 2. Persistir en BD institucional
             Propuesta propuesta = new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles, null);
             propuestasRepository.guardar(propuesta);
 
