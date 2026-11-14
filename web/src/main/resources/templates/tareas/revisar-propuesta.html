@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Revisar propuesta')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+    <h1>Revisar propuesta (v<span th:text="${propuesta.version}">1</span>)</h1>
+
+    <div class="detalles">
+        <h2>Datos del curso</h2>
+        <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa</span></p>
+        <p><strong>Curso:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
+        <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
+        <p><strong>Participantes estimados:</strong> <span th:text="${curso.participantesEstimados}">0</span></p>
+        <p><strong>Fechas preferidas:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
+
+        <h2>Propuesta elaborada</h2>
+        <p><strong>Programa:</strong> <span th:text="${propuesta.programa}">Programa</span></p>
+        <p><strong>Presupuesto:</strong> $<span th:text="${propuesta.presupuesto}">0</span></p>
+        <p><strong>Fechas posibles:</strong> <span th:text="${propuesta.fechasPosibles}">Fechas</span></p>
+        <p>
+            <a th:href="@{/tareas/propuestas/{cursoId}/{version}/pdf(cursoId=${curso.id}, version=${propuesta.version})}"
+               target="_blank" rel="noopener" class="boton">Ver PDF de la propuesta</a>
+        </p>
+    </div>
+
+    <form th:action="@{'/tareas/' + ${tarea.id()} + '/revisar-propuesta'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}">
+
+        <h2>Evaluación y decisión</h2>
+
+        <div>
+            <label><input type="radio" name="decision" value="ACEPTADA" required> Aceptar propuesta</label><br>
+            <label><input type="radio" name="decision" value="MODIFICAR"> Solicitar modificaciones</label><br>
+            <label><input type="radio" name="decision" value="RECHAZADA"> Rechazar propuesta</label>
+        </div>
+
+        <br>
+        <div>
+            <label for="observaciones"><strong>Observaciones:</strong></label><br>
+            <textarea id="observaciones" name="observaciones" rows="4" cols="50" placeholder="Escriba las observaciones o motivos (opcional para propuesta aceptada)..."></textarea>
+        </div>
+
+        <br>
+        <button type="submit" class="boton">Enviar decisión</button>
+        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+    </form>
+</main>
+</body>
+</html>
