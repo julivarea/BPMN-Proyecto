@@ -64,9 +64,17 @@
                                 >Archivar solicitud</a
                             >
 
+                            <!-- Pantalla propia para evaluar recursos (#21) -->
+                            <a
+                                th:if="${tarea.clave() == 'evaluarRecursos'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/evaluar-recursos'(seccion=${seccion})}"
+                                class="boton"
+                                >Evaluar recursos</a
+                            >
+
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && bandeja.seCompletaEnLaWeb(tarea)}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >

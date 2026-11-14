@@ -306,10 +306,14 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   (`ServicioAulasSimulado`), guarda `aulaAsignada` y `LiberarAulaDelegate` se la devuelve al
   liberar; la virtual usa `ServicioAulasVirtuales`. La excepción `AULA_NO_DISPONIBLE` queda
   para cuando la reserva deje de ser simulada (el servicio simulado nunca rechaza).
-- [-] **#21–#22, #26–#29 · Sitio web funcional:** evaluar recursos y confeccionar la lista
-  definitiva, tareas docentes, informe y cierre, login y portal de empresas. La estructura,
-  el login del personal, la bandeja y las pantallas de solicitud, propuesta, revisión y
-  archivo ya están cerradas (#5–#7, #12–#15).
+- [x] **#21 · Evaluar recursos:** `EvaluarRecursosController` muestra las tres casillas
+  (`requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento`) y exige al menos una antes
+  de completar la tarea, porque sin recursos el modelo no sigue; lo cubre
+  `EvaluarRecursosControllerTest`.
+- [-] **#22, #26–#29 · Sitio web funcional:** confeccionar la lista definitiva, tareas
+  docentes, informe y cierre, login y portal de empresas. La estructura, el login del
+  personal, la bandeja y las pantallas de solicitud, propuesta, revisión, archivo y recursos
+  ya están cerradas (#5–#7, #12–#15, #21).
 - [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
   con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
   [09-app-materiales.md](09-app-materiales.md) §7.
