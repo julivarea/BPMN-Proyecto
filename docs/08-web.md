@@ -55,6 +55,7 @@ web/
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
+    │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: la propuesta y su decisión
     │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
     │   └── resources/
     │       ├── application.yml            puerto 8081, base de la institución, conexión con Flowable y plazo de respuesta
@@ -74,7 +75,8 @@ web/
     │           │   └── enviada.html       confirmación de la solicitud
     │           └── tareas/
     │               ├── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
-    │               └── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
+    │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
+    │               └── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
@@ -88,7 +90,8 @@ web/
         └── tareas/
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
             ├── BandejaControllerTest.java             la bandeja desde el navegador
-            └── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
+            ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
+            └── RevisarPropuestaControllerTest.java    la pantalla de revisión: formulario y decisión del administrativo
 ```
 
 ## 3. Páginas
@@ -291,6 +294,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y la decisión (aceptar, pedir modificaciones o rechazar) completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
 | `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
@@ -301,12 +305,12 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 
 ## 8. Lo que falta
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrado: #13**, registrar y
-elaborar la propuesta desde la web, con su PDF (`ElaborarPropuestaController`, §3 y §7).
+Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13 y #14**,
+registrar y elaborar la propuesta desde la web (`ElaborarPropuestaController`) y revisarla con su PDF
+(`RevisarPropuestaController`), ambos en §3 y §7.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #14 | Revisar la propuesta: aceptar, rechazar o pedir modificaciones, con su PDF |
 | #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
 | #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |
