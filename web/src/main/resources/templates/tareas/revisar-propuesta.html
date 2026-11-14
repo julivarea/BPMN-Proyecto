@@ -5,6 +5,9 @@
 <header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
+
+    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+
     <h1>Revisar propuesta (v<span th:text="${propuesta.version}">1</span>)</h1>
 
     <div class="detalles">

@@ -188,8 +188,8 @@ pendientes en los Javadocs.
   `ContarCursosEnEjecucionListener`; cuenta las instancias abiertas con `accesoHabilitado = true`
   y escribe `cursosEnEjecucion` para la DMN.
 - **Task listener `create` en `Confeccionar lista definitiva`**:
-  `AsignarAdministrativoConMenosTareasListener`; actualmente deja la tarea disponible
-  para el grupo y no calcula cargas.
+  `AsignarAdministrativoConMenosTareasListener`; asigna la tarea al administrativo con menos
+  tareas pendientes y desempata alfabéticamente por ID de usuario.
 - Expresiones BPMN que fijan `resultado`, versión, recordatorios y cancelación.
 - `resultado=RECHAZADO` al tomar el flujo de rechazo y `SIN_RESPUESTA` al superar dos
   recordatorios.
