@@ -72,9 +72,17 @@
                                 >Evaluar recursos</a
                             >
 
+                            <!-- Pantalla propia para confeccionar la lista definitiva (#22) -->
+                            <a
+                                th:if="${tarea.clave() == 'confeccionarListaDefinitiva'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/confeccionar-lista-definitiva'(seccion=${seccion})}"
+                                class="boton"
+                                >Confeccionar lista</a
+                            >
+
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && bandeja.seCompletaEnLaWeb(tarea)}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >

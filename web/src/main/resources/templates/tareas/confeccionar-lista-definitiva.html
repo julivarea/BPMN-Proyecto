@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Confeccionar lista definitiva')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+
+    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+
+    <h1>Confeccionar lista definitiva</h1>
+
+    <div class="detalles">
+        <h2>Datos de la solicitud</h2>
+        <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa</span></p>
+        <p><strong>Curso:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
+        <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
+        <p><strong>Participantes estimados:</strong> <span th:text="${curso.participantesEstimados}">0</span></p>
+        <p><strong>Fechas preferidas:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
+    </div>
+
+    <form th:action="@{'/tareas/' + ${tarea.id()} + '/confeccionar-lista-definitiva'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}">
+
+        <h2>Lista definitiva de inscriptos</h2>
+        <p>La lista parte de la nómina que envió la empresa. Ajustala si hace falta: un participante por línea.</p>
+        <label for="listaDefinitiva"><strong>Participantes</strong></label><br>
+        <textarea id="listaDefinitiva" name="listaDefinitiva" rows="10" cols="50"
+                  placeholder="Nombre y apellido de cada participante, uno por línea"
+                  th:text="${listaDefinitiva}"></textarea>
+
+        <br><br>
+        <button type="submit" class="boton">Guardar lista definitiva</button>
+        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+    </form>
+</main>
+</body>
+</html>

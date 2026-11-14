@@ -310,10 +310,14 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   (`requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento`) y exige al menos una antes
   de completar la tarea, porque sin recursos el modelo no sigue; lo cubre
   `EvaluarRecursosControllerTest`.
-- [-] **#22, #26–#29 · Sitio web funcional:** confeccionar la lista definitiva, tareas
-  docentes, informe y cierre, login y portal de empresas. La estructura, el login del
-  personal, la bandeja y las pantallas de solicitud, propuesta, revisión, archivo y recursos
-  ya están cerradas (#5–#7, #12–#15, #21).
+- [x] **#22 · Lista definitiva:** `ConfeccionarListaDefinitivaController` parte de la nómina
+  recibida en `participantes`, la deja editar (un participante por línea) y guarda
+  `listaDefinitiva`, rechazando una lista vacía; lo cubre
+  `ConfeccionarListaDefinitivaControllerTest`.
+- [-] **#26–#29 · Sitio web funcional:** tareas docentes, informe y cierre, login y portal de
+  empresas. La estructura, el login del personal, la bandeja y las pantallas de solicitud,
+  propuesta, revisión, archivo, recursos y lista definitiva ya están cerradas
+  (#5–#7, #12–#15, #21, #22).
 - [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
   con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
   [09-app-materiales.md](09-app-materiales.md) §7.

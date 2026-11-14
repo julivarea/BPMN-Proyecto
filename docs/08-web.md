@@ -55,6 +55,7 @@ web/
     │   │       ├── ArchivarSolicitudController.java  pantalla /tareas/{id}/archivar-solicitud: motivo y confirmación
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
+    │   │       ├── ConfeccionarListaDefinitivaController.java  pantalla /tareas/{id}/confeccionar-lista-definitiva: la nómina editable
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
     │   │       ├── EvaluarRecursosController.java    pantalla /tareas/{id}/evaluar-recursos: recursos que necesita el curso
     │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: la propuesta y su decisión
@@ -78,6 +79,7 @@ web/
     │           └── tareas/
     │               ├── archivar-solicitud.html   la solicitud, el motivo del archivo y la confirmación
     │               ├── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
+    │               ├── confeccionar-lista-definitiva.html  datos del curso y la nómina editable de inscriptos
     │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     │               ├── evaluar-recursos.html   datos de la solicitud y las tres casillas de recursos
     │               └── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
@@ -95,6 +97,7 @@ web/
             ├── ArchivarSolicitudControllerTest.java   la pantalla de archivo: formulario y confirmación
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
             ├── BandejaControllerTest.java             la bandeja desde el navegador
+            ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
             ├── EvaluarRecursosControllerTest.java     la pantalla de recursos: formulario, al menos un recurso y confirmación
             └── RevisarPropuestaControllerTest.java    la pantalla de revisión: formulario y decisión del administrativo
@@ -241,8 +244,10 @@ aparece sin botones, con la indicación de la app de materiales. Los botones env
 **Tareas que cargan datos.** El *Completar* de la bandeja no envía variables. Una tarea que necesita datos para que el
 proceso siga tiene su propia pantalla, según la convención de §3 ("Pantallas de tarea"). *Evaluar recursos* la tiene
 (`EvaluarRecursosController`): las tres casillas `requiereAula`, `requiereAulaVirtual` y `requiereEquipamiento`, con la
-regla de que al menos una quede marcada, porque sin recursos el modelo no tiene por dónde seguir. Si una tarea con
-datos se completa sin ellos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
+regla de que al menos una quede marcada, porque sin recursos el modelo no tiene por dónde seguir. *Confeccionar lista
+definitiva* también (`ConfeccionarListaDefinitivaController`): parte de la nómina que la empresa mandó en
+`participantes`, la deja editar en un área de texto y guarda `listaDefinitiva`, un participante por línea. Si una tarea
+con datos se completa sin ellos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
 
 ## 5. Login del personal
 
@@ -303,6 +308,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y la decisión (aceptar, pedir modificaciones o rechazar) completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ConfeccionarListaDefinitivaControllerTest` | La pantalla de la lista definitiva desde el navegador: el asignado ve el formulario con la nómina que envió la empresa, una lista vacía vuelve con el error y no completa la tarea, y una lista con participantes completa pasando `listaDefinitiva` (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ArchivarSolicitudControllerTest` | La pantalla de archivo desde el navegador: el asignado ve la solicitud con el motivo (rechazo o sin respuesta) y confirmar archiva y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
 | `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
@@ -314,13 +320,13 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 
 ## 8. Lo que falta
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15 y #21**,
-registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
-(`RevisarPropuestaController`), archivar la solicitud (`ArchivarSolicitudController`) y evaluar los recursos del curso
-(`EvaluarRecursosController`), todos en §3 y §7.
+Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15, #21 y
+#22**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
+(`RevisarPropuestaController`), archivar la solicitud (`ArchivarSolicitudController`), evaluar los recursos del curso
+(`EvaluarRecursosController`) y confeccionar la lista definitiva (`ConfeccionarListaDefinitivaController`), todos en §3
+y §7.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #22 | Confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
 | #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |
