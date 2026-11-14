@@ -12,13 +12,16 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /** Cliente de la API REST de Flowable: el único lugar de la app que conoce URLs y JSON de Flowable (enunciado 4.2.2). */
-final class FlowableRest {
+class FlowableRest {
 
     // Flowable devuelve 10 resultados por defecto; 500 alcanza para el proyecto.
     private static final int MAXIMO_RESULTADOS = 500;
@@ -58,6 +61,35 @@ final class FlowableRest {
         }
         solicitudes.sort(Comparator.comparing(Solicitud::iniciada));
         return solicitudes;
+    }
+
+    /**
+     * Ejecución de la instancia que está esperando ese mensaje, o vacío si no lo está esperando ahora.
+     * Una lista vacía significa que la comunicación no está habilitada (X-04).
+     */
+    Optional<String> ejecucionEsperando(String instanciaId, String mensaje) {
+        JsonNode respuesta = enviar("GET", "/runtime/executions?processInstanceId=" + instanciaId
+                + "&messageEventSubscriptionName=" + mensaje, null);
+        for (JsonNode ejecucion : respuesta.get("data")) {
+            return Optional.of(ejecucion.get("id").asText());
+        }
+        return Optional.empty();
+    }
+
+    /** Entrega el mensaje a la ejecución y la destraba; las variables quedan en el proceso. */
+    void enviarMensaje(String ejecucionId, String mensaje, Map<String, Object> variables) {
+        List<Map<String, Object>> lista = new ArrayList<>();
+        variables.forEach((nombre, valor) -> {
+            Map<String, Object> variable = new LinkedHashMap<>();
+            variable.put("name", nombre);
+            variable.put("value", valor);
+            lista.add(variable);
+        });
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("action", "messageEventReceived");
+        cuerpo.put("messageName", mensaje);
+        cuerpo.put("variables", lista);
+        enviar("PUT", "/runtime/executions/" + ejecucionId, cuerpo);
     }
 
     /** Hace la llamada y devuelve el JSON de la respuesta. Falla con {@link ErrorDeFlowable} si no es un 2xx. */

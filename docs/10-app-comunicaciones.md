@@ -46,23 +46,27 @@ Con el entorno Docker levantado ([04-entorno-desarrollo.md](04-entorno-desarroll
 ```
 
 Muestra las solicitudes en curso (las instancias activas de `organizarCurso`), identificadas por su `businessKey`.
-*Actualizar* vuelve a consultar. El aspecto es el mismo que el de la app de materiales (FlatLaf, un 25 % más grande; se
-cambia agregando, por ejemplo, `-Dflatlaf.uiScale=1.5` al comando).
+Al elegir una, se habilitan solo los botones de las comunicaciones que esa instancia está esperando en ese momento
+(§6). *Actualizar* vuelve a consultar. El aspecto es el mismo que el de la app de materiales (FlatLaf, un 25 % más
+grande; se cambia agregando, por ejemplo, `-Dflatlaf.uiScale=1.5` al comando).
 
 ## 4. Organización
 
 ```
 app-comunicaciones/src/main/java/ar/edu/unrc/gtpn/comunicaciones/
-├── ComunicacionesApp.java      arranque y aspecto
-├── FlowableRest.java           cliente REST de Flowable (§5)
-├── Solicitud.java              una solicitud en curso: instancia, businessKey y fecha de inicio
-└── VentanaDeSolicitudes.java   lista de solicitudes; acá se agregan las comunicaciones (§6)
+├── ComunicacionesApp.java          arranque y aspecto
+├── Comunicacion.java               las comunicaciones de la negociación: mensaje BPMN y dato que lleva cada una (§6)
+├── ComunicacionesDeLaEmpresa.java  cuáles están habilitadas y el envío del mensaje (§6)
+├── FlowableRest.java               cliente REST de Flowable (§5)
+├── Solicitud.java                  una solicitud en curso: instancia, businessKey y fecha de inicio
+└── VentanaDeSolicitudes.java       lista de solicitudes y botones de comunicación
 ```
 
 ## 5. El cliente REST
 
 `FlowableRest` es el **único lugar de la app que conoce las URLs y el JSON de Flowable**. Expone métodos con nombres
-del dominio (hoy, `solicitudesEnCurso()`) y por dentro todos pasan por `enviar(metodo, ruta, cuerpo)`, que:
+del dominio (`solicitudesEnCurso()`, `ejecucionEsperando(...)` y `enviarMensaje(...)`) y por dentro todos pasan por
+`enviar(metodo, ruta, cuerpo)`, que:
 
 - agrega la autenticación básica con la cuenta técnica;
 - convierte el cuerpo a JSON y la respuesta a un árbol JSON;
@@ -71,16 +75,29 @@ del dominio (hoy, `solicitudesEnCurso()`) y por dentro todos pasan por `enviar(m
 Para una operación nueva se agrega un método que llame a `enviar` con su ruta (`GET`, `POST` o `PUT`) y su test en
 `FlowableRestTest`. Las listas piden hasta 500 resultados, porque Flowable devuelve 10 por defecto.
 
-## 6. Comunicaciones habilitadas y envío (#16, #23)
+## 6. Comunicaciones habilitadas y envío (#16)
 
-- **Qué comunicaciones existen:** un `enum Comunicacion` con el nombre del mensaje y los datos que pide cada una (la
-  tabla de §1).
+`Comunicacion` (enum) es la tabla de §1 en código: cada constante lleva el nombre del mensaje del modelo BPMN, el
+texto del botón y, si corresponde, la variable del proceso y lo que hay que pedirle al usuario. `ComunicacionesDeLaEmpresa`
+usa el cliente para habilitarlas y enviarlas:
+
 - **Cuáles están habilitadas:** una comunicación está habilitada si la instancia tiene una ejecución esperando su
   mensaje: `GET /runtime/executions?processInstanceId={id}&messageEventSubscriptionName={mensaje}`. Lista vacía = no
-  habilitada. La ventana muestra un botón por comunicación y habilita solo esos.
-- **Enviar:** se piden los datos de la comunicación y se entrega el mensaje a esa ejecución con
-  `PUT /runtime/executions/{executionId}` y `{"action": "messageEventReceived", "messageName": …, "variables": […]}`.
-  Después se vuelve a consultar, porque las comunicaciones habilitadas cambian.
+  habilitada. La ventana muestra un botón por comunicación y habilita solo esos; si la instancia no espera ninguno
+  (por ejemplo, mientras la institución elabora la propuesta), todos quedan deshabilitados.
+- **Enviar:** se piden los datos de la comunicación (fecha acordada u observaciones) y se entrega el mensaje a esa
+  ejecución con `PUT /runtime/executions/{executionId}` y
+  `{"action": "messageEventReceived", "messageName": …, "variables": […]}`. Después se vuelve a consultar, porque las
+  comunicaciones habilitadas cambian.
+- **Datos:** la aceptación convierte la fecha acordada al ISO-8601 que espera el timer (`2026-12-01T09:00:00`); se
+  acepta `AAAA-MM-DD`, `DD/MM/AAAA` y los mismos con hora (sin hora se usa 09:00). Las modificaciones envían las
+  observaciones tal cual; el rechazo no lleva datos.
+- **Camino que se destraba:** aceptación → preparación del curso con la fecha programada; rechazo → *Archivar
+  solicitud*; modificaciones → *Revisar propuesta*. Los tres caminos están cubiertos en
+  `proceso/src/test/java/ar/edu/unrc/gtpn/proceso/NegociacionTest.java` (rechazo y modificaciones) y en
+  `CancelacionYCompensacionesTest` (aceptación con `fechaInicioCurso`).
+
+La nómina y la cancelación (#23) se agregan con el mismo mecanismo: una constante más en `Comunicacion`.
 
 Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowable
 ([03-guia-flowable.md](03-guia-flowable.md) §2, "Probar desde la UI de Flowable").
@@ -89,12 +106,15 @@ Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowa
 
 | Test | Qué prueba | Cómo se corre |
 |------|------------|---------------|
-| `FlowableRestTest` | Que el cliente arme bien las llamadas (ruta y autenticación), lea bien las respuestas e informe los errores, contra un servidor HTTP simulado (el del JDK) | `./mvnw -pl app-comunicaciones verify` (también en CI) |
+| `FlowableRestTest` | Que el cliente arme bien las llamadas (ruta, método y autenticación), lea bien las respuestas, entregue los mensajes con sus variables e informe los errores, contra un servidor HTTP simulado (el del JDK) | `./mvnw -pl app-comunicaciones verify` (también en CI) |
+| `ComunicacionesDeLaEmpresaTest` | Las comunicaciones: solo queda habilitada la que la instancia espera, el envío lleva el mensaje y la variable correctos (fecha en ISO, observaciones, rechazo sin datos), no se envía lo no habilitado y la fecha se entiende en sus formatos | `./mvnw -pl app-comunicaciones verify` (también en CI) |
 | `FlowableRestContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las solicitudes en curso | `FLOWABLE_DOCKER=si ./mvnw -pl app-comunicaciones verify`, con el entorno levantado |
 
 ## 8. Lo que falta
 
+**Cerrado: #16**, las comunicaciones de la negociación (aceptación, rechazo y modificaciones), habilitadas solo
+cuando la instancia espera su mensaje (§6).
+
 | Issue | Qué agrega |
 |-------|------------|
-| #16 | Comunicaciones de la negociación: aceptación, rechazo y modificaciones, solo si están habilitadas |
 | #23 | Comunicaciones de la preparación: nómina y cancelación |

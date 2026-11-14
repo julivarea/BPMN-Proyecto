@@ -87,8 +87,8 @@ declarado en `web/pom.xml`.
    instancias, consultas de tareas/instancias/variables, claim y complete.
 2. `web/.../seguridad/AutenticacionContraFlowable.java` valida las credenciales del usuario
    mediante `GET /identity/groups`.
-3. `app-comunicaciones/.../FlowableRest.java` consulta instancias en curso; la interfaz
-   prevista debe enviar mensajes mediante `/runtime/executions`.
+3. `app-comunicaciones/.../FlowableRest.java` consulta instancias en curso, detecta la
+   ejecución que espera cada mensaje y lo entrega con `messageEventReceived`.
 4. `scripts/setup-identidades.sh` usa REST de identidad; `scripts/desplegar-proceso.sh`
    usa el endpoint de deployments.
 5. Los scripts de minería previstos leen historial mediante REST.
@@ -291,24 +291,31 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 - [x] **#11 · Motor de viabilidad:** consultar instancias abiertas de todas las versiones
   con `accesoHabilitado=true`, excluyendo la instancia actual; la prueba cubre el límite de
   cinco cursos.
-- [ ] **#18 · Asignación por carga:** implementar el `TaskListener` que cuente tareas
-  asignadas pendientes y asigne al administrativo con menor carga.
+- [x] **#18 · Asignación por carga:** el `TaskListener` de *Confeccionar lista definitiva*
+  cuenta las tareas activas asignadas a cada miembro de `administracion` y asigna al de
+  menor carga, con desempate alfabético por ID; lo cubre
+  `AsignarAdministrativoConMenosTareasListenerTest`.
 - [ ] **#17 · Persistencia de acceso:** hacer que `HabilitarAccesoEmpresaDelegate`
   cree/reutilice `cuenta_empresa`, vincule el curso y gestione la conexión JDBC.
 - [ ] **#25 · Persistencia final:** hacer que `RegistrarResultadoDelCursoListener`
   actualice estado, programa, presupuesto, fecha e informe.
 - [ ] **#19 · Reserva/liberación:** persistir o simular `aulaAsignada` y definir la
   excepción `AULA_NO_DISPONIBLE`.
-- [-] **#12–#15, #21–#22, #26–#29 · Sitio web funcional:** completar formulario público,
-  propuestas y PDF, archivo, recursos, lista definitiva, tareas docentes, informe, cierre,
-  login y portal de empresas. Ya existe la base de bandeja y seguridad, pero las pantallas
-  de negocio son incompletas.
+- [-] **#21–#22, #26–#29 · Sitio web funcional:** evaluar recursos y confeccionar la lista
+  definitiva, tareas docentes, informe y cierre, login y portal de empresas. La estructura,
+  el login del personal, la bandeja y las pantallas de solicitud, propuesta, revisión y
+  archivo ya están cerradas (#5–#7, #12–#15).
 - [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
-  con sus tests. Actualmente la ventana solo lista y actualiza tareas.
+  con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
+  [09-app-materiales.md](09-app-materiales.md) §7.
 - [ ] **#30–#32 · Consultas históricas:** implementar resultados, duración de las ramas y
   tareas por persona, filtrando tareas canceladas.
-- [-] **#16 y #23 · App de comunicaciones:** implementar enum de comunicaciones, detección
-  de suscripciones y envío de mensajes/variables. Actualmente solo lista instancias.
+- [x] **#16 · App de comunicaciones (negociación):** `Comunicacion` con los mensajes del
+  modelo, detección de la ejecución que espera cada mensaje y envío con sus variables
+  (fecha acordada en ISO, observaciones, rechazo sin datos). Los caminos de aceptación,
+  rechazo y modificaciones los cubre `NegociacionTest`.
+- [ ] **#23 · App de comunicaciones (preparación):** nómina y cancelación, con el mismo
+  mecanismo: una constante más en `Comunicacion`.
 - [ ] **M-01–M-03 · Minería de procesos:** agregar `exportar_history.py`, `analizar.py`,
   CSV, gráfico, recorridos, porcentajes y conclusión.
 - [ ] **Escenario 7 de defensa:** acordar con el profesor qué sucede cuando no hay aula;
