@@ -62,6 +62,7 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
 | HTTP (app comunicaciones) | `java.net.http.HttpClient` + Jackson | El cliente HTTP del JDK alcanza; Jackson para JSON. |
 | BD | **PostgreSQL 15** en Docker | La recomienda el anexo B de la práctica 4. La comparten el servidor y la app de materiales, y los datos persisten en un volumen. |
 | Tests del proceso | JUnit 5 + `@FlowableTest` + H2 en memoria | Corren sin Docker y en CI (práctica 5). |
+| Hash de claves de las empresas | BCrypt (`spring-security-crypto`, ya incluido en la imagen de Flowable) | Es el formato que espera `cuenta_empresa.password_hash`; no hace falta agregar otra dependencia al servidor. |
 | CI | GitHub Actions: `./mvnw verify` en cada push | Avisa enseguida si algo rompe el build o los tests. |
 | Consultas históricas (§4.3) | En la **app de materiales**, con `HistoryService` | El §4.3 lo permite, y esa app ya tiene el motor embebido y acceso a la BD del motor. |
 | Minería de procesos (§4.4) | **Python + PM4Py + pandas**, en `mineria/` con su propio entorno virtual | Son los scripts y la herramienta que provee el enunciado. |
@@ -104,7 +105,7 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 │       │   ├── java/…/proceso/
 │       │   │   ├── viabilidad/       ContarCursosEnEjecucionListener
 │       │   │   ├── notificacion/     NotificarEmpresaDelegate
-│       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate
+│       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate, CuentasDeEmpresa(Jdbc)
 │       │   │   ├── recursos/         ReservarAulaDelegate, LiberarAulaDelegate, LiberarAulaVirtualDelegate
 │       │   │   ├── asignacion/       AsignarAdministrativoConMenosTareasListener
 │       │   │   └── estado/           RegistrarResultadoDelCursoListener

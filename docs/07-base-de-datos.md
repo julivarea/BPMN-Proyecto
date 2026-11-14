@@ -92,10 +92,26 @@ Decisiones del diseño:
 | `empresa` (si no existe) y `curso` | Web, formulario público | Al enviar la solicitud, antes de iniciar la instancia (§4.1.1) |
 | `curso.process_instance_id` | Web | Al iniciar la instancia; el `businessKey` de la instancia es `curso.id` |
 | `propuesta` (nueva versión) | Web | Al completar *Registrar y elaborar propuesta* o *Revisar propuesta* |
-| `cuenta_empresa` | Motor: `HabilitarAccesoEmpresaDelegate` | En *Habilitar acceso a la empresa*, solo si la empresa no tiene cuenta |
+| `cuenta_empresa` | Motor: `HabilitarAccesoEmpresaDelegate` | En *Habilitar acceso a la empresa*, solo si la empresa no tiene cuenta: genera usuario y clave, y guarda el hash BCrypt |
 | `curso.programa`, `curso.presupuesto`, `curso.fecha_inicio`, `curso.informe_resultados`, `curso.estado` | Motor: `RegistrarResultadoDelCursoListener` | Al terminar la instancia, a partir de las variables del proceso |
 
 Las apps de escritorio no escriben en esta base. La app de materiales solo usa la base del motor (§4.2.1).
+
+### Cómo escribe el motor la cuenta
+
+*Habilitar acceso a la empresa* corre dentro del servidor Flowable, que no es una aplicación Spring: el delegate usa
+`CuentasDeEmpresaJdbc`, JDBC plano sobre la BD `institucion`, con las credenciales de `INSTITUCION_DB_*` que ya define
+`docker-compose.yml` (el driver de PostgreSQL viene en la imagen). El acceso se concentra en una interfaz,
+`CuentasDeEmpresa`, para poder probar el delegate con un doble.
+
+- **Consulta:** un join `curso → empresa → cuenta_empresa` por `curso.id` (el `businessKey` de la instancia) devuelve
+  la empresa y su usuario, si ya tiene cuenta.
+- **Primera contratación:** se genera un usuario a partir de la razón social con el id de la empresa al final
+  (`Instituto ABC S.A.`, id 3 → `instituto-abc-s-a-3`, así dos empresas homónimas no chocan) y una clave aleatoria de
+  16 caracteres. Se guarda el hash **BCrypt** en `password_hash` y el envío de las credenciales se simula con un log.
+- **Segunda contratación:** la cuenta se reutiliza; no se escribe nada y no se reenvían credenciales.
+- En los dos casos la variable `accesoHabilitado` queda en `true`, que es lo que cuenta *Cursos en ejecución*.
+
 
 ## 4. Script de creación (propuesta)
 

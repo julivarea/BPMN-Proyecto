@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,8 +22,13 @@ import org.flowable.engine.test.Deployment;
 import org.flowable.engine.test.FlowableTest;
 import org.flowable.job.api.Job;
 import org.flowable.task.api.Task;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import ar.edu.unrc.gtpn.proceso.acceso.CuentasDeEmpresa;
+import ar.edu.unrc.gtpn.proceso.acceso.EmpresaDelCurso;
+import ar.edu.unrc.gtpn.proceso.acceso.HabilitarAccesoEmpresaDelegate;
 
 /**
  * Escenario 6 de la defensa (enunciado 1.3 y 1.4): la cancelación compensa solo los recursos ya gestionados y el
@@ -48,6 +54,23 @@ class CancelacionYCompensacionesTest {
         tareas = motor.getTaskService();
         historial = motor.getHistoryService();
         gestion = motor.getManagementService();
+        // *Habilitar acceso* escribe en la BD de la institución, que acá no existe: se usa un doble.
+        HabilitarAccesoEmpresaDelegate.usarRepositorio(new CuentasDeEmpresa() {
+            @Override
+            public Optional<EmpresaDelCurso> buscarPorCurso(long cursoId) {
+                return Optional.of(new EmpresaDelCurso(1, "Empresa de prueba", null));
+            }
+
+            @Override
+            public void crear(long empresaId, String usuario, String passwordHash) {
+                // el acceso se habilita igual; la cuenta no se guarda en los tests del proceso
+            }
+        });
+    }
+
+    @AfterEach
+    void quitarElRepositorioDePrueba() {
+        HabilitarAccesoEmpresaDelegate.usarRepositorio(null);
     }
 
     @Test
@@ -98,8 +121,9 @@ class CancelacionYCompensacionesTest {
 
     /** Negociación aceptada: la instancia queda dentro de "Preparar curso", con las tres ramas activas. */
     private void llegarAPreparacion() {
+        // El businessKey es el id del curso en la BD de la institución (docs/07-base-de-datos.md §3).
         instancia = runtime.startProcessInstanceByMessage(
-                "solicitudCapacitacion", "curso-de-prueba", Map.of("plazoRespuesta", "P5D")).getId();
+                "solicitudCapacitacion", "7", Map.of("plazoRespuesta", "P5D")).getId();
         completar("registrarYElaborarPropuesta", Map.of());
         // Fecha ya pasada: el timer "fecha programada" vence apenas se crea.
         recibirMensaje("aceptacionPropuesta", Map.of("fechaInicioCurso", "2020-01-01T09:00:00"));

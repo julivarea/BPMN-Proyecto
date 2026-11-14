@@ -176,9 +176,10 @@ En `organizarCurso.bpmn20.xml`:
 | `Liberar aula virtual` | `LiberarAulaVirtualDelegate`, compensación |
 
 `Liberar equipamiento` es una user task de compensación, no una service task.
-Las implementaciones actuales de acceso, reserva/liberación y notificación registran logs o
-variables mínimas; la persistencia real y la simulación del web service están marcadas como
-pendientes en los Javadocs.
+*Habilitar acceso a la empresa* ya persiste la cuenta: `HabilitarAccesoEmpresaDelegate` consulta y crea
+`cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). Reserva/liberación y
+notificación siguen simulando con logs; la simulación del web service y la persistencia del resultado final están
+marcadas como pendientes en los Javadocs.
 
 ### Listeners y expresiones
 
@@ -295,8 +296,10 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   cuenta las tareas activas asignadas a cada miembro de `administracion` y asigna al de
   menor carga, con desempate alfabético por ID; lo cubre
   `AsignarAdministrativoConMenosTareasListenerTest`.
-- [ ] **#17 · Persistencia de acceso:** hacer que `HabilitarAccesoEmpresaDelegate`
-  cree/reutilice `cuenta_empresa`, vincule el curso y gestione la conexión JDBC.
+- [x] **#17 · Persistencia de acceso:** `HabilitarAccesoEmpresaDelegate` busca la empresa del
+  curso (`businessKey`), crea la `cuenta_empresa` con usuario y clave BCrypt la primera vez y
+  la reutiliza después; deja `accesoHabilitado = true`. Lo cubren
+  `HabilitarAccesoEmpresaDelegateTest` y `CuentasDeEmpresaJdbcTest`.
 - [ ] **#25 · Persistencia final:** hacer que `RegistrarResultadoDelCursoListener`
   actualice estado, programa, presupuesto, fecha e informe.
 - [ ] **#19 · Reserva/liberación:** persistir o simular `aulaAsignada` y definir la
