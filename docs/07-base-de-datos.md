@@ -15,7 +15,9 @@ sus tablas las crea la web con Flyway (`web/src/main/resources/db/migration`).
 
 **No guarda:**
 - **El personal de la institución:** entra con su usuario de Flowable (§3.3).
-- **Participantes y recursos asignados:** quedan como variables del proceso (§3.2 lo permite).
+- **Participantes y recursos asignados:** quedan como variables del proceso (§3.2 lo permite). El aula física
+  reservada vive en `aulaAsignada` (la escribe *Reservar aula* y la libera *Liberar aula*); no hay tablas de aulas ni
+  de equipamiento.
 - **El estado "en curso"** (en preparación, confirmado y pendiente de inicio, en desarrollo, en elaboración del
   informe): se deriva de las actividades activas de la instancia en Flowable. Así no hay dos fuentes que se
   desincronicen. La base solo guarda el **resultado final**.

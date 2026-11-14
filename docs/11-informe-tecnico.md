@@ -177,9 +177,9 @@ En `organizarCurso.bpmn20.xml`:
 
 `Liberar equipamiento` es una user task de compensación, no una service task.
 *Habilitar acceso a la empresa* ya persiste la cuenta: `HabilitarAccesoEmpresaDelegate` consulta y crea
-`cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). Reserva/liberación y
-notificación siguen simulando con logs; la simulación del web service y la persistencia del resultado final están
-marcadas como pendientes en los Javadocs.
+`cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). La reserva y la
+liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, con implementación simulada
+(issue #19). Quedan simulados el envío de notificaciones y el registro del resultado final.
 
 ### Listeners y expresiones
 
@@ -302,8 +302,10 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   `HabilitarAccesoEmpresaDelegateTest` y `CuentasDeEmpresaJdbcTest`.
 - [ ] **#25 · Persistencia final:** hacer que `RegistrarResultadoDelCursoListener`
   actualice estado, programa, presupuesto, fecha e informe.
-- [ ] **#19 · Reserva/liberación:** persistir o simular `aulaAsignada` y definir la
-  excepción `AULA_NO_DISPONIBLE`.
+- [x] **#19 · Reserva/liberación:** `ReservarAulaDelegate` simula el web service de aulas
+  (`ServicioAulasSimulado`), guarda `aulaAsignada` y `LiberarAulaDelegate` se la devuelve al
+  liberar; la virtual usa `ServicioAulasVirtuales`. La excepción `AULA_NO_DISPONIBLE` queda
+  para cuando la reserva deje de ser simulada (el servicio simulado nunca rechaza).
 - [-] **#21–#22, #26–#29 · Sitio web funcional:** evaluar recursos y confeccionar la lista
   definitiva, tareas docentes, informe y cierre, login y portal de empresas. La estructura,
   el login del personal, la bandeja y las pantallas de solicitud, propuesta, revisión y

@@ -92,6 +92,11 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
 - **Extensiones del motor que escriben en la BD de la institución:** usan JDBC con `INSTITUCION_DB_*` (ya definidas
   en `docker-compose.yml`). Cada clase recibe sus dependencias por constructor, con un constructor sin argumentos que
   arma las reales (Flowable instancia `flowable:class` con ese). Así en los tests se pasan dobles.
+- **Reserva y liberación de recursos (I-10):** `ReservarAulaDelegate` y `LiberarAulaDelegate` hablan con
+  `ServicioAulas`, cuya implementación por defecto es `ServicioAulasSimulado` (devuelve "Aula 101", "Aula 102", … y
+  deja las llamadas en el log). El aula queda en la variable `aulaAsignada`, que la compensación lee para liberarla.
+  La virtual usa `ServicioAulasVirtuales`. Cambiar la simulación por un web service real no toca el modelo ni los
+  delegates.
 
 ## 5. Organización del código (propuesta)
 
@@ -106,7 +111,7 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 │       │   │   ├── viabilidad/       ContarCursosEnEjecucionListener
 │       │   │   ├── notificacion/     NotificarEmpresaDelegate
 │       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate, CuentasDeEmpresa(Jdbc)
-│       │   │   ├── recursos/         ReservarAulaDelegate, LiberarAulaDelegate, LiberarAulaVirtualDelegate
+│       │   │   ├── recursos/         Reservar/LiberarAula…Delegate, ServicioAulas(Simulado), ServicioAulasVirtuales
 │       │   │   ├── asignacion/       AsignarAdministrativoConMenosTareasListener
 │       │   │   └── estado/           RegistrarResultadoDelCursoListener
 │       │   └── resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
