@@ -52,6 +52,7 @@ web/
     │   │   │   ├── CuitDeOtraEmpresa.java         el CUIT ya existe con otra razón social (05-decisiones)
     │   │   │   └── SolicitudNoRegistrada.java     Flowable no inició la instancia: no se guarda nada
     │   │   └── tareas/                    bandeja de tareas (§4)
+    │   │       ├── ArchivarSolicitudController.java  pantalla /tareas/{id}/archivar-solicitud: motivo y confirmación
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
@@ -74,6 +75,7 @@ web/
     │           │   ├── formulario.html    formulario público de solicitud (§3)
     │           │   └── enviada.html       confirmación de la solicitud
     │           └── tareas/
+    │               ├── archivar-solicitud.html   la solicitud, el motivo del archivo y la confirmación
     │               ├── bandeja.html       bandeja: tareas asignadas y disponibles, con la empresa y el curso (§4)
     │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     │               └── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
@@ -88,6 +90,7 @@ web/
         │   ├── SolicitudesDeCapacitacionTest.java     registro, CUIT, razón social distinta, Flowable caído y descripciones
         │   └── SolicitudControllerTest.java           el formulario desde el navegador: validación, errores y CSRF
         └── tareas/
+            ├── ArchivarSolicitudControllerTest.java   la pantalla de archivo: formulario y confirmación
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
             ├── BandejaControllerTest.java             la bandeja desde el navegador
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
@@ -295,6 +298,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y la decisión (aceptar, pedir modificaciones o rechazar) completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ArchivarSolicitudControllerTest` | La pantalla de archivo desde el navegador: el asignado ve la solicitud con el motivo (rechazo o sin respuesta) y confirmar archiva y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
 | `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ClienteFlowableContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las tareas de `jefe_admin` | `FLOWABLE_DOCKER=si ./mvnw -pl web verify`, con el entorno levantado |
@@ -305,12 +309,12 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 
 ## 8. Lo que falta
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13 y #14**,
-registrar y elaborar la propuesta desde la web (`ElaborarPropuestaController`) y revisarla con su PDF
-(`RevisarPropuestaController`), ambos en §3 y §7.
+Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14 y #15**,
+registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
+(`RevisarPropuestaController`) y archivar la solicitud (`ArchivarSolicitudController`), todos en §3 y §7.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #15, #21, #22 | Archivar solicitud, evaluar recursos y confeccionar la lista definitiva |
+| #21, #22 | Evaluar recursos y confeccionar la lista definitiva |
 | #26, #27 | Tareas docentes, informe y cierre del expediente |
 | #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |

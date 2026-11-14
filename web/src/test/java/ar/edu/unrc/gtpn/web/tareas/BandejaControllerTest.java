@@ -57,7 +57,7 @@ class BandejaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.containsString("42")))
                 .andExpect(content().string(Matchers.containsString("Archivar solicitud")))
-                .andExpect(content().string(Matchers.containsString("/tareas/t1/completar")))
+                .andExpect(content().string(Matchers.containsString("/tareas/t1/archivar-solicitud")))
                 .andExpect(content().string(Matchers.containsString("Se completa desde la app de materiales")))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("/tareas/t2/reclamar"))));
     }

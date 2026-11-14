@@ -56,9 +56,17 @@
                                 >Revisar propuesta</a
                             >
 
+                            <!-- Pantalla propia para archivar solicitud (#15) -->
+                            <a
+                                th:if="${tarea.clave() == 'archivarSolicitud'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/archivar-solicitud'(seccion=${seccion})}"
+                                class="boton"
+                                >Archivar solicitud</a
+                            >
+
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && bandeja.seCompletaEnLaWeb(tarea)}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >
