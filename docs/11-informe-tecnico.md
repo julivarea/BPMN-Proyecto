@@ -336,8 +336,11 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   `preparacionCompleta` (las canceladas quedan afuera) y devuelve
   `DuracionRamas(inscripciones, materiales, recursos, totalInstancias)`; la app de materiales
   lo muestra en la pestaña *Duración de Ramas (§4.3.2)* y lo cubre `ConsultasHistoricasTest`.
-- [ ] **#32 · Tareas completadas por persona:** contar las tareas completadas por cada
-  administrativo y docente, filtrando las canceladas.
+- [x] **#32 · Tareas completadas por persona:** `ConsultasHistoricas.tareasCompletadasPorPersona()`
+  cuenta las tareas terminadas por `assignee`, descartando las que tienen `deleteReason` (canceladas
+  o interrumpidas) y las que no tienen asignado; devuelve `TareaPorPersona(usuario, cantidad)`
+  ordenado por cantidad y usuario. La app de materiales lo muestra en la pestaña
+  *Tareas por Persona (§4.3.3)* y lo cubre `ConsultasHistoricasTest`.
 - [x] **#16 · App de comunicaciones (negociación):** `Comunicacion` con los mensajes del
   modelo, detección de la ejecución que espera cada mensaje y envío con sus variables
   (fecha acordada en ISO, observaciones, rechazo sin datos). Los caminos de aceptación,

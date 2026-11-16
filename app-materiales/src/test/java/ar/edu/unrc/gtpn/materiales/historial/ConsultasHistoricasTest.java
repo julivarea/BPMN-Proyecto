@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import org.flowable.engine.HistoryService;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -17,10 +18,11 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.test.Deployment;
 import org.flowable.engine.test.FlowableTest;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Consultas históricas del §4.3, con un motor en memoria: resultados (#30) y duración de las ramas (#31). */
+/** Consultas históricas del §4.3, con un motor en memoria: resultados (#30), ramas (#31) y personas (#32). */
 @FlowableTest
 class ConsultasHistoricasTest {
 
@@ -131,6 +133,68 @@ class ConsultasHistoricasTest {
     void sinActividadesDevuelvePromediosEnCero() {
         assertEquals(new ConsultasHistoricas.DuracionRamas(Duration.ZERO, Duration.ZERO, Duration.ZERO, 0),
                 ConsultasHistoricas.promediar(List.of()));
+    }
+
+    @Test
+    @Deployment(resources = "procesos/organizar-curso-test.bpmn20.xml")
+    void cuentaLasTareasCompletadasPorUsuarioYOrdena(RuntimeService runtime, TaskService tareas) {
+        completarComo(runtime, tareas, "jefe_admin");
+        completarComo(runtime, tareas, "jefe_admin");
+        completarComo(runtime, tareas, "docente1");
+        completarComo(runtime, tareas, "administrativo2");
+        // Sin assignee no se puede atribuir a ninguna persona.
+        ProcessInstance sinAsignar = runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO);
+        tareas.complete(tareas.createTaskQuery().processInstanceId(sinAsignar.getId()).singleResult().getId());
+        // Una tarea asignada pero todavía pendiente tampoco cuenta.
+        ProcessInstance pendiente = runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO);
+        Task tareaPendiente = tareas.createTaskQuery().processInstanceId(pendiente.getId()).singleResult();
+        tareas.setAssignee(tareaPendiente.getId(), "docente1");
+
+        assertEquals(List.of(
+                new ConsultasHistoricas.TareaPorPersona("jefe_admin", 2),
+                new ConsultasHistoricas.TareaPorPersona("administrativo2", 1),
+                new ConsultasHistoricas.TareaPorPersona("docente1", 1)),
+                consultas.tareasCompletadasPorPersona());
+    }
+
+    @Test
+    @Deployment(resources = PREPARACION)
+    void unaTareaCanceladaNoCuentaComoCompletada(
+            RuntimeService runtime, TaskService tareas, HistoryService historia) {
+        ProcessInstance instancia = iniciarPreparacion(runtime);
+        Task materiales = tareas.createTaskQuery()
+                .processInstanceId(instancia.getId())
+                .taskDefinitionKey("prepararMateriales")
+                .singleResult();
+        tareas.setAssignee(materiales.getId(), "jefe_admin");
+        tareas.complete(materiales.getId());
+
+        recibir(runtime, instancia.getId(), "nominaParticipantes");
+        Task lista = tareas.createTaskQuery()
+                .processInstanceId(instancia.getId())
+                .taskDefinitionKey("confeccionarListaDefinitiva")
+                .singleResult();
+        tareas.setAssignee(lista.getId(), "docente1");
+
+        recibir(runtime, instancia.getId(), "cancelacionCurso");
+
+        HistoricTaskInstance cancelada = historia.createHistoricTaskInstanceQuery()
+                .processInstanceId(instancia.getId())
+                .taskDefinitionKey("confeccionarListaDefinitiva")
+                .singleResult();
+        assertNotNull(cancelada);
+        assertNotNull(cancelada.getDeleteReason());
+        assertTrue(!cancelada.getDeleteReason().isBlank());
+
+        assertEquals(List.of(new ConsultasHistoricas.TareaPorPersona("jefe_admin", 1)),
+                consultas.tareasCompletadasPorPersona());
+    }
+
+    private static void completarComo(RuntimeService runtime, TaskService tareas, String usuario) {
+        ProcessInstance instancia = runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO);
+        Task tarea = tareas.createTaskQuery().processInstanceId(instancia.getId()).singleResult();
+        tareas.setAssignee(tarea.getId(), usuario);
+        tareas.complete(tarea.getId());
     }
 
     private static ProcessInstance iniciarPreparacion(RuntimeService runtime) {

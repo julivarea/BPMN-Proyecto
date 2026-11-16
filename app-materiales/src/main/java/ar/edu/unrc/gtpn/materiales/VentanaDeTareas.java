@@ -28,17 +28,19 @@ import com.formdev.flatlaf.util.UIScale;
 import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas;
 import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.DuracionRamas;
 import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.ResultadoSolicitud;
+import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.TareaPorPersona;
 
 /**
  * Ventana de la app: una pestaña con las tareas "Preparar materiales" del usuario, con acciones de reclamar y
- * completar (#24), otra con los resultados de las solicitudes terminadas (§4.3.1, #30) y otra con la duración promedio
- * de las ramas de la preparación (§4.3.2, #31).
+ * completar (#24), otra con los resultados de las solicitudes terminadas (§4.3.1, #30), otra con la duración promedio
+ * de las ramas de la preparación (§4.3.2, #31) y otra con las tareas completadas por persona (§4.3.3, #32).
  */
 final class VentanaDeTareas extends JFrame {
 
     private static final String[] COLUMNAS = {"Solicitud", "Tarea", "Estado", "Creada"};
     private static final String[] COLUMNAS_RESULTADOS = {"Resultado", "Cantidad", "Porcentaje (%)"};
     private static final String[] COLUMNAS_DURACIONES = {"Rama", "Duración Promedio", "Instancias"};
+    private static final String[] COLUMNAS_PERSONAS = {"Usuario", "Tareas Completadas"};
 
     private final transient ServicioDeTareas servicio;
     private final transient ConsultasHistoricas consultas;
@@ -69,6 +71,14 @@ final class VentanaDeTareas extends JFrame {
     };
     private final JTable tablaDuraciones = new JTable(filasDuraciones);
     private final JLabel sinDuraciones = new JLabel("No hay preparaciones completadas para calcular promedios.");
+    private final DefaultTableModel filasPersonas = new DefaultTableModel(COLUMNAS_PERSONAS, 0) {
+        @Override
+        public boolean isCellEditable(int fila, int columna) {
+            return false;
+        }
+    };
+    private final JTable tablaPersonas = new JTable(filasPersonas);
+    private final JLabel sinPersonas = new JLabel("No hay tareas completadas para mostrar.");
 
     VentanaDeTareas(ServicioDeTareas servicio, ConsultasHistoricas consultas, String usuario, Runnable alCerrar) {
         super(MaterialesApp.TITULO + " · " + usuario);
@@ -80,6 +90,7 @@ final class VentanaDeTareas extends JFrame {
         pestanas.addTab("Mis tareas", panelDeTareas());
         pestanas.addTab("Resultados de Solicitudes (§4.3.1)", panelDeResultados());
         pestanas.addTab("Duración de Ramas (§4.3.2)", panelDeDuraciones());
+        pestanas.addTab("Tareas por Persona (§4.3.3)", panelDePersonas());
         setContentPane(pestanas);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -94,6 +105,7 @@ final class VentanaDeTareas extends JFrame {
         cargarTareas();
         cargarResultados();
         cargarDuraciones();
+        cargarPersonas();
     }
 
     private JPanel panelDeTareas() {
@@ -194,6 +206,36 @@ final class VentanaDeTareas extends JFrame {
         return contenido;
     }
 
+    private JPanel panelDePersonas() {
+        JLabel titulo = new JLabel("Tareas por Persona");
+        titulo.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel subtitulo = new JLabel("Tareas completadas por cada usuario (§4.3.3)");
+        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
+        encabezado.add(titulo, BorderLayout.NORTH);
+        encabezado.add(subtitulo, BorderLayout.SOUTH);
+
+        tablaPersonas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        sinPersonas.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel centro = new JPanel(new BorderLayout(0, 8));
+        centro.add(new JScrollPane(tablaPersonas), BorderLayout.CENTER);
+        centro.add(sinPersonas, BorderLayout.SOUTH);
+
+        JButton actualizar = new JButton("Actualizar");
+        actualizar.putClientProperty("JButton.buttonType", "roundRect");
+        actualizar.addActionListener(evento -> cargarPersonas());
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
+        acciones.add(actualizar);
+
+        JPanel contenido = new JPanel(new BorderLayout(0, 12));
+        int margen = UIScale.scale(20);
+        contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
+        contenido.add(encabezado, BorderLayout.NORTH);
+        contenido.add(centro, BorderLayout.CENTER);
+        contenido.add(acciones, BorderLayout.SOUTH);
+        return contenido;
+    }
+
     private void cargarTareas() {
         SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         String tareaAnterior = tareaSeleccionada() == null ? null : tareaSeleccionada().getId();
@@ -260,6 +302,23 @@ final class VentanaDeTareas extends JFrame {
         }
         sinDuraciones.setText("No hay preparaciones completadas para calcular promedios.");
         sinDuraciones.setVisible(duraciones.totalInstancias() == 0);
+    }
+
+    private void cargarPersonas() {
+        filasPersonas.setRowCount(0);
+        List<TareaPorPersona> personas;
+        try {
+            personas = consultas.tareasCompletadasPorPersona();
+        } catch (RuntimeException error) {
+            sinPersonas.setText("No se pudieron consultar las tareas por persona: " + error.getMessage());
+            sinPersonas.setVisible(true);
+            return;
+        }
+        for (TareaPorPersona persona : personas) {
+            filasPersonas.addRow(new Object[] {persona.usuario(), persona.cantidad()});
+        }
+        sinPersonas.setText("No hay tareas completadas para mostrar.");
+        sinPersonas.setVisible(personas.isEmpty());
     }
 
     /** Formato legible: días y horas cuando dura más de un día; si no, {@code HH:mm:ss}. */

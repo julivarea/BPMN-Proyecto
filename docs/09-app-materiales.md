@@ -12,8 +12,8 @@ pasar por el sitio web:
 2. ve sus tareas "Preparar materiales": las asignadas a él y las que puede reclamar por ser de su grupo;
 3. reclama una disponible y la completa cuando los materiales están listos (#24).
 
-También muestra las consultas sobre el historial de ejecuciones del §4.3: los resultados de las solicitudes (#30) y la
-duración promedio de las ramas de la preparación (#31); las tareas por persona siguen pendientes (#32).
+También muestra las consultas sobre el historial de ejecuciones del §4.3: los resultados de las solicitudes (#30), la
+duración promedio de las ramas de la preparación (#31) y las tareas completadas por persona (#32).
 
 El enunciado pide que use la **API Java** de Flowable, y no la API REST como la web y la app de comunicaciones. Es
 una herramienta interna: corre en la red de la institución y tiene acceso directo a la base del motor.
@@ -88,9 +88,9 @@ app-materiales/src/main/java/ar/edu/unrc/gtpn/materiales/
 ├── MaterialesApp.java       arranque: conecta el motor y pide el login
 ├── MotorFlowable.java       configuración del motor embebido (§3)
 ├── ServicioDeTareas.java    todo lo que la app le pide al motor: login y consultas de tareas
-├── VentanaDeTareas.java     ventana con pestañas: tareas, resultados y duración de ramas
+├── VentanaDeTareas.java     ventana con pestañas: tareas, resultados, duración y personas
 └── historial/
-    └── ConsultasHistoricas.java   consultas del §4.3: resultados (#30) y ramas (#31); personas (#32)
+    └── ConsultasHistoricas.java   consultas del §4.3: resultados (#30), ramas (#31) y personas (#32)
 ```
 
 La interfaz (Swing) no habla con el motor directamente: usa `ServicioDeTareas`. Así las reglas quedan en un solo lugar
@@ -165,15 +165,23 @@ hay datos. Las duraciones se muestran como `HH:mm:ss` o como "N días H h" si su
 y dos instancias que completan las tres ramas dan `totalInstancias = 2`. El cálculo exacto se prueba con actividades
 sintéticas (`promediar(...)`), incluida una instancia incompleta que se descarta.
 
-### Pendientes (#32)
+### Tareas completadas por persona (#32)
 
-Tareas completadas por persona (§4.3.3).
+`tareasCompletadasPorPersona()` consulta las tareas terminadas del proceso
+(`createHistoricTaskInstanceQuery().processDefinitionKey("organizarCurso").finished().list()`). Descarta las tareas
+con `deleteReason` no vacío, que son las que se borraron al cancelar o interrumpir la preparación, y las que no tienen
+`assignee`. Agrupa por `assignee`, cuenta y devuelve `TareaPorPersona(usuario, cantidad)` ordenado por cantidad
+descendente y, a igual cantidad, por usuario.
+
+La ventana tiene la pestaña **Tareas por Persona (§4.3.3)** con las columnas *Usuario* y *Tareas Completadas*, un botón
+*Actualizar* y el aviso "No hay tareas completadas para mostrar." cuando no hay datos.
+
+`ConsultasHistoricasTest` cuenta tareas de `jefe_admin` (2), `administrativo2` (1) y `docente1` (1), descartando una
+tarea sin asignar y otra pendiente, y comprueba que una tarea asignada a `docente1` y borrada al cancelar la
+preparación no se cuente.
 
 ## 9. Estado
 
-**Cerradas: #24, #30 y #31.** La #24 tiene los botones *Reclamar* y *Completar* con validación de asignación, la #30
-la pestaña de resultados de las solicitudes y la #31 la de duración de las ramas, todas con pruebas con H2 en memoria.
-
-| Issue | Qué agrega |
-|-------|------------|
-| #32 | Tareas completadas por persona (§4.3.3) |
+**Cerradas: #24, #30, #31 y #32.** La #24 tiene los botones *Reclamar* y *Completar* con validación de asignación; la
+#30, la #31 y la #32 agregan las tres consultas del §4.3 (resultados, duración de ramas y tareas por persona), todas
+con pruebas con H2 en memoria. No quedan issues pendientes en la app de materiales.

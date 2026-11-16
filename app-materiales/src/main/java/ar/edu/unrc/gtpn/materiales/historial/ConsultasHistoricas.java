@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.history.HistoricProcessInstance;
+import org.flowable.task.api.history.HistoricTaskInstance;
 
 /**
  * Consultas sobre el historial de ejecuciones del proceso (enunciado 4.3).
@@ -150,10 +151,28 @@ public final class ConsultasHistoricas {
         return Duration.between(inicio, fin);
     }
 
-    /** Tareas de usuario completadas por cada administrativo y docente, sin pendientes ni canceladas (4.3.3). */
-    public Map<String, Long> tareasCompletadasPorPersona() {
-        // TODO: Implementación pendiente
-        throw new UnsupportedOperationException("Implementación pendiente");
+    /**
+     * Tareas de usuario completadas por cada administrativo y docente, sin pendientes ni canceladas (4.3.3). Una tarea
+     * con {@code deleteReason} fue borrada (por ejemplo, al cancelar la preparación), así que no cuenta como
+     * completada; las tareas sin {@code assignee} tampoco. Ordena por cantidad descendente y, a igual cantidad, por
+     * usuario.
+     */
+    public List<TareaPorPersona> tareasCompletadasPorPersona() {
+        Map<String, Long> cantidades = historial.createHistoricTaskInstanceQuery()
+                .processDefinitionKey(PROCESO)
+                .finished()
+                .list()
+                .stream()
+                .filter(tarea -> tarea.getDeleteReason() == null || tarea.getDeleteReason().isBlank())
+                .map(HistoricTaskInstance::getAssignee)
+                .filter(usuario -> usuario != null && !usuario.isBlank())
+                .collect(Collectors.groupingBy(usuario -> usuario, Collectors.counting()));
+
+        return cantidades.entrySet().stream()
+                .map(cantidad -> new TareaPorPersona(cantidad.getKey(), cantidad.getValue()))
+                .sorted(Comparator.comparingLong(TareaPorPersona::cantidad).reversed()
+                        .thenComparing(TareaPorPersona::usuario))
+                .toList();
     }
 
     private static String resultadoDe(HistoricProcessInstance instancia) {
@@ -173,5 +192,9 @@ public final class ConsultasHistoricas {
 
     /** Una actividad del historial reducida a lo que necesita el cálculo: instancia, ID, inicio y fin. */
     public record ActividadHistorica(String instancia, String actividad, Instant inicio, Instant fin) {
+    }
+
+    /** Fila del §4.3.3: un usuario y cuántas tareas completó. */
+    public record TareaPorPersona(String usuario, long cantidad) {
     }
 }
