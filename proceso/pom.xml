@@ -65,5 +65,17 @@
     <build>
         <!-- Nombre fijo: docker-compose.yml monta target/proceso.jar dentro del servidor Flowable. -->
         <finalName>proceso</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <INSTITUCION_DB_URL>jdbc:h2:mem:institucion;DB_CLOSE_DELAY=-1;INIT=CREATE TABLE IF NOT EXISTS curso (id BIGINT, estado VARCHAR(20), programa VARCHAR(1000), presupuesto NUMERIC, fecha_inicio TIMESTAMP, informe_resultados VARCHAR(1000))</INSTITUCION_DB_URL>
+                        <INSTITUCION_DB_USER>sa</INSTITUCION_DB_USER>
+                        <INSTITUCION_DB_PASSWORD></INSTITUCION_DB_PASSWORD>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

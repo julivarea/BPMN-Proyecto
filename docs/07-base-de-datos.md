@@ -97,6 +97,10 @@ Decisiones del diseño:
 | `cuenta_empresa` | Motor: `HabilitarAccesoEmpresaDelegate` | En *Habilitar acceso a la empresa*, solo si la empresa no tiene cuenta: genera usuario y clave, y guarda el hash BCrypt |
 | `curso.programa`, `curso.presupuesto`, `curso.fecha_inicio`, `curso.informe_resultados`, `curso.estado` | Motor: `RegistrarResultadoDelCursoListener` | Al terminar la instancia, a partir de las variables del proceso |
 
+El listener de cierre usa `CursoRepositoryJdbc` sobre `INSTITUCION_DB_*` y actualiza el curso por la `businessKey`
+(el `curso.id`). Los datos opcionales se conservan con `COALESCE`, de modo que un camino que no llegó a elaborar una
+propuesta no borra información ya registrada.
+
 Las apps de escritorio no escriben en esta base. La app de materiales solo usa la base del motor (§4.2.1).
 
 ### Cómo escribe el motor la cuenta
