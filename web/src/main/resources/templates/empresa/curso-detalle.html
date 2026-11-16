@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+    <!-- Ficha de un curso de la empresa (W-04, W-05). Durante la preparación se listan las actividades de las ramas
+     paralelas que están en curso. -->
+    <head th:replace="~{fragmentos :: cabecera('Detalle del curso')}"></head>
+    <body>
+        <header th:replace="~{fragmentos :: encabezado('empresas')}"></header>
+        <main>
+            <div th:replace="~{fragmentos :: mensajes}"></div>
+
+            <p><a th:href="@{/empresas}">← Volver a mis cursos</a></p>
+
+            <h1 th:text="${curso.curso().nombre()}">Curso de Java</h1>
+            <p>
+                <strong>Estado:</strong>
+                <span th:text="${curso.estado().etiqueta()}">En preparación</span>
+            </p>
+
+            <div class="detalles">
+                <h2>Datos del curso</h2>
+                <p><strong>Descripción:</strong> <span th:text="${curso.curso().descripcion()}">Descripción</span></p>
+                <p th:if="${curso.curso().programa() != null}">
+                    <strong>Programa:</strong> <span th:text="${curso.curso().programa()}">Programa</span>
+                </p>
+                <p th:if="${curso.curso().presupuesto() != null}">
+                    <strong>Presupuesto:</strong>
+                    <span th:text="${'$ ' + curso.curso().presupuesto()}">1000</span>
+                </p>
+                <p th:if="${curso.curso().fechaInicio() != null}">
+                    <strong>Fecha de inicio:</strong>
+                    <span th:text="${#temporals.format(curso.curso().fechaInicio(), 'dd/MM/yyyy')}">01/01/2026</span>
+                </p>
+                <p>
+                    <strong>Participantes estimados:</strong>
+                    <span th:text="${curso.curso().participantesEstimados()}">0</span>
+                </p>
+                <p>
+                    <strong>Fechas preferidas:</strong>
+                    <span th:text="${curso.curso().fechasPreferidas()}">Fechas</span>
+                </p>
+                <p>
+                    <strong>Solicitado:</strong>
+                    <span th:text="${#temporals.format(curso.curso().creadoEn(), 'dd/MM/yyyy HH:mm')}">01/01/2026 09:00</span>
+                </p>
+            </div>
+
+            <div th:if="${curso.muestraActividades()}">
+                <h2>Actividades en curso</h2>
+                <p>La institución está preparando el curso. Estas son las tareas de las ramas paralelas en este momento:</p>
+                <ul>
+                    <li th:each="actividad : ${curso.actividades()}" th:text="${actividad.nombre()}">Reservar aula</li>
+                </ul>
+            </div>
+
+            <div th:if="${curso.tieneInforme()}">
+                <h2>Informe de resultados</h2>
+                <pre class="informe" th:text="${curso.curso().informeResultados()}">Informe</pre>
+            </div>
+        </main>
+    </body>
+</html>

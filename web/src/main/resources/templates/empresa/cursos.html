@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+    <!-- Portal de empresas (W-04): los cursos de la empresa logueada y el estado de cada uno. -->
+    <head th:replace="~{fragmentos :: cabecera('Mis cursos')}"></head>
+    <body>
+        <header th:replace="~{fragmentos :: encabezado('empresas')}"></header>
+        <main>
+            <div th:replace="~{fragmentos :: mensajes}"></div>
+            <h1>Mis cursos</h1>
+
+            <p th:if="${#lists.isEmpty(cursos)}">
+                Todavía no tenés cursos contratados.
+            </p>
+
+            <div class="tabla-contenedor" th:unless="${#lists.isEmpty(cursos)}">
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Solicitado</th>
+                            <th>Programa o descripción</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="fila : ${cursos}">
+                            <td th:text="${fila.curso().nombre()}">Curso de Java</td>
+                            <td th:text="${#temporals.format(fila.curso().creadoEn(), 'dd/MM/yyyy')}">01/01/2026</td>
+                            <td th:text="${fila.curso().programa() != null ? fila.curso().programa() : fila.curso().descripcion()}">
+                                Programa o descripción
+                            </td>
+                            <td th:text="${fila.estado().etiqueta()}">En preparación</td>
+                            <td class="accion">
+                                <a class="boton" th:href="@{'/empresas/cursos/' + ${fila.curso().id()}}">Ver detalle</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </body>
+</html>

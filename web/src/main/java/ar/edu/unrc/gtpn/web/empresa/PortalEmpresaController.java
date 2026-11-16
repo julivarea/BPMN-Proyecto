@@ -1,0 +1,101 @@
+package ar.edu.unrc.gtpn.web.empresa;
+
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
+
+import ar.edu.unrc.gtpn.web.flowable.Actividad;
+import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresa;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresaRepository;
+
+/**
+ * Portal de empresas (W-04, W-05): cada empresa ve sus cursos, el estado de cada uno y, durante la preparación, las
+ * actividades que la institución está haciendo en paralelo.
+ *
+ * <p>La empresa se resuelve por el usuario autenticado, contra {@code cuenta_empresa} (issue #28). Todas las consultas
+ * filtran por su ID, así que un curso de otra empresa no se puede abrir ni armando la URL a mano (escenario 10).
+ */
+@Controller
+public class PortalEmpresaController {
+
+    private final CuentaEmpresaRepository cuentas;
+    private final CursosDeLaEmpresaRepository cursos;
+    private final ClienteFlowable flowable;
+
+    public PortalEmpresaController(
+            CuentaEmpresaRepository cuentas,
+            CursosDeLaEmpresaRepository cursos,
+            ClienteFlowable flowable) {
+        this.cuentas = cuentas;
+        this.cursos = cursos;
+        this.flowable = flowable;
+    }
+
+    /** Los cursos de la empresa logueada. */
+    @GetMapping("/empresas")
+    public String misCursos(Principal usuario, Model modelo) {
+        CuentaEmpresa cuenta = cuentaDe(usuario);
+        List<CursoConEstado> misCursos = cursos.listar(cuenta.empresaId()).stream()
+                .map(curso -> conEstado(curso, false))
+                .toList();
+        modelo.addAttribute("seccion", "empresas");
+        modelo.addAttribute("cursos", misCursos);
+        return "empresa/cursos";
+    }
+
+    /** Ficha de un curso, con las actividades paralelas si está en preparación. */
+    @GetMapping("/empresas/cursos/{id}")
+    public String detalle(@PathVariable long id, Principal usuario, Model modelo) {
+        CuentaEmpresa cuenta = cuentaDe(usuario);
+        CursoDeLaEmpresa curso = cursos.buscar(cuenta.empresaId(), id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "El curso no pertenece a tu empresa."));
+        modelo.addAttribute("seccion", "empresas");
+        modelo.addAttribute("curso", conEstado(curso, true));
+        return "empresa/curso-detalle";
+    }
+
+    /** La cuenta de la empresa logueada. Un usuario sin cuenta de empresa no entra al portal. */
+    private CuentaEmpresa cuentaDe(Principal usuario) {
+        return cuentas.buscarPorUsuario(usuario.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Tu usuario no tiene una empresa asociada."));
+    }
+
+    /**
+     * Estado del curso y, si se pide y corresponde, las actividades de las ramas paralelas. Con la instancia terminada
+     * no hay actividades activas: vale el estado persistido. Si Flowable no responde, el portal sigue funcionando con
+     * ese mismo estado en lugar de romper el listado.
+     */
+    private CursoConEstado conEstado(CursoDeLaEmpresa curso, boolean conActividades) {
+        EstadoDelCurso persistido = EstadoDelCurso.desdePersistido(curso.estado());
+        if (curso.instanciaId() == null) {
+            return new CursoConEstado(curso, persistido, List.of());
+        }
+
+        List<Actividad> activas;
+        try {
+            activas = flowable.actividadesActivas(curso.instanciaId());
+        } catch (RestClientException error) {
+            return new CursoConEstado(curso, persistido, List.of());
+        }
+
+        if (activas.isEmpty()) {
+            return new CursoConEstado(curso, persistido, List.of());
+        }
+
+        EstadoDelCurso estado = EstadoDelCurso.derivar(activas);
+        List<Actividad> visibles = conActividades && estado == EstadoDelCurso.EN_PREPARACION
+                ? EstadoDelCurso.actividadesDePreparacion(activas)
+                : List.of();
+        return new CursoConEstado(curso, estado, visibles);
+    }
+}

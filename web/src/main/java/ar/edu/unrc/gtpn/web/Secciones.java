@@ -14,7 +14,6 @@ public class Secciones implements WebMvcConfigurer {
     @Override
     public void addViewControllers(ViewControllerRegistry registro) {
         registro.addViewController("/").setViewName("index");
-        registro.addViewController("/empresas").setViewName("empresa/inicio");
         registro.addViewController("/login").setViewName("login");
     }
 }

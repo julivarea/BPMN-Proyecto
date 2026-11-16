@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import ar.edu.unrc.gtpn.web.empresa.CursosDeLaEmpresaRepository;
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.propuestas.GeneradorPdfPropuesta;
 import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
@@ -56,6 +57,9 @@ class SeguridadTest {
 
     @MockitoBean
     private GeneradorPdfPropuesta generadorPdf;
+
+    @MockitoBean
+    private CursosDeLaEmpresaRepository cursosDeLaEmpresa;
 
     @Test
     void sinIngresarLaSeccionDeAdministracionPideLogin() throws Exception {
@@ -97,6 +101,10 @@ class SeguridadTest {
 
     @Test
     void unaEmpresaEntraAEmpresasPeroNoAlPersonal() throws Exception {
+        when(cuentas.buscarPorUsuario("empresa-1"))
+                .thenReturn(Optional.of(new CuentaEmpresa(7, "empresa-1", "hash")));
+        when(cursosDeLaEmpresa.listar(7)).thenReturn(List.of());
+
         mvc.perform(get("/empresas").with(user("empresa-1").roles(SeguridadConfig.EMPRESA)))
                 .andExpect(status().isOk());
         mvc.perform(get("/administracion").with(user("empresa-1").roles(SeguridadConfig.EMPRESA)))

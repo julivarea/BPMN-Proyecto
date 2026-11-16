@@ -37,6 +37,9 @@ public class ClienteFlowable {
             };
     private static final ParameterizedTypeReference<List<Variable>> LISTA_DE_VARIABLES = new ParameterizedTypeReference<>() {
     };
+    private static final ParameterizedTypeReference<Pagina<Actividad>> PAGINA_DE_ACTIVIDADES =
+            new ParameterizedTypeReference<>() {
+            };
 
     private final RestClient http;
 
@@ -150,6 +153,22 @@ public class ClienteFlowable {
         Map<String, Object> porNombre = new HashMap<>();
         variables.forEach(variable -> porNombre.put(variable.name(), variable.value()));
         return porNombre;
+    }
+
+    /**
+     * Actividades de una instancia que todavía no terminaron (W-05, docs/03 §3): las tareas y eventos en curso,
+     * incluidas las de las ramas paralelas. Con la instancia terminada la lista viene vacía.
+     */
+    public List<Actividad> actividadesActivas(String instanciaId) {
+        return http.get()
+                .uri(uri -> uri.path("/history/historic-activity-instances")
+                        .queryParam("processInstanceId", instanciaId)
+                        .queryParam("finished", false)
+                        .queryParam("size", MAXIMO_RESULTADOS)
+                        .build())
+                .retrieve()
+                .body(PAGINA_DE_ACTIVIDADES)
+                .data();
     }
 
     /** Tareas pendientes según el filtro, cada una con la solicitud (businessKey) a la que pertenece. */

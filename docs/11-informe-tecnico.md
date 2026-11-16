@@ -314,10 +314,16 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   recibida en `participantes`, la deja editar (un participante por línea) y guarda
   `listaDefinitiva`, rechazando una lista vacía; lo cubre
   `ConfeccionarListaDefinitivaControllerTest`.
-- [-] **#26–#29 · Sitio web funcional:** tareas docentes, informe y cierre, login y portal de
-  empresas. La estructura, el login del personal, la bandeja y las pantallas de solicitud,
-  propuesta, revisión, archivo, recursos y lista definitiva ya están cerradas
-  (#5–#7, #12–#15, #21, #22).
+- [x] **#26 · Tareas docentes:** `DefinirDocenteController` elige el docente del curso y
+  completa `definirDocente` con `docenteAsignado`; lo cubre `DefinirDocenteControllerTest`.
+- [x] **#27 · Informe y cierre:** `ElaborarInformeController` carga `informeResultados` y
+  `EnviarInformeController` consulta, envía y archiva el expediente; el flujo libera los
+  recursos y termina con `resultado = 'FINALIZADO'`.
+- [x] **#28 · Login de empresas:** `AutenticacionEmpresa` valida contra `cuenta_empresa` con
+  BCrypt y `SeguridadConfig` protege `/empresas/**` con el rol `EMPRESA`.
+- [x] **#29 · Portal de empresas:** `PortalEmpresaController` lista solo los cursos de la
+  empresa logueada, deriva el estado de las actividades en curso de Flowable y muestra las
+  ramas paralelas durante la preparación; lo cubre `PortalEmpresaControllerTest`.
 - [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
   con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
   [09-app-materiales.md](09-app-materiales.md) §7.

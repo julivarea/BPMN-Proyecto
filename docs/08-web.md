@@ -29,10 +29,17 @@ web/
     ├── main/
     │   ├── java/ar/edu/unrc/gtpn/web/
     │   │   ├── WebApplication.java        arranque de Spring Boot; lee las propiedades de application.yml
-    │   │   ├── Secciones.java             URL → página de las secciones sin controller propio: /, /empresas, /login (§3)
+    │   │   ├── Secciones.java             URL → página de las secciones sin controller propio: / y /login (§3)
+    │   │   ├── empresa/                   portal de empresas: sus cursos y su estado (§3, §5)
+    │   │   │   ├── PortalEmpresaController.java       páginas /empresas y /empresas/cursos/{id}: listado y ficha
+    │   │   │   ├── CursosDeLaEmpresaRepository.java   SQL de los cursos, siempre filtrado por empresa
+    │   │   │   ├── CursoDeLaEmpresa.java              un curso con los datos que ve la empresa
+    │   │   │   ├── CursoConEstado.java                el curso con su estado y las actividades en curso
+    │   │   │   └── EstadoDelCurso.java                estados del portal y su derivación de Flowable
     │   │   ├── flowable/                  conexión con Flowable (§4)
     │   │   │   ├── ClienteFlowable.java       único lugar que llama a la API REST de Flowable
     │   │   │   ├── FlowableProperties.java    URL y cuenta técnica (propiedades flowable.* de application.yml)
+    │   │   │   ├── Actividad.java             una actividad en curso: ID, nombre y tipo BPMN
     │   │   │   └── Tarea.java                 una tarea pendiente: nombre, clave, asignado, fecha y solicitud
     │   │   ├── propuestas/                propuesta económica del curso y su PDF (§3, §6)
     │   │   │   ├── Propuesta.java             una versión de la propuesta: programa, presupuesto y fechas
@@ -75,7 +82,8 @@ web/
     │           ├── login.html             login del personal (§5)
     │           ├── error.html             página de error (404, 403, 500…)
     │           ├── empresa/
-    │           │   └── inicio.html        sección de empresas (se completa en #28 y #29)
+    │           │   ├── cursos.html         cursos de la empresa con fecha de solicitud y estado
+    │           │   └── curso-detalle.html  ficha del curso y actividades paralelas de la preparación
     │           ├── solicitudes/
     │           │   ├── formulario.html    formulario público de solicitud (§3)
     │           │   └── enviada.html       confirmación de la solicitud
@@ -90,6 +98,8 @@ web/
     │               ├── elaborar-informe.html    datos del curso y el informe de resultados editable
     │               └── enviar-informe.html      datos del curso, el informe y la confirmación del archivo
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
+        ├── empresa/
+        │   └── PortalEmpresaControllerTest.java          aislamiento por empresa y estado derivado de Flowable
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
         │   └── ClienteFlowableContraDockerTest.java   el cliente contra el Flowable real (solo con FLOWABLE_DOCKER=si)
@@ -115,8 +125,8 @@ web/
 
 **Secciones.** El sitio tiene cuatro: pública (`/`), empresas (`/empresas`), administración (`/administracion`) y
 docentes (`/docentes`). Administración y Docentes muestran la bandeja de tareas del usuario (§4), que es lo que hace
-el personal en el sitio. Las otras dos las asocia `Secciones.java` con su página; cuando una tenga su propio
-controller, se saca su línea de ahí.
+el personal en el sitio. Empresas muestra el portal con sus cursos (`PortalEmpresaController`, §5). Solo `/` y
+`/login` quedan como vistas directas en `Secciones.java`; una sección con su propio controller se saca de ahí.
 
 **Fragmentos.** Toda página arranca así, con las partes comunes de `fragmentos.html`:
 
@@ -204,6 +214,7 @@ falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HT
 | `reclamar(tareaId, usuario)` | `POST /runtime/tasks/{id}` (`claim`) | Asignarse una tarea de grupo |
 | `completar(tareaId, variables)` | `POST /runtime/tasks/{id}` (`complete`) | Completar una tarea con sus datos |
 | `variables(instanciaId)` | `GET /runtime/process-instances/{id}/variables` | Leer los datos de una instancia |
+| `actividadesActivas(instanciaId)` | `GET /history/historic-activity-instances?processInstanceId=…&finished=false` | Actividades en curso, incluidas las de las ramas paralelas (§3, portal de empresas) |
 
 - **Variables:** se pasan y se reciben como `Map<String, Object>`. Flowable deduce el tipo del valor JSON (texto,
   número o booleano). Las fechas van como texto ISO-8601 (`2026-12-01T09:00:00`). Los nombres son los de la guía 06
@@ -212,6 +223,24 @@ falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HT
 - **Errores:** si Flowable responde con un error (4xx o 5xx), el cliente lanza `RestClientResponseException`. El
   controller la atrapa cuando el usuario puede hacer algo al respecto y muestra un `error`; si no, termina en la página
   de error.
+
+### El portal de empresas
+
+`empresa/PortalEmpresaController` resuelve la empresa por el usuario logueado (`CuentaEmpresaRepository`) y consulta
+solo sus cursos. El estado (`EstadoDelCurso`) sale de `curso.estado` cuando la instancia terminó; mientras sigue
+activa se deriva de `actividadesActivas`:
+
+| Actividades en curso | Estado que ve la empresa |
+|----------------------|--------------------------|
+| Subproceso *Preparar curso* y sus ramas | En preparación |
+| *Enviar confirmación*, *Definir docente* o la espera de la fecha | Confirmado y pendiente de inicio |
+| *Desarrollar curso* | En desarrollo |
+| *Elaborar informe de resultados* o el cierre | En elaboración del informe |
+| Ninguna conocida | En negociación |
+| Subproceso de *Cancelación* | Cancelado |
+
+En el detalle de un curso en preparación se listan las tareas y esperas de las ramas paralelas, sin compuertas ni el
+subproceso contenedor. Si Flowable no responde, el portal muestra el estado persistido en vez de romper el listado.
 
 ### Credenciales
 
@@ -282,10 +311,11 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 |------|----------|
 | `/administracion/**` | Rol `ADMINISTRACION` |
 | `/docentes/**` | Rol `DOCENTES` |
+| `/empresas`, `/empresas/**` | Rol `EMPRESA` (la cuenta se valida contra `cuenta_empresa`) |
 | `/tareas/{id}/elaborar-informe` | Rol `DOCENTES` (lo hace el jefe docente) |
 | `/tareas/{id}/enviar-informe` | Rol `ADMINISTRACION` (lo hace el jefe administrativo) |
 | `/tareas/**` (reclamar y completar) | Rol `ADMINISTRACION` o `DOCENTES` |
-| Todo lo demás | Nada (la sección de empresas tendrá su propio login, #28) |
+| Todo lo demás | Nada (páginas públicas) |
 
 - Sin sesión iniciada, una sección protegida redirige a `/login`, y después del login vuelve a la página pedida.
 - Con sesión pero sin el rol, muestra la página de error con un 403 ("Tu usuario no tiene acceso a esta sección").
@@ -317,6 +347,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `ClienteFlowableTest` | Que cada método del cliente arme bien la llamada y lea bien la respuesta, contra un servidor HTTP simulado (`MockRestServiceServer`) | `./mvnw -pl web verify` (también en CI) |
 | `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
+| `PortalEmpresaControllerTest` | El portal de empresas: una empresa recibe 404 al abrir el curso de otra (escenario 10), el detalle en preparación muestra las actividades de las ramas paralelas y el estado se deriva de Flowable o del persistido (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
@@ -336,12 +367,14 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 ## 8. Lo que falta
 
 Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15, #21,
-#22 y #26**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
+#22, #26, #27, #28 y #29**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
 (`RevisarPropuestaController`), archivar la solicitud (`ArchivarSolicitudController`), evaluar los recursos del curso
-(`EvaluarRecursosController`) y confeccionar la lista definitiva (`ConfeccionarListaDefinitivaController`), todos en §3
-y §7.
+(`EvaluarRecursosController`), confeccionar la lista definitiva (`ConfeccionarListaDefinitivaController`), definir el
+docente (`DefinirDocenteController`), elaborar y enviar el informe (`ElaborarInformeController`,
+`EnviarInformeController`), el login de empresas (`AutenticacionEmpresa`) y el portal con sus cursos
+(`PortalEmpresaController`), todos en §3 y §7.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #27 | Informe y cierre del expediente |
-| #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |
+| #30–#32 | Consultas históricas: resultados, duración de las ramas y tareas por persona |
+| #40–#42 | Pantallas opcionales de aula virtual, equipamiento y liberación |

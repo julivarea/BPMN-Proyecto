@@ -166,4 +166,23 @@ class ClienteFlowableTest {
 
         assertEquals(Map.of("resultado", "EN_CURSO", "versionPropuesta", 1), cliente.variables("instancia-1"));
     }
+
+    @Test
+    void actividadesActivasConsultaLasNoFinalizadasDeLaInstancia() {
+        servidor.expect(requestTo(URL
+                        + "/history/historic-activity-instances?processInstanceId=instancia-1&finished=false&size=500"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("""
+                        {"data": [{"activityId": "reservarAula", "activityName": "Reservar aula",
+                                   "activityType": "serviceTask", "finished": false},
+                                  {"activityId": "prepararMateriales", "activityName": "Preparar materiales",
+                                   "activityType": "userTask", "finished": false}],
+                         "total": 2}""", MediaType.APPLICATION_JSON));
+
+        assertEquals(List.of(
+                        new Actividad("reservarAula", "Reservar aula", "serviceTask"),
+                        new Actividad("prepararMateriales", "Preparar materiales", "userTask")),
+                cliente.actividadesActivas("instancia-1"));
+        servidor.verify();
+    }
 }
