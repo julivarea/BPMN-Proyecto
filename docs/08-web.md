@@ -60,6 +60,8 @@ web/
     │   │       ├── EvaluarRecursosController.java    pantalla /tareas/{id}/evaluar-recursos: recursos que necesita el curso
     │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: la propuesta y su decisión
     │   │       ├── DefinirDocenteController.java     pantalla /tareas/{id}/definir-docente: elige el docente del curso
+    │   │       ├── ElaborarInformeController.java    pantalla /tareas/{id}/elaborar-informe: el informe de resultados
+    │   │       ├── EnviarInformeController.java      pantalla /tareas/{id}/enviar-informe: consulta, envía y archiva
     │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
     │   └── resources/
     │       ├── application.yml            puerto 8081, base de la institución, conexión con Flowable y plazo de respuesta
@@ -84,7 +86,9 @@ web/
     │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     │               ├── evaluar-recursos.html   datos de la solicitud y las tres casillas de recursos
     │               ├── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
-    │               └── definir-docente.html     selección del docente que desarrollará el curso
+    │               ├── definir-docente.html     selección del docente que desarrollará el curso
+    │               ├── elaborar-informe.html    datos del curso y el informe de resultados editable
+    │               └── enviar-informe.html      datos del curso, el informe y la confirmación del archivo
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
@@ -102,7 +106,9 @@ web/
             ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
             ├── EvaluarRecursosControllerTest.java     la pantalla de recursos: formulario, al menos un recurso y confirmación
-            └── RevisarPropuestaControllerTest.java    la pantalla de revisión: formulario y decisión del administrativo
+            ├── RevisarPropuestaControllerTest.java    la pantalla de revisión: formulario y decisión del administrativo
+            ├── ElaborarInformeControllerTest.java     el informe de resultados: formulario, texto obligatorio y guardado
+            └── EnviarInformeControllerTest.java       el envío y archivo: informe, curso, confirmación y permisos
 ```
 
 ## 3. Páginas
@@ -248,8 +254,12 @@ proceso siga tiene su propia pantalla, según la convención de §3 ("Pantallas 
 (`EvaluarRecursosController`): las tres casillas `requiereAula`, `requiereAulaVirtual` y `requiereEquipamiento`, con la
 regla de que al menos una quede marcada, porque sin recursos el modelo no tiene por dónde seguir. *Confeccionar lista
 definitiva* también (`ConfeccionarListaDefinitivaController`): parte de la nómina que la empresa mandó en
-`participantes`, la deja editar en un área de texto y guarda `listaDefinitiva`, un participante por línea. Si una tarea
-con datos se completa sin ellos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
+`participantes`, la deja editar en un área de texto y guarda `listaDefinitiva`, un participante por línea. *Elaborar
+informe de resultados* (`ElaborarInformeController`) es el soporte opcional de W-11: el jefe docente carga
+`informeResultados` desde el sitio. *Enviar informe y archivar expediente* (`EnviarInformeController`) muestra ese
+informe y los datos del curso al jefe administrativo; al confirmar completa la tarea sin variables, porque el informe
+ya está en el proceso, y el flujo libera los recursos y termina con `resultado = 'FINALIZADO'`. Si una tarea con datos
+se completa sin ellos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
 
 ## 5. Login del personal
 
@@ -272,6 +282,8 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 |------|----------|
 | `/administracion/**` | Rol `ADMINISTRACION` |
 | `/docentes/**` | Rol `DOCENTES` |
+| `/tareas/{id}/elaborar-informe` | Rol `DOCENTES` (lo hace el jefe docente) |
+| `/tareas/{id}/enviar-informe` | Rol `ADMINISTRACION` (lo hace el jefe administrativo) |
 | `/tareas/**` (reclamar y completar) | Rol `ADMINISTRACION` o `DOCENTES` |
 | Todo lo demás | Nada (la sección de empresas tendrá su propio login, #28) |
 

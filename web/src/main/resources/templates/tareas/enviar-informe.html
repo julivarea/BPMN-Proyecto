@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Enviar informe y archivar expediente')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+
+    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+
+    <h1>Enviar informe y archivar expediente</h1>
+
+    <div class="detalles">
+        <h2>Datos del curso</h2>
+        <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa</span></p>
+        <p><strong>Curso:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
+        <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
+        <p><strong>Participantes estimados:</strong> <span th:text="${curso.participantesEstimados}">0</span></p>
+        <p><strong>Fechas preferidas:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
+    </div>
+
+    <h2>Informe de resultados</h2>
+    <p>Este es el informe que elaboró docencia. Al confirmar, se envía a la empresa y se archiva el expediente.</p>
+    <pre class="informe" th:text="${informeResultados}">Sin informe registrado</pre>
+
+    <form th:action="@{'/tareas/' + ${tarea.id()} + '/enviar-informe'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}">
+
+        <p>¿Confirma que desea enviar el informe a la empresa y dar por finalizado el curso?</p>
+
+        <button type="submit" class="boton">Enviar informe a la empresa y archivar expediente</button>
+        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+    </form>
+</main>
+</body>
+</html>

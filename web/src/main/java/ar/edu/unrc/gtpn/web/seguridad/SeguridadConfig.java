@@ -18,6 +18,9 @@ public class SeguridadConfig {
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/administracion/**").hasRole(ADMINISTRACION)
                         .requestMatchers("/docentes/**").hasRole(DOCENTES)
+                        // Las pantallas de informe tienen un rol esperado: docencia lo elabora y administración lo envía.
+                        .requestMatchers("/tareas/*/elaborar-informe").hasRole(DOCENTES)
+                        .requestMatchers("/tareas/*/enviar-informe").hasRole(ADMINISTRACION)
                         .requestMatchers("/tareas/**").hasAnyRole(ADMINISTRACION, DOCENTES)
                         // La sección de empresas se protege con su propio login (issue #28).
                         .anyRequest().permitAll())

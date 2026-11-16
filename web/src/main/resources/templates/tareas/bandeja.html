@@ -89,9 +89,25 @@
                                 >Definir docente</a
                             >
 
+                            <!-- Pantalla para elaborar el informe de resultados (#27) -->
+                            <a
+                                th:if="${tarea.clave() == 'elaborarInformeResultados'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/elaborar-informe'(seccion=${seccion})}"
+                                class="boton"
+                                >Elaborar informe</a
+                            >
+
+                            <!-- Pantalla para enviar el informe y archivar el expediente (#27) -->
+                            <a
+                                th:if="${tarea.clave() == 'enviarInformeYArchivarExpediente'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/enviar-informe'(seccion=${seccion})}"
+                                class="boton"
+                                >Enviar informe y archivar</a
+                            >
+
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && tarea.clave() != 'elaborarInformeResultados' && tarea.clave() != 'enviarInformeYArchivarExpediente' && bandeja.seCompletaEnLaWeb(tarea)}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >

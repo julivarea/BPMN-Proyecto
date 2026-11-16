@@ -104,6 +104,22 @@ class BandejaControllerTest {
     }
 
     @Test
+    void laBandejaEnlazaLasPantallasDeInforme() throws Exception {
+        when(flowable.tareasAsignadas("jefe_admin")).thenReturn(List.of(
+                tarea("t4", "Enviar informe y archivar expediente", "enviarInformeYArchivarExpediente", "jefe_admin"),
+                tarea("t5", "Elaborar informe de resultados", "elaborarInformeResultados", "jefe_admin")));
+
+        mvc.perform(get("/administracion").with(user("jefe_admin").roles("ADMINISTRACION")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(
+                        Matchers.containsString("/tareas/t4/enviar-informe?seccion=administracion")))
+                .andExpect(content().string(
+                        Matchers.containsString("/tareas/t5/elaborar-informe?seccion=administracion")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("/tareas/t4/completar"))))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("/tareas/t5/completar"))));
+    }
+
+    @Test
     void laSeccionDeDocentesMuestraLaBandejaDelDocente() throws Exception {
         when(flowable.tareasAsignadas("docente1"))
                 .thenReturn(List.of(tarea("t3", "Desarrollar curso", "desarrollarCurso", "docente1")));

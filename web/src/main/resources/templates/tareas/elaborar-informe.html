@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Elaborar informe de resultados')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+
+    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+
+    <h1>Elaborar informe de resultados</h1>
+
+    <div class="detalles">
+        <h2>Datos del curso</h2>
+        <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa</span></p>
+        <p><strong>Curso:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
+        <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
+        <p><strong>Participantes estimados:</strong> <span th:text="${curso.participantesEstimados}">0</span></p>
+        <p><strong>Fechas preferidas:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
+    </div>
+
+    <form th:action="@{'/tareas/' + ${tarea.id()} + '/elaborar-informe'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}">
+
+        <h2>Informe de resultados</h2>
+        <p>El texto queda disponible para que el área administrativa lo envíe a la empresa y archive el expediente.</p>
+        <label for="informeResultados"><strong>Informe</strong></label><br>
+        <textarea id="informeResultados" name="informeResultados" rows="12" cols="60"
+                  placeholder="Resultados del curso, evaluaciones y observaciones"
+                  th:text="${informeResultados}"></textarea>
+
+        <br><br>
+        <button type="submit" class="boton">Guardar informe de resultados</button>
+        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+    </form>
+</main>
+</body>
+</html>

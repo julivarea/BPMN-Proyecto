@@ -126,6 +126,18 @@ main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem; }
 
 select { padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5rem; background: #fff; font: inherit; }
 
+/* Informe de resultados: conserva los saltos de línea y no desborda la pantalla. */
+.informe {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #cfd5df;
+    border-radius: 0.5rem;
+    background: #fff;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+}
+
 @media (max-width: 40rem) {
     main { padding: 1.25rem 0.75rem; }
     .tabla { min-width: 36rem; }
