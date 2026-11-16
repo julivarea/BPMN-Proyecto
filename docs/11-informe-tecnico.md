@@ -331,8 +331,13 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   agrupa las instancias terminadas por la variable `resultado` y calcula cantidad y
   porcentaje; la app de materiales lo muestra en la pestaña *Resultados de Solicitudes
   (§4.3.1)* y lo cubre `ConsultasHistoricasTest`.
-- [ ] **#31–#32 · Consultas históricas:** duración promedio de las ramas y tareas por
-  persona, filtrando tareas canceladas.
+- [x] **#31 · Duración promedio de las ramas:** `ConsultasHistoricas.duracionPromedioDeLasRamas()`
+  mide inscripciones, materiales y recursos solo sobre las instancias que completaron
+  `preparacionCompleta` (las canceladas quedan afuera) y devuelve
+  `DuracionRamas(inscripciones, materiales, recursos, totalInstancias)`; la app de materiales
+  lo muestra en la pestaña *Duración de Ramas (§4.3.2)* y lo cubre `ConsultasHistoricasTest`.
+- [ ] **#32 · Tareas completadas por persona:** contar las tareas completadas por cada
+  administrativo y docente, filtrando las canceladas.
 - [x] **#16 · App de comunicaciones (negociación):** `Comunicacion` con los mensajes del
   modelo, detección de la ejecución que espera cada mensaje y envío con sus variables
   (fecha acordada en ISO, observaciones, rechazo sin datos). Los caminos de aceptación,

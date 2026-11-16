@@ -1,13 +1,18 @@
 package ar.edu.unrc.gtpn.materiales.historial;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
+import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.test.Deployment;
 import org.flowable.engine.test.FlowableTest;
@@ -15,9 +20,11 @@ import org.flowable.task.api.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Resultados de las solicitudes (§4.3.1), con un motor en memoria (issue #30). */
+/** Consultas históricas del §4.3, con un motor en memoria: resultados (#30) y duración de las ramas (#31). */
 @FlowableTest
 class ConsultasHistoricasTest {
+
+    private static final String PREPARACION = "procesos/organizar-curso-preparacion-test.bpmn20.xml";
 
     private ConsultasHistoricas consultas;
 
@@ -66,5 +73,101 @@ class ConsultasHistoricasTest {
         ProcessInstance instancia = runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO, variables);
         Task tarea = tareas.createTaskQuery().processInstanceId(instancia.getId()).singleResult();
         tareas.complete(tarea.getId());
+    }
+
+    @Test
+    @Deployment(resources = PREPARACION)
+    void unaInstanciaCanceladaDuranteLaPreparacionNoEntraEnElPromedio(RuntimeService runtime, TaskService tareas) {
+        ProcessInstance instancia = iniciarPreparacion(runtime);
+        completar(tareas, instancia.getId(), "prepararMateriales");
+        recibir(runtime, instancia.getId(), "cancelacionCurso");
+
+        ConsultasHistoricas.DuracionRamas duraciones = consultas.duracionPromedioDeLasRamas();
+
+        assertEquals(new ConsultasHistoricas.DuracionRamas(
+                Duration.ZERO, Duration.ZERO, Duration.ZERO, 0), duraciones);
+    }
+
+    @Test
+    @Deployment(resources = PREPARACION)
+    void promediaLasRamasDeLasInstanciasQueCompletaronLaPreparacion(RuntimeService runtime, TaskService tareas) {
+        completarPreparacion(runtime, tareas);
+        completarPreparacion(runtime, tareas);
+
+        ConsultasHistoricas.DuracionRamas duraciones = consultas.duracionPromedioDeLasRamas();
+
+        assertEquals(2, duraciones.totalInstancias());
+        assertTrue(!duraciones.inscripciones().isNegative());
+        assertTrue(!duraciones.materiales().isNegative());
+        assertTrue(!duraciones.recursos().isNegative());
+    }
+
+    @Test
+    void promediaLasTresRamasYDescartaLasInstanciasIncompletas() {
+        List<ConsultasHistoricas.ActividadHistorica> actividades = List.of(
+                actividad("a", "nominaRecibida", "2026-01-01T08:00:00Z", "2026-01-01T08:00:00Z"),
+                actividad("a", "confeccionarListaDefinitiva", "2026-01-01T08:00:00Z", "2026-01-01T10:00:00Z"),
+                actividad("a", "prepararMateriales", "2026-01-01T08:00:00Z", "2026-01-01T09:00:00Z"),
+                actividad("a", "evaluarRecursos", "2026-01-01T08:00:00Z", "2026-01-01T08:30:00Z"),
+                actividad("a", "reservarAula", "2026-01-01T08:30:00Z", "2026-01-01T11:00:00Z"),
+                actividad("b", "nominaRecibida", "2026-01-02T08:00:00Z", "2026-01-02T08:00:00Z"),
+                actividad("b", "confeccionarListaDefinitiva", "2026-01-02T08:00:00Z", "2026-01-02T09:00:00Z"),
+                actividad("b", "prepararMateriales", "2026-01-02T08:00:00Z", "2026-01-02T10:00:00Z"),
+                actividad("b", "evaluarRecursos", "2026-01-02T08:00:00Z", "2026-01-02T08:00:00Z"),
+                actividad("b", "solicitarAulaVirtual", "2026-01-02T08:00:00Z", "2026-01-02T08:45:00Z"),
+                actividad("b", "contratarEquipamiento", "2026-01-02T08:00:00Z", "2026-01-02T09:15:00Z"),
+                // A la instancia "c" le falta el fin de inscripciones: se descarta.
+                actividad("c", "nominaRecibida", "2026-01-03T08:00:00Z", "2026-01-03T08:00:00Z"),
+                actividad("c", "prepararMateriales", "2026-01-03T08:00:00Z", "2026-01-03T09:00:00Z"),
+                actividad("c", "evaluarRecursos", "2026-01-03T08:00:00Z", "2026-01-03T09:00:00Z"),
+                actividad("c", "reservarAula", "2026-01-03T09:00:00Z", "2026-01-03T10:00:00Z"));
+
+        assertEquals(new ConsultasHistoricas.DuracionRamas(
+                        Duration.ofMinutes(90), Duration.ofMinutes(90), Duration.ofSeconds(7650), 2),
+                ConsultasHistoricas.promediar(actividades));
+    }
+
+    @Test
+    void sinActividadesDevuelvePromediosEnCero() {
+        assertEquals(new ConsultasHistoricas.DuracionRamas(Duration.ZERO, Duration.ZERO, Duration.ZERO, 0),
+                ConsultasHistoricas.promediar(List.of()));
+    }
+
+    private static ProcessInstance iniciarPreparacion(RuntimeService runtime) {
+        return runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO,
+                Map.of("requiereAula", true, "requiereAulaVirtual", false, "requiereEquipamiento", false));
+    }
+
+    private static void completarPreparacion(RuntimeService runtime, TaskService tareas) {
+        ProcessInstance instancia = iniciarPreparacion(runtime);
+        recibir(runtime, instancia.getId(), "nominaParticipantes");
+        completar(tareas, instancia.getId(), "confeccionarListaDefinitiva");
+        completar(tareas, instancia.getId(), "prepararMateriales");
+        completar(tareas, instancia.getId(), "evaluarRecursos");
+        completar(tareas, instancia.getId(), "reservarAula");
+    }
+
+    private static void recibir(RuntimeService runtime, String instancia, String mensaje) {
+        Execution suscripta = runtime.createExecutionQuery()
+                .processInstanceId(instancia)
+                .messageEventSubscriptionName(mensaje)
+                .singleResult();
+        assertNotNull(suscripta, "La instancia no espera el mensaje " + mensaje);
+        runtime.messageEventReceived(mensaje, suscripta.getId());
+    }
+
+    private static void completar(TaskService tareas, String instancia, String actividad) {
+        Task tarea = tareas.createTaskQuery()
+                .processInstanceId(instancia)
+                .taskDefinitionKey(actividad)
+                .singleResult();
+        assertNotNull(tarea, "No hay tarea " + actividad + " en la instancia");
+        tareas.complete(tarea.getId());
+    }
+
+    private static ConsultasHistoricas.ActividadHistorica actividad(
+            String instancia, String actividad, String inicio, String fin) {
+        return new ConsultasHistoricas.ActividadHistorica(
+                instancia, actividad, Instant.parse(inicio), Instant.parse(fin));
     }
 }

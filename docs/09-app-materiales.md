@@ -12,8 +12,8 @@ pasar por el sitio web:
 2. ve sus tareas "Preparar materiales": las asignadas a él y las que puede reclamar por ser de su grupo;
 3. reclama una disponible y la completa cuando los materiales están listos (#24).
 
-También muestra las consultas sobre el historial de ejecuciones del §4.3: los resultados de las solicitudes ya están
-(#30) y las ramas y tareas por persona siguen pendientes (#31–#32).
+También muestra las consultas sobre el historial de ejecuciones del §4.3: los resultados de las solicitudes (#30) y la
+duración promedio de las ramas de la preparación (#31); las tareas por persona siguen pendientes (#32).
 
 El enunciado pide que use la **API Java** de Flowable, y no la API REST como la web y la app de comunicaciones. Es
 una herramienta interna: corre en la red de la institución y tiene acceso directo a la base del motor.
@@ -88,9 +88,9 @@ app-materiales/src/main/java/ar/edu/unrc/gtpn/materiales/
 ├── MaterialesApp.java       arranque: conecta el motor y pide el login
 ├── MotorFlowable.java       configuración del motor embebido (§3)
 ├── ServicioDeTareas.java    todo lo que la app le pide al motor: login y consultas de tareas
-├── VentanaDeTareas.java     ventana con pestañas: tareas del usuario y resultados de solicitudes
+├── VentanaDeTareas.java     ventana con pestañas: tareas, resultados y duración de ramas
 └── historial/
-    └── ConsultasHistoricas.java   consultas del §4.3: resultados (#30); ramas y personas (#31–#32)
+    └── ConsultasHistoricas.java   consultas del §4.3: resultados (#30) y ramas (#31); personas (#32)
 ```
 
 La interfaz (Swing) no habla con el motor directamente: usa `ServicioDeTareas`. Así las reglas quedan en un solo lugar
@@ -140,16 +140,40 @@ La ventana tiene la pestaña **Resultados de Solicitudes (§4.3.1)** con las col
 `ConsultasHistoricasTest` arma con `@FlowableTest` y H2 cuatro instancias terminadas (2 `FINALIZADO`, 1 `RECHAZADO` y
 1 `SIN_RESPUESTA`) y verifica que los conteos y los porcentajes sean exactos.
 
-### Pendientes (#31–#32)
+### Duración de las ramas de la preparación (#31)
 
-Duración promedio de las ramas de la preparación (§4.3.2) y tareas completadas por persona (§4.3.3).
+`duracionPromedioDeLasRamas()` busca en el historial las instancias que completaron la compuerta `preparacionCompleta`
+(`createHistoricActivityInstanceQuery().activityId("preparacionCompleta").finished()`), así que las preparaciones
+canceladas antes quedan afuera. Para cada instancia consulta sus actividades y mide cada rama desde la primera
+actividad hasta el fin de la última:
+
+| Rama | Inicio | Fin |
+|------|--------|-----|
+| Inscripciones | `nominaRecibida` | `confeccionarListaDefinitiva` |
+| Materiales | `prepararMateriales` | `prepararMateriales` |
+| Recursos | `evaluarRecursos` | máximo fin de `reservarAula`, `solicitarAulaVirtual` o `contratarEquipamiento` |
+
+Devuelve `DuracionRamas(inscripciones, materiales, recursos, totalInstancias)` con el promedio
+(`Duration.dividedBy(total)`). Si una instancia no tiene el fin de alguna rama se descarta para no falsear el
+promedio; sin instancias válidas devuelve las tres duraciones en cero.
+
+La ventana tiene la pestaña **Duración de Ramas (§4.3.2)** con las columnas *Rama*, *Duración Promedio* e
+*Instancias*, un botón *Actualizar* y el aviso "No hay preparaciones completadas para calcular promedios." cuando no
+hay datos. Las duraciones se muestran como `HH:mm:ss` o como "N días H h" si superan un día.
+
+`ConsultasHistoricasTest` cubre los dos casos: una instancia cancelada durante la preparación no entra en el promedio
+y dos instancias que completan las tres ramas dan `totalInstancias = 2`. El cálculo exacto se prueba con actividades
+sintéticas (`promediar(...)`), incluida una instancia incompleta que se descarta.
+
+### Pendientes (#32)
+
+Tareas completadas por persona (§4.3.3).
 
 ## 9. Estado
 
-**Cerradas: #24 y #30.** La #24 tiene los botones *Reclamar* y *Completar* con validación de asignación, y la #30 la
-pestaña de resultados de las solicitudes, ambas con pruebas con H2 en memoria.
+**Cerradas: #24, #30 y #31.** La #24 tiene los botones *Reclamar* y *Completar* con validación de asignación, la #30
+la pestaña de resultados de las solicitudes y la #31 la de duración de las ramas, todas con pruebas con H2 en memoria.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #31 | Duración promedio de las ramas de la preparación (§4.3.2) |
 | #32 | Tareas completadas por persona (§4.3.3) |

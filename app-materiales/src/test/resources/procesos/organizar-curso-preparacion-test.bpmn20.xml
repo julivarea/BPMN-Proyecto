@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="materiales">
+  <!-- Versión reducida del subproceso "Preparar curso" del proceso real, sin listeners, formularios ni clases Java.
+       Conserva los IDs de las ramas y la cancelación para probar la consulta de duraciones (§4.3.2, issue #31). -->
+  <message id="nominaParticipantes" name="nominaParticipantes"></message>
+  <message id="cancelacionCurso" name="cancelacionCurso"></message>
+  <process id="organizarCurso" name="Organizar curso" isExecutable="true">
+    <startEvent id="solicitudRecibida"/>
+    <sequenceFlow id="flujoInicio" sourceRef="solicitudRecibida" targetRef="prepararCurso"/>
+    <subProcess id="prepararCurso" name="Preparar curso">
+      <startEvent id="inicioPrepararCurso"/>
+      <sequenceFlow id="flujo_inicioPrepararCurso_iniciarPreparacion" sourceRef="inicioPrepararCurso" targetRef="iniciarPreparacion"/>
+      <parallelGateway id="iniciarPreparacion"/>
+      <sequenceFlow id="flujo_iniciarPreparacion_nominaRecibida" sourceRef="iniciarPreparacion" targetRef="nominaRecibida"/>
+      <sequenceFlow id="flujo_iniciarPreparacion_prepararMateriales" sourceRef="iniciarPreparacion" targetRef="prepararMateriales"/>
+      <sequenceFlow id="flujo_iniciarPreparacion_evaluarRecursos" sourceRef="iniciarPreparacion" targetRef="evaluarRecursos"/>
+      <intermediateCatchEvent id="nominaRecibida" name="recibir nómina de inscripciones">
+        <messageEventDefinition messageRef="nominaParticipantes"></messageEventDefinition>
+      </intermediateCatchEvent>
+      <sequenceFlow id="flujo_nominaRecibida_confeccionarListaDefinitiva" sourceRef="nominaRecibida" targetRef="confeccionarListaDefinitiva"/>
+      <userTask id="confeccionarListaDefinitiva" name="Confeccionar lista definitiva"/>
+      <sequenceFlow id="flujo_confeccionarListaDefinitiva_preparacionCompleta" sourceRef="confeccionarListaDefinitiva" targetRef="preparacionCompleta"/>
+      <userTask id="prepararMateriales" name="Preparar materiales"/>
+      <sequenceFlow id="flujo_prepararMateriales_preparacionCompleta" sourceRef="prepararMateriales" targetRef="preparacionCompleta"/>
+      <userTask id="evaluarRecursos" name="Evaluar recursos"/>
+      <sequenceFlow id="flujo_evaluarRecursos_seleccionarRecursos" sourceRef="evaluarRecursos" targetRef="seleccionarRecursos"/>
+      <inclusiveGateway id="seleccionarRecursos"/>
+      <sequenceFlow id="flujo_seleccionarRecursos_reservarAula" sourceRef="seleccionarRecursos" targetRef="reservarAula">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAula}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_solicitarAulaVirtual" sourceRef="seleccionarRecursos" targetRef="solicitarAulaVirtual">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAulaVirtual}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_contratarEquipamiento" sourceRef="seleccionarRecursos" targetRef="contratarEquipamiento">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereEquipamiento}]]></conditionExpression>
+      </sequenceFlow>
+      <userTask id="reservarAula" name="Reservar aula"/>
+      <userTask id="solicitarAulaVirtual" name="Solicitar aula virtual"/>
+      <userTask id="contratarEquipamiento" name="Contratar equipamiento"/>
+      <sequenceFlow id="flujo_reservarAula_recursosListos" sourceRef="reservarAula" targetRef="recursosListos"/>
+      <sequenceFlow id="flujo_solicitarAulaVirtual_recursosListos" sourceRef="solicitarAulaVirtual" targetRef="recursosListos"/>
+      <sequenceFlow id="flujo_contratarEquipamiento_recursosListos" sourceRef="contratarEquipamiento" targetRef="recursosListos"/>
+      <inclusiveGateway id="recursosListos"/>
+      <sequenceFlow id="flujo_recursosListos_preparacionCompleta" sourceRef="recursosListos" targetRef="preparacionCompleta"/>
+      <parallelGateway id="preparacionCompleta" name="Preparación de curso completa"/>
+      <endEvent id="finPrepararCurso"/>
+      <sequenceFlow id="flujo_preparacionCompleta_finPrepararCurso" sourceRef="preparacionCompleta" targetRef="finPrepararCurso"/>
+      <subProcess id="cancelacion" name="Cancelación" triggeredByEvent="true">
+        <startEvent id="cancelacionRecibida" name="recibir cancelación" isInterrupting="true">
+          <messageEventDefinition messageRef="cancelacionCurso"></messageEventDefinition>
+        </startEvent>
+        <endEvent id="preparacionCancelada"/>
+        <sequenceFlow id="flujo_cancelacionRecibida_preparacionCancelada" sourceRef="cancelacionRecibida" targetRef="preparacionCancelada"/>
+      </subProcess>
+    </subProcess>
+    <endEvent id="finOrganizarCurso"/>
+    <sequenceFlow id="flujo_prepararCurso_finOrganizarCurso" sourceRef="prepararCurso" targetRef="finOrganizarCurso"/>
+  </process>
+</definitions>

@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
@@ -25,16 +26,19 @@ import org.flowable.task.api.Task;
 import com.formdev.flatlaf.util.UIScale;
 
 import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas;
+import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.DuracionRamas;
 import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.ResultadoSolicitud;
 
 /**
  * Ventana de la app: una pestaña con las tareas "Preparar materiales" del usuario, con acciones de reclamar y
- * completar (#24), y otra con los resultados de las solicitudes terminadas (§4.3.1, #30).
+ * completar (#24), otra con los resultados de las solicitudes terminadas (§4.3.1, #30) y otra con la duración promedio
+ * de las ramas de la preparación (§4.3.2, #31).
  */
 final class VentanaDeTareas extends JFrame {
 
     private static final String[] COLUMNAS = {"Solicitud", "Tarea", "Estado", "Creada"};
     private static final String[] COLUMNAS_RESULTADOS = {"Resultado", "Cantidad", "Porcentaje (%)"};
+    private static final String[] COLUMNAS_DURACIONES = {"Rama", "Duración Promedio", "Instancias"};
 
     private final transient ServicioDeTareas servicio;
     private final transient ConsultasHistoricas consultas;
@@ -57,6 +61,14 @@ final class VentanaDeTareas extends JFrame {
     };
     private final JTable tablaResultados = new JTable(filasResultados);
     private final JLabel sinResultados = new JLabel("No hay instancias terminadas para mostrar.");
+    private final DefaultTableModel filasDuraciones = new DefaultTableModel(COLUMNAS_DURACIONES, 0) {
+        @Override
+        public boolean isCellEditable(int fila, int columna) {
+            return false;
+        }
+    };
+    private final JTable tablaDuraciones = new JTable(filasDuraciones);
+    private final JLabel sinDuraciones = new JLabel("No hay preparaciones completadas para calcular promedios.");
 
     VentanaDeTareas(ServicioDeTareas servicio, ConsultasHistoricas consultas, String usuario, Runnable alCerrar) {
         super(MaterialesApp.TITULO + " · " + usuario);
@@ -67,6 +79,7 @@ final class VentanaDeTareas extends JFrame {
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Mis tareas", panelDeTareas());
         pestanas.addTab("Resultados de Solicitudes (§4.3.1)", panelDeResultados());
+        pestanas.addTab("Duración de Ramas (§4.3.2)", panelDeDuraciones());
         setContentPane(pestanas);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -80,6 +93,7 @@ final class VentanaDeTareas extends JFrame {
         setLocationRelativeTo(null);
         cargarTareas();
         cargarResultados();
+        cargarDuraciones();
     }
 
     private JPanel panelDeTareas() {
@@ -150,6 +164,36 @@ final class VentanaDeTareas extends JFrame {
         return contenido;
     }
 
+    private JPanel panelDeDuraciones() {
+        JLabel titulo = new JLabel("Duración de Ramas");
+        titulo.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel subtitulo = new JLabel("Promedio de las ramas de la preparación (§4.3.2)");
+        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
+        encabezado.add(titulo, BorderLayout.NORTH);
+        encabezado.add(subtitulo, BorderLayout.SOUTH);
+
+        tablaDuraciones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        sinDuraciones.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel centro = new JPanel(new BorderLayout(0, 8));
+        centro.add(new JScrollPane(tablaDuraciones), BorderLayout.CENTER);
+        centro.add(sinDuraciones, BorderLayout.SOUTH);
+
+        JButton actualizar = new JButton("Actualizar");
+        actualizar.putClientProperty("JButton.buttonType", "roundRect");
+        actualizar.addActionListener(evento -> cargarDuraciones());
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
+        acciones.add(actualizar);
+
+        JPanel contenido = new JPanel(new BorderLayout(0, 12));
+        int margen = UIScale.scale(20);
+        contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
+        contenido.add(encabezado, BorderLayout.NORTH);
+        contenido.add(centro, BorderLayout.CENTER);
+        contenido.add(acciones, BorderLayout.SOUTH);
+        return contenido;
+    }
+
     private void cargarTareas() {
         SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         String tareaAnterior = tareaSeleccionada() == null ? null : tareaSeleccionada().getId();
@@ -194,6 +238,38 @@ final class VentanaDeTareas extends JFrame {
         }
         sinResultados.setText("No hay instancias terminadas para mostrar.");
         sinResultados.setVisible(resultados.isEmpty());
+    }
+
+    private void cargarDuraciones() {
+        filasDuraciones.setRowCount(0);
+        DuracionRamas duraciones;
+        try {
+            duraciones = consultas.duracionPromedioDeLasRamas();
+        } catch (RuntimeException error) {
+            sinDuraciones.setText("No se pudieron consultar las duraciones: " + error.getMessage());
+            sinDuraciones.setVisible(true);
+            return;
+        }
+        if (duraciones.totalInstancias() > 0) {
+            filasDuraciones.addRow(new Object[] {
+                    "Inscripciones", formatearDuracion(duraciones.inscripciones()), duraciones.totalInstancias()});
+            filasDuraciones.addRow(new Object[] {
+                    "Materiales", formatearDuracion(duraciones.materiales()), duraciones.totalInstancias()});
+            filasDuraciones.addRow(new Object[] {
+                    "Recursos", formatearDuracion(duraciones.recursos()), duraciones.totalInstancias()});
+        }
+        sinDuraciones.setText("No hay preparaciones completadas para calcular promedios.");
+        sinDuraciones.setVisible(duraciones.totalInstancias() == 0);
+    }
+
+    /** Formato legible: días y horas cuando dura más de un día; si no, {@code HH:mm:ss}. */
+    static String formatearDuracion(Duration duracion) {
+        long dias = duracion.toDays();
+        if (dias > 0) {
+            return String.format(Locale.ROOT, "%d días %d h", dias, duracion.toHoursPart());
+        }
+        return String.format(Locale.ROOT, "%02d:%02d:%02d",
+                duracion.toHoursPart(), duracion.toMinutesPart(), duracion.toSecondsPart());
     }
 
     private Task tareaSeleccionada() {
