@@ -327,8 +327,12 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 - [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
   con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
   [09-app-materiales.md](09-app-materiales.md) §7.
-- [ ] **#30–#32 · Consultas históricas:** implementar resultados, duración de las ramas y
-  tareas por persona, filtrando tareas canceladas.
+- [x] **#30 · Resultados de las solicitudes:** `ConsultasHistoricas.resultadosDeLasSolicitudes()`
+  agrupa las instancias terminadas por la variable `resultado` y calcula cantidad y
+  porcentaje; la app de materiales lo muestra en la pestaña *Resultados de Solicitudes
+  (§4.3.1)* y lo cubre `ConsultasHistoricasTest`.
+- [ ] **#31–#32 · Consultas históricas:** duración promedio de las ramas y tareas por
+  persona, filtrando tareas canceladas.
 - [x] **#16 · App de comunicaciones (negociación):** `Comunicacion` con los mensajes del
   modelo, detección de la ejecución que espera cada mensaje y envío con sus variables
   (fecha acordada en ISO, observaciones, rechazo sin datos). Los caminos de aceptación,

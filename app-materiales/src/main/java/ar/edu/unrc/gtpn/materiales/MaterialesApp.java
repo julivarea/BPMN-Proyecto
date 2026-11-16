@@ -16,6 +16,8 @@ import org.flowable.engine.ProcessEngine;
 
 import com.formdev.flatlaf.FlatLightLaf;
 
+import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas;
+
 /**
  * App de escritorio para que un administrativo prepare materiales usando la API Java de Flowable (enunciado 4.2.1):
  * identificarse, consultar las tareas "Preparar materiales" asignadas o reclamables, reclamarlas y completarlas.
@@ -30,11 +32,12 @@ public final class MaterialesApp {
     public static void main(String[] args) {
         ProcessEngine motor = MotorFlowable.conectar();
         ServicioDeTareas servicio = new ServicioDeTareas(motor);
+        ConsultasHistoricas consultas = new ConsultasHistoricas(motor.getHistoryService());
         SwingUtilities.invokeLater(() -> {
             usarAspectoModerno();
             Optional<String> usuario = ingresar(servicio);
             if (usuario.isPresent()) {
-                new VentanaDeTareas(servicio, usuario.get(), motor::close).setVisible(true);
+                new VentanaDeTareas(servicio, consultas, usuario.get(), motor::close).setVisible(true);
             } else {
                 motor.close();
             }

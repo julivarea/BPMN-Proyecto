@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="materiales">
+  <!-- Proceso mínimo para las consultas históricas: mismo ID que el proceso real, sin las clases Java ni los
+       formularios. Cada instancia termina con la variable "resultado" que se le pasa al iniciarla. -->
+  <process id="organizarCurso" name="Organizar curso" isExecutable="true">
+    <startEvent id="solicitudRecibida"/>
+    <sequenceFlow id="flujoInicio" sourceRef="solicitudRecibida" targetRef="archivarSolicitud"/>
+    <userTask id="archivarSolicitud" name="Archivar solicitud"/>
+    <sequenceFlow id="flujoFin" sourceRef="archivarSolicitud" targetRef="finSolicitudArchivada"/>
+    <endEvent id="finSolicitudArchivada"/>
+  </process>
+</definitions>

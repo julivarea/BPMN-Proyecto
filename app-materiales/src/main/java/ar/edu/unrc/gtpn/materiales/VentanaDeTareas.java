@@ -6,6 +6,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -14,6 +15,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
@@ -22,12 +24,20 @@ import org.flowable.task.api.Task;
 
 import com.formdev.flatlaf.util.UIScale;
 
-/** Lista de tareas "Preparar materiales" del usuario, con acciones de reclamar y completar. */
+import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas;
+import ar.edu.unrc.gtpn.materiales.historial.ConsultasHistoricas.ResultadoSolicitud;
+
+/**
+ * Ventana de la app: una pestaña con las tareas "Preparar materiales" del usuario, con acciones de reclamar y
+ * completar (#24), y otra con los resultados de las solicitudes terminadas (§4.3.1, #30).
+ */
 final class VentanaDeTareas extends JFrame {
 
     private static final String[] COLUMNAS = {"Solicitud", "Tarea", "Estado", "Creada"};
+    private static final String[] COLUMNAS_RESULTADOS = {"Resultado", "Cantidad", "Porcentaje (%)"};
 
     private final transient ServicioDeTareas servicio;
+    private final transient ConsultasHistoricas consultas;
     private final String usuario;
     private transient List<Task> tareas = List.of();
     private final DefaultTableModel filas = new DefaultTableModel(COLUMNAS, 0) {
@@ -39,12 +49,40 @@ final class VentanaDeTareas extends JFrame {
     private final JTable tabla = new JTable(filas);
     private final JButton reclamar = new JButton("Reclamar");
     private final JButton completar = new JButton("Completar");
+    private final DefaultTableModel filasResultados = new DefaultTableModel(COLUMNAS_RESULTADOS, 0) {
+        @Override
+        public boolean isCellEditable(int fila, int columna) {
+            return false;
+        }
+    };
+    private final JTable tablaResultados = new JTable(filasResultados);
+    private final JLabel sinResultados = new JLabel("No hay instancias terminadas para mostrar.");
 
-    VentanaDeTareas(ServicioDeTareas servicio, String usuario, Runnable alCerrar) {
+    VentanaDeTareas(ServicioDeTareas servicio, ConsultasHistoricas consultas, String usuario, Runnable alCerrar) {
         super(MaterialesApp.TITULO + " · " + usuario);
         this.servicio = servicio;
+        this.consultas = consultas;
         this.usuario = usuario;
 
+        JTabbedPane pestanas = new JTabbedPane();
+        pestanas.addTab("Mis tareas", panelDeTareas());
+        pestanas.addTab("Resultados de Solicitudes (§4.3.1)", panelDeResultados());
+        setContentPane(pestanas);
+
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent evento) {
+                alCerrar.run();
+            }
+        });
+        setSize(UIScale.scale(900), UIScale.scale(480));
+        setLocationRelativeTo(null);
+        cargarTareas();
+        cargarResultados();
+    }
+
+    private JPanel panelDeTareas() {
         JButton actualizar = new JButton("Actualizar");
         actualizar.putClientProperty("JButton.buttonType", "roundRect");
         actualizar.addActionListener(evento -> cargarTareas());
@@ -79,18 +117,37 @@ final class VentanaDeTareas extends JFrame {
         });
         contenido.add(new JScrollPane(tabla), BorderLayout.CENTER);
         contenido.add(acciones, BorderLayout.SOUTH);
-        setContentPane(contenido);
+        return contenido;
+    }
 
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosed(WindowEvent evento) {
-                alCerrar.run();
-            }
-        });
-        setSize(UIScale.scale(900), UIScale.scale(480));
-        setLocationRelativeTo(null);
-        cargarTareas();
+    private JPanel panelDeResultados() {
+        JLabel titulo = new JLabel("Resultados de Solicitudes");
+        titulo.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel subtitulo = new JLabel("Solicitudes terminadas agrupadas por resultado (§4.3.1)");
+        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
+        encabezado.add(titulo, BorderLayout.NORTH);
+        encabezado.add(subtitulo, BorderLayout.SOUTH);
+
+        tablaResultados.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        sinResultados.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel centro = new JPanel(new BorderLayout(0, 8));
+        centro.add(new JScrollPane(tablaResultados), BorderLayout.CENTER);
+        centro.add(sinResultados, BorderLayout.SOUTH);
+
+        JButton actualizar = new JButton("Actualizar");
+        actualizar.putClientProperty("JButton.buttonType", "roundRect");
+        actualizar.addActionListener(evento -> cargarResultados());
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
+        acciones.add(actualizar);
+
+        JPanel contenido = new JPanel(new BorderLayout(0, 12));
+        int margen = UIScale.scale(20);
+        contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
+        contenido.add(encabezado, BorderLayout.NORTH);
+        contenido.add(centro, BorderLayout.CENTER);
+        contenido.add(acciones, BorderLayout.SOUTH);
+        return contenido;
     }
 
     private void cargarTareas() {
@@ -116,6 +173,27 @@ final class VentanaDeTareas extends JFrame {
         }
         tabla.clearSelection();
         actualizarAcciones();
+    }
+
+    private void cargarResultados() {
+        filasResultados.setRowCount(0);
+        List<ResultadoSolicitud> resultados;
+        try {
+            resultados = consultas.resultadosDeLasSolicitudes();
+        } catch (RuntimeException error) {
+            sinResultados.setText("No se pudieron consultar los resultados: " + error.getMessage());
+            sinResultados.setVisible(true);
+            return;
+        }
+        for (ResultadoSolicitud resultado : resultados) {
+            filasResultados.addRow(new Object[] {
+                    resultado.resultado(),
+                    resultado.cantidad(),
+                    String.format(Locale.ROOT, "%.1f", resultado.porcentaje())
+            });
+        }
+        sinResultados.setText("No hay instancias terminadas para mostrar.");
+        sinResultados.setVisible(resultados.isEmpty());
     }
 
     private Task tareaSeleccionada() {

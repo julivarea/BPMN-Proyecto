@@ -12,7 +12,8 @@ pasar por el sitio web:
 2. ve sus tareas "Preparar materiales": las asignadas a él y las que puede reclamar por ser de su grupo;
 3. reclama una disponible y la completa cuando los materiales están listos (#24).
 
-También muestra las consultas sobre el historial de ejecuciones del §4.3 (#30–#32).
+También muestra las consultas sobre el historial de ejecuciones del §4.3: los resultados de las solicitudes ya están
+(#30) y las ramas y tareas por persona siguen pendientes (#31–#32).
 
 El enunciado pide que use la **API Java** de Flowable, y no la API REST como la web y la app de comunicaciones. Es
 una herramienta interna: corre en la red de la institución y tiene acceso directo a la base del motor.
@@ -87,9 +88,9 @@ app-materiales/src/main/java/ar/edu/unrc/gtpn/materiales/
 ├── MaterialesApp.java       arranque: conecta el motor y pide el login
 ├── MotorFlowable.java       configuración del motor embebido (§3)
 ├── ServicioDeTareas.java    todo lo que la app le pide al motor: login y consultas de tareas
-├── VentanaDeTareas.java     ventana con la lista de tareas del usuario
+├── VentanaDeTareas.java     ventana con pestañas: tareas del usuario y resultados de solicitudes
 └── historial/
-    └── ConsultasHistoricas.java   consultas del §4.3 (pendiente)
+    └── ConsultasHistoricas.java   consultas del §4.3: resultados (#30); ramas y personas (#31–#32)
 ```
 
 La interfaz (Swing) no habla con el motor directamente: usa `ServicioDeTareas`. Así las reglas quedan en un solo lugar
@@ -126,12 +127,29 @@ Van en `historial/ConsultasHistoricas`, con `HistoryService`. Cómo hacer cada c
 IDs de las ramas): [03-guia-flowable.md](03-guia-flowable.md) §8 y
 [06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §10.
 
+### Resultados de las solicitudes (#30)
+
+`resultadosDeLasSolicitudes()` consulta las instancias terminadas del proceso
+(`processDefinitionKey("organizarCurso").finished().includeProcessVariables().list()`), agrupa por la variable
+`resultado` y devuelve `ResultadoSolicitud(resultado, cantidad, porcentaje)`, con
+`porcentaje = cantidad * 100 / total`. Las filas van de mayor a menor cantidad y, a igual cantidad, por nombre del
+resultado. Una instancia terminada sin `resultado` cuenta como `SIN_RESULTADO`.
+
+La ventana tiene la pestaña **Resultados de Solicitudes (§4.3.1)** con las columnas *Resultado*, *Cantidad* y
+*Porcentaje (%)*, un botón *Actualizar* y el mensaje "No hay instancias terminadas para mostrar." cuando no hay datos.
+`ConsultasHistoricasTest` arma con `@FlowableTest` y H2 cuatro instancias terminadas (2 `FINALIZADO`, 1 `RECHAZADO` y
+1 `SIN_RESPUESTA`) y verifica que los conteos y los porcentajes sean exactos.
+
+### Pendientes (#31–#32)
+
+Duración promedio de las ramas de la preparación (§4.3.2) y tareas completadas por persona (§4.3.3).
+
 ## 9. Estado
 
-**Cerrada: #24**, con botones *Reclamar* y *Completar*, validación de asignación y pruebas con H2 en memoria.
+**Cerradas: #24 y #30.** La #24 tiene los botones *Reclamar* y *Completar* con validación de asignación, y la #30 la
+pestaña de resultados de las solicitudes, ambas con pruebas con H2 en memoria.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #30 | Resultados de las solicitudes (§4.3.1) |
 | #31 | Duración promedio de las ramas de la preparación (§4.3.2) |
 | #32 | Tareas completadas por persona (§4.3.3) |
