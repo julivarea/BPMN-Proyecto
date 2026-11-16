@@ -15,11 +15,11 @@
         <a class="marca" th:href="@{/}">Institución de capacitación</a>
         <nav aria-label="Secciones del sitio">
             <a th:href="@{/}" th:aria-current="${seccion == 'inicio'} ? 'page'">Inicio</a>
-            <a th:href="@{/empresas}" th:aria-current="${seccion == 'empresas'} ? 'page'">Empresas</a>
-            <a th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Administración</a>
-            <a th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Docentes</a>
+            <a sec:authorize="hasRole('EMPRESA')" th:href="@{/empresas}" th:aria-current="${seccion == 'empresas'} ? 'page'">Empresas</a>
+            <a sec:authorize="hasRole('ADMINISTRACION')" th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Administración</a>
+            <a sec:authorize="hasRole('DOCENTES')" th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Docentes</a>
         </nav>
-        <!-- Usuario del personal que inició sesión, o el enlace para ingresar. -->
+        <!-- Usuario autenticado, o el enlace para ingresar. -->
         <form class="sesion" sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
             <span sec:authentication="name">usuario</span>
             <button type="submit">Salir</button>

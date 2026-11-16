@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<!-- Login del personal con su usuario de Flowable. Spring Security procesa el POST a /login. -->
+<!-- Login unificado del personal (Flowable) y de empresas (cuenta_empresa). -->
 <head th:replace="~{fragmentos :: cabecera('Ingresar')}"></head>
 <body>
 <header th:replace="~{fragmentos :: encabezado('')}"></header>
 <main>
     <h1>Ingresar</h1>
-    <p>Personal de la institución: usuario y contraseña de Flowable.</p>
+    <p>Ingresá con tu usuario y contraseña. El sistema identifica si es una cuenta del personal o de una empresa.</p>
     <p class="error" th:if="${param.error}">No se pudo ingresar: revisá el usuario y la contraseña.</p>
     <form class="formulario" th:action="@{/login}" method="post">
         <label>Usuario
