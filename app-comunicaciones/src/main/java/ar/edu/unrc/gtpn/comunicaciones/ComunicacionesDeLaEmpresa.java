@@ -13,8 +13,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Comunicaciones que la empresa puede enviar sobre una solicitud (enunciado 4.2.2, X-03 y X-04): cuáles están
- * habilitadas según lo que la instancia está esperando y el envío del mensaje a Flowable.
+ * Comunicaciones que la empresa puede enviar sobre una solicitud (enunciado 4.2.2, X-03 y X-04), tanto durante la
+ * negociación como durante la preparación: cuáles están habilitadas según lo que la instancia está esperando y el
+ * envío del mensaje a Flowable.
  */
 final class ComunicacionesDeLaEmpresa {
 
@@ -70,11 +71,26 @@ final class ComunicacionesDeLaEmpresa {
         return variables;
     }
 
-    private static String valor(Comunicacion comunicacion, String dato) {
+    private static Object valor(Comunicacion comunicacion, String dato) {
         if (comunicacion == Comunicacion.ACEPTACION) {
             return fechaISO(dato);
         }
+        if (comunicacion == Comunicacion.NOMINA_PARTICIPANTES) {
+            return participantes(dato);
+        }
         return dato.trim();
+    }
+
+    /** Convierte la entrada de la app en la lista JSON que Flowable guarda en {@code participantes}. */
+    private static List<String> participantes(String dato) {
+        List<String> resultado = List.of(dato.split("[,\\r\\n]")).stream()
+                .map(String::trim)
+                .filter(participante -> !participante.isEmpty())
+                .toList();
+        if (resultado.isEmpty()) {
+            throw new IllegalArgumentException("La nómina debe incluir al menos un participante.");
+        }
+        return resultado;
     }
 
     /**

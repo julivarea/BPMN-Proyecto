@@ -18,13 +18,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
 import com.formdev.flatlaf.util.UIScale;
 
 /**
- * Lista de solicitudes en curso para elegir sobre cuál actuar, y las comunicaciones de la negociación (issue #16):
+ * Lista de solicitudes en curso para elegir sobre cuál actuar, y las comunicaciones de la negociación y preparación:
  * solo se habilita el botón del mensaje que la instancia está esperando en ese momento (X-04).
  */
 final class VentanaDeSolicitudes extends JFrame {
@@ -168,12 +169,17 @@ final class VentanaDeSolicitudes extends JFrame {
             return;
         }
         String dato = "";
+        if (comunicacion == Comunicacion.CANCELACION_CURSO
+                && JOptionPane.showConfirmDialog(this, "¿Está seguro de cancelar el curso?",
+                        comunicacion.etiqueta(), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE)
+                != JOptionPane.YES_OPTION) {
+            return;
+        }
         Optional<String> pedido = comunicacion.pedido();
         if (pedido.isPresent()) {
-            dato = JOptionPane.showInputDialog(this, pedido.get(), comunicacion.etiqueta(),
-                    JOptionPane.QUESTION_MESSAGE);
+            dato = pedirDato(comunicacion, pedido.get());
             if (dato == null) {
-                return; // cancelado: no se envía nada
+                return;
             }
             if (dato.isBlank()) {
                 JOptionPane.showMessageDialog(this, "Hace falta completar el dato para enviar la comunicación.",
@@ -191,5 +197,17 @@ final class VentanaDeSolicitudes extends JFrame {
         }
         // Después de enviar, las comunicaciones habilitadas cambian: se vuelve a consultar.
         cargarSolicitudes();
+    }
+
+    private String pedirDato(Comunicacion comunicacion, String mensaje) {
+        if (comunicacion != Comunicacion.NOMINA_PARTICIPANTES) {
+            return JOptionPane.showInputDialog(this, mensaje, comunicacion.etiqueta(), JOptionPane.QUESTION_MESSAGE);
+        }
+        JTextArea entrada = new JTextArea(8, 35);
+        entrada.setLineWrap(true);
+        entrada.setWrapStyleWord(true);
+        int resultado = JOptionPane.showConfirmDialog(this, new JScrollPane(entrada), mensaje,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+        return resultado == JOptionPane.OK_OPTION ? entrada.getText() : null;
     }
 }

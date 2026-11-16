@@ -82,6 +82,9 @@ class FlowableRest {
         variables.forEach((nombre, valor) -> {
             Map<String, Object> variable = new LinkedHashMap<>();
             variable.put("name", nombre);
+            if (valor instanceof List<?>) {
+                variable.put("type", "json");
+            }
             variable.put("value", valor);
             lista.add(variable);
         });

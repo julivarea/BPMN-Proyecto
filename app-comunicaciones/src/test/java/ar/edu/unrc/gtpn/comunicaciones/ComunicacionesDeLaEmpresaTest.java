@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -64,6 +65,32 @@ class ComunicacionesDeLaEmpresaTest {
         comunicaciones.enviar(solicitud, Comunicacion.RECHAZO, "");
 
         assertEquals("rechazoPropuesta", flowable.mensajeEnviado);
+        assertEquals(Map.of(), flowable.variablesEnviadas);
+    }
+
+    @Test
+    void laNominaSeHabilitaYEnviaLaListaDeParticipantes() {
+        flowable.esperar("nominaParticipantes", "e10");
+
+        assertEquals(Set.of(Comunicacion.NOMINA_PARTICIPANTES), comunicaciones.habilitadas(solicitud));
+        comunicaciones.enviar(solicitud, Comunicacion.NOMINA_PARTICIPANTES,
+                " Juan Perez\nMaria Lopez, Carlos Gomez ");
+
+        assertEquals("e10", flowable.ejecucionUsada);
+        assertEquals("nominaParticipantes", flowable.mensajeEnviado);
+        assertEquals(Map.of("participantes", List.of("Juan Perez", "Maria Lopez", "Carlos Gomez")),
+                flowable.variablesEnviadas);
+    }
+
+    @Test
+    void laCancelacionSeHabilitaYNoLlevaVariables() {
+        flowable.esperar("cancelacionCurso", "e11");
+
+        assertEquals(Set.of(Comunicacion.CANCELACION_CURSO), comunicaciones.habilitadas(solicitud));
+        comunicaciones.enviar(solicitud, Comunicacion.CANCELACION_CURSO, "");
+
+        assertEquals("e11", flowable.ejecucionUsada);
+        assertEquals("cancelacionCurso", flowable.mensajeEnviado);
         assertEquals(Map.of(), flowable.variablesEnviadas);
     }
 

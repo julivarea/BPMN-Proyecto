@@ -118,6 +118,33 @@ class FlowableRestTest {
         assertEquals("2026-12-01T09:00:00", cuerpo.get("variables").get(0).get("value").asText());
     }
 
+    @Test
+    void enviarMensajeEntregaLaNominaComoVariableJson() throws IOException {
+        responder(204, "");
+
+        flowable.enviarMensaje("e10", "nominaParticipantes", Map.of(
+                "participantes", List.of("Juan Perez", "Maria Lopez")));
+
+        var cuerpo = new ObjectMapper().readTree(cuerpoPedido);
+        var variable = cuerpo.get("variables").get(0);
+        assertEquals("participantes", variable.get("name").asText());
+        assertEquals("json", variable.get("type").asText());
+        assertEquals(List.of("Juan Perez", "Maria Lopez"),
+                new ObjectMapper().convertValue(variable.get("value"), List.class));
+    }
+
+    @Test
+    void enviarMensajeDeCancelacionNoEntregaVariables() throws IOException {
+        responder(204, "");
+
+        flowable.enviarMensaje("e11", "cancelacionCurso", Map.of());
+
+        var cuerpo = new ObjectMapper().readTree(cuerpoPedido);
+        assertEquals("cancelacionCurso", cuerpo.get("messageName").asText());
+        assertTrue(cuerpo.get("variables").isArray());
+        assertEquals(0, cuerpo.get("variables").size());
+    }
+
     private void responder(int estado, String respuesta) {
         this.estado = estado;
         this.respuesta = respuesta;
