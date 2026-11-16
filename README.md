@@ -1,5 +1,6 @@
 # Organización de cursos de capacitación
 
+
 **UNRC** · Facultad de Ciencias Exactas, Físico-Químicas y Naturales<br>
 **Materia:** Gestión y Tecnologías de Procesos de Negocios (3371)<br>
 **Profesor:** Ariel González
