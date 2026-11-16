@@ -126,11 +126,12 @@ Van en `historial/ConsultasHistoricas`, con `HistoryService`. Cómo hacer cada c
 IDs de las ramas): [03-guia-flowable.md](03-guia-flowable.md) §8 y
 [06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §10.
 
-## 9. Lo que falta
+## 9. Estado
+
+**Cerrada: #24**, con botones *Reclamar* y *Completar*, validación de asignación y pruebas con H2 en memoria.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #24 | Botones *Reclamar* y *Completar*, con las reglas de §7 y sus tests |
 | #30 | Resultados de las solicitudes (§4.3.1) |
 | #31 | Duración promedio de las ramas de la preparación (§4.3.2) |
 | #32 | Tareas completadas por persona (§4.3.3) |

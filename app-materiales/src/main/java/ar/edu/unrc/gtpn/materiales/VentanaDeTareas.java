@@ -11,27 +11,33 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
 import org.flowable.task.api.Task;
 
 import com.formdev.flatlaf.util.UIScale;
 
-/** Lista de tareas "Preparar materiales" del usuario. Reclamar y completar se agregan en el issue #24. */
+/** Lista de tareas "Preparar materiales" del usuario, con acciones de reclamar y completar. */
 final class VentanaDeTareas extends JFrame {
 
     private static final String[] COLUMNAS = {"Solicitud", "Tarea", "Estado", "Creada"};
 
     private final transient ServicioDeTareas servicio;
     private final String usuario;
+    private transient List<Task> tareas = List.of();
     private final DefaultTableModel filas = new DefaultTableModel(COLUMNAS, 0) {
         @Override
         public boolean isCellEditable(int fila, int columna) {
             return false;
         }
     };
+    private final JTable tabla = new JTable(filas);
+    private final JButton reclamar = new JButton("Reclamar");
+    private final JButton completar = new JButton("Completar");
 
     VentanaDeTareas(ServicioDeTareas servicio, String usuario, Runnable alCerrar) {
         super(MaterialesApp.TITULO + " · " + usuario);
@@ -41,7 +47,15 @@ final class VentanaDeTareas extends JFrame {
         JButton actualizar = new JButton("Actualizar");
         actualizar.putClientProperty("JButton.buttonType", "roundRect");
         actualizar.addActionListener(evento -> cargarTareas());
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        reclamar.putClientProperty("JButton.buttonType", "roundRect");
+        reclamar.setEnabled(false);
+        reclamar.addActionListener(evento -> reclamar());
+        completar.putClientProperty("JButton.buttonType", "roundRect");
+        completar.setEnabled(false);
+        completar.addActionListener(evento -> completar());
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
+        acciones.add(reclamar);
+        acciones.add(completar);
         acciones.add(actualizar);
 
         JLabel titulo = new JLabel("Preparar materiales");
@@ -56,7 +70,13 @@ final class VentanaDeTareas extends JFrame {
         int margen = UIScale.scale(20);
         contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
         contenido.add(encabezado, BorderLayout.NORTH);
-        contenido.add(new JScrollPane(new JTable(filas)), BorderLayout.CENTER);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getSelectionModel().addListSelectionListener(evento -> {
+            if (!evento.getValueIsAdjusting()) {
+                actualizarAcciones();
+            }
+        });
+        contenido.add(new JScrollPane(tabla), BorderLayout.CENTER);
         contenido.add(acciones, BorderLayout.SOUTH);
         setContentPane(contenido);
 
@@ -74,8 +94,10 @@ final class VentanaDeTareas extends JFrame {
 
     private void cargarTareas() {
         SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        String tareaAnterior = tareaSeleccionada() == null ? null : tareaSeleccionada().getId();
+        tareas = servicio.tareasDe(usuario);
         filas.setRowCount(0);
-        for (Task tarea : servicio.tareasDe(usuario)) {
+        for (Task tarea : tareas) {
             filas.addRow(new Object[] {
                     servicio.solicitudDe(tarea),
                     tarea.getName(),
@@ -83,5 +105,60 @@ final class VentanaDeTareas extends JFrame {
                     formato.format(tarea.getCreateTime())
             });
         }
+        if (tareaAnterior != null) {
+            for (int fila = 0; fila < tareas.size(); fila++) {
+                if (tareas.get(fila).getId().equals(tareaAnterior)) {
+                    tabla.setRowSelectionInterval(fila, fila);
+                    return;
+                }
+            }
+        }
+        tabla.clearSelection();
+        actualizarAcciones();
+    }
+
+    private Task tareaSeleccionada() {
+        int fila = tabla.getSelectedRow();
+        return fila < 0 ? null : tareas.get(fila);
+    }
+
+    private void actualizarAcciones() {
+        Task tarea = tareaSeleccionada();
+        reclamar.setEnabled(tarea != null && tarea.getAssignee() == null);
+        completar.setEnabled(tarea != null && usuario.equals(tarea.getAssignee()));
+    }
+
+    private void reclamar() {
+        Task tarea = tareaSeleccionada();
+        if (tarea == null) {
+            return;
+        }
+        try {
+            servicio.reclamar(tarea.getId(), usuario);
+            JOptionPane.showMessageDialog(this, "Tarea reclamada correctamente.", MaterialesApp.TITULO,
+                    JOptionPane.INFORMATION_MESSAGE);
+            cargarTareas();
+        } catch (RuntimeException error) {
+            JOptionPane.showMessageDialog(this, "No se pudo reclamar la tarea: " + error.getMessage(),
+                    MaterialesApp.TITULO, JOptionPane.WARNING_MESSAGE);
+            cargarTareas();
+        }
+    }
+
+    private void completar() {
+        Task tarea = tareaSeleccionada();
+        if (tarea == null || JOptionPane.showConfirmDialog(this, "¿Los materiales ya están listos?",
+                MaterialesApp.TITULO, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            servicio.completar(tarea.getId(), usuario);
+            JOptionPane.showMessageDialog(this, "Tarea completada correctamente.", MaterialesApp.TITULO,
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (RuntimeException error) {
+            JOptionPane.showMessageDialog(this, "No se pudo completar la tarea: " + error.getMessage(),
+                    MaterialesApp.TITULO, JOptionPane.WARNING_MESSAGE);
+        }
+        cargarTareas();
     }
 }
