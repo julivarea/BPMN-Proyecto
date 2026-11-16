@@ -114,6 +114,18 @@ class BandejaControllerTest {
     }
 
     @Test
+    void elDocenteAsignadoPuedeCompletarElDesarrolloDelCurso() throws Exception {
+        when(flowable.tarea("t3")).thenReturn(tarea("t3", "Desarrollar curso", "desarrollarCurso", "docente1"));
+
+        mvc.perform(post("/tareas/t3/completar").param("seccion", "docentes")
+                .with(user("docente1").roles("DOCENTES")).with(csrf()))
+                .andExpect(redirectedUrl("/docentes"))
+                .andExpect(flash().attribute("mensaje", "Completaste la tarea."));
+
+        verify(flowable).completar("t3", Map.of());
+    }
+
+    @Test
     void despuesDeActuarVuelveSoloAUnaSeccionConocida() throws Exception {
         when(flowable.tarea("t1")).thenReturn(tarea("t1", "Archivar solicitud", "archivarSolicitud", "jefe_admin"));
 

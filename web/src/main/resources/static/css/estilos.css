@@ -108,7 +108,8 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 .boton:hover, .tabla button:hover { opacity: 0.9; }
 
 /* Tablas */
-.tabla { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; background: #fff; table-layout: fixed; }
+.tabla-contenedor { width: 100%; overflow-x: auto; margin-bottom: 1.5rem; }
+.tabla { width: 100%; min-width: 42rem; border-collapse: collapse; background: #fff; table-layout: fixed; }
 /* Mismo ancho de columnas en todas las tablas de tareas: solicitud, tarea, creada, acción. */
 .tabla th:nth-child(1) { width: 18%; }
 .tabla th:nth-child(2) { width: 28%; }
@@ -122,6 +123,15 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 h2 { margin-top: 2rem; font-size: 1.15rem; }
 
 main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem; }
+
+select { padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5rem; background: #fff; font: inherit; }
+
+@media (max-width: 40rem) {
+    main { padding: 1.25rem 0.75rem; }
+    .tabla { min-width: 36rem; }
+    .tabla .accion { white-space: nowrap; }
+    .formulario { max-width: none; }
+}
 
 .mensaje, .error { padding: 0.6rem 0.9rem; border-radius: 0.5rem; }
 .mensaje { background: #e8f5ec; border: 1px solid #b7dfc3; color: #1e5e33; }

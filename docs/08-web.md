@@ -59,6 +59,7 @@ web/
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
     │   │       ├── EvaluarRecursosController.java    pantalla /tareas/{id}/evaluar-recursos: recursos que necesita el curso
     │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: la propuesta y su decisión
+    │   │       ├── DefinirDocenteController.java     pantalla /tareas/{id}/definir-docente: elige el docente del curso
     │   │       └── AccionNoPermitida.java     regla no cumplida, con el mensaje que ve el usuario
     │   └── resources/
     │       ├── application.yml            puerto 8081, base de la institución, conexión con Flowable y plazo de respuesta
@@ -82,7 +83,8 @@ web/
     │               ├── confeccionar-lista-definitiva.html  datos del curso y la nómina editable de inscriptos
     │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     │               ├── evaluar-recursos.html   datos de la solicitud y las tres casillas de recursos
-    │               └── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
+    │               ├── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
+    │               └── definir-docente.html     selección del docente que desarrollará el curso
     └── test/java/ar/edu/unrc/gtpn/web/    tests (§7)
         ├── flowable/
         │   ├── ClienteFlowableTest.java               cada llamada del cliente, contra un servidor HTTP simulado
@@ -309,6 +311,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y la decisión (aceptar, pedir modificaciones o rechazar) completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ConfeccionarListaDefinitivaControllerTest` | La pantalla de la lista definitiva desde el navegador: el asignado ve el formulario con la nómina que envió la empresa, una lista vacía vuelve con el error y no completa la tarea, y una lista con participantes completa pasando `listaDefinitiva` (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `DefinirDocenteControllerTest` | La pantalla del jefe docente: consulta los miembros del grupo, permite elegir un docente válido y completa `definirDocente` con `docenteAsignado` (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ArchivarSolicitudControllerTest` | La pantalla de archivo desde el navegador: el asignado ve la solicitud con el motivo (rechazo o sin respuesta) y confirmar archiva y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
 | `SolicitudControllerTest` | El formulario desde el navegador: es público, una solicitud válida redirige a la confirmación, los datos inválidos y la razón social distinta vuelven al formulario con el error, Flowable caído se informa y token CSRF (`@WebMvcTest`) | `./mvnw -pl web verify` |
@@ -320,13 +323,13 @@ devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-g
 
 ## 8. Lo que falta
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15, #21 y
-#22**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
+Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15, #21,
+#22 y #26**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
 (`RevisarPropuestaController`), archivar la solicitud (`ArchivarSolicitudController`), evaluar los recursos del curso
 (`EvaluarRecursosController`) y confeccionar la lista definitiva (`ConfeccionarListaDefinitivaController`), todos en §3
 y §7.
 
 | Issue | Qué agrega |
 |-------|------------|
-| #26, #27 | Tareas docentes, informe y cierre del expediente |
+| #27 | Informe y cierre del expediente |
 | #28, #29 | Login de empresas (un segundo proveedor de autenticación, contra la base) y portal con sus cursos y su estado |

@@ -73,6 +73,18 @@ class ClienteFlowableTest {
     }
 
     @Test
+    void miembrosDelGrupoDevuelveLosUsuariosDocentes() {
+        servidor.expect(requestTo(URL + "/identity/users?memberOfGroup=docentes&size=500"))
+                .andRespond(withSuccess("""
+                        {"data": [{"id": "jefe_docente", "firstName": "Jefe"},
+                                  {"id": "docente1", "firstName": "Docente"}], "total": 2}""",
+                        MediaType.APPLICATION_JSON));
+
+        assertEquals(List.of("jefe_docente", "docente1"), cliente.miembrosDelGrupo("docentes"));
+        servidor.verify();
+    }
+
+    @Test
     void tareasAsignadasDevuelveLasTareasDelUsuarioConSuSolicitud() {
         servidor.expect(requestTo(URL + "/runtime/tasks?assignee=jefe_admin&size=500"))
                 .andRespond(withSuccess("""

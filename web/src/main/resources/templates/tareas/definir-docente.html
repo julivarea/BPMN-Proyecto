@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: cabecera('Definir docente')}"></head>
+<body>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
+<main>
+    <div th:replace="~{fragmentos :: mensajes}"></div>
+    <p><a th:href="@{/docentes}">← Volver a la bandeja</a></p>
+    <h1>Definir docente</h1>
+    <p>Elegí quién desarrollará el curso de la solicitud
+        <strong th:text="${tarea.solicitud() == null ? '—' : tarea.solicitud()}">42</strong>.</p>
+    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/definir-docente'}" method="post">
+        <label for="docenteAsignado">Docente responsable</label>
+        <select id="docenteAsignado" name="docenteAsignado" required>
+            <option value="" selected disabled>Seleccioná un docente</option>
+            <option th:each="docente : ${docentes}" th:value="${docente}" th:text="${docente}">docente1</option>
+        </select>
+        <button type="submit">Asignar docente</button>
+    </form>
+</main>
+</body>
+</html>

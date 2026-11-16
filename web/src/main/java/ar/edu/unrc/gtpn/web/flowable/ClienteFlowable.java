@@ -32,6 +32,9 @@ public class ClienteFlowable {
             };
     private static final ParameterizedTypeReference<Pagina<Grupo>> PAGINA_DE_GRUPOS = new ParameterizedTypeReference<>() {
     };
+    private static final ParameterizedTypeReference<Pagina<Usuario>> PAGINA_DE_USUARIOS =
+            new ParameterizedTypeReference<>() {
+            };
     private static final ParameterizedTypeReference<List<Variable>> LISTA_DE_VARIABLES = new ParameterizedTypeReference<>() {
     };
 
@@ -73,6 +76,21 @@ public class ClienteFlowable {
         } catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.Forbidden error) {
             return Optional.empty();
         }
+    }
+
+    /** Usuarios miembros de un grupo de Flowable, por ejemplo {@code docentes}. */
+    public List<String> miembrosDelGrupo(String grupo) {
+        return http.get()
+                .uri(uri -> uri.path("/identity/users")
+                        .queryParam("memberOfGroup", grupo)
+                        .queryParam("size", MAXIMO_RESULTADOS)
+                        .build())
+                .retrieve()
+                .body(PAGINA_DE_USUARIOS)
+                .data()
+                .stream()
+                .map(Usuario::id)
+                .collect(Collectors.toList());
     }
 
     /** Tareas pendientes asignadas al usuario. */
@@ -198,5 +216,9 @@ public class ClienteFlowable {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Grupo(String id) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Usuario(String id) {
     }
 }

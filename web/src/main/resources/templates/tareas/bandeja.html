@@ -15,7 +15,8 @@
             <p th:if="${asignadas.isEmpty()}">
                 No tenés tareas asignadas.
             </p>
-            <table class="tabla" th:unless="${asignadas.isEmpty()}">
+            <div class="tabla-contenedor" th:unless="${asignadas.isEmpty()}">
+            <table class="tabla">
                 <thead>
                     <tr>
                         <th>Solicitud</th>
@@ -80,9 +81,17 @@
                                 >Confeccionar lista</a
                             >
 
+                            <!-- Pantalla para definir docente (#26) -->
+                            <a
+                                th:if="${tarea.clave() == 'definirDocente'}"
+                                th:href="@{'/tareas/' + ${tarea.id()} + '/definir-docente'}"
+                                class="boton"
+                                >Definir docente</a
+                            >
+
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && bandeja.seCompletaEnLaWeb(tarea)}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >
@@ -106,12 +115,14 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
 
             <h2>Disponibles para tu grupo</h2>
             <p th:if="${disponibles.isEmpty()}">
                 No hay tareas disponibles para reclamar.
             </p>
-            <table class="tabla" th:unless="${disponibles.isEmpty()}">
+            <div class="tabla-contenedor" th:unless="${disponibles.isEmpty()}">
+            <table class="tabla">
                 <thead>
                     <tr>
                         <th>Solicitud</th>
@@ -159,6 +170,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </main>
     </body>
 </html>
