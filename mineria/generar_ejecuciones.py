@@ -9,6 +9,8 @@ Requiere el entorno levantado y la web corriendo con un plazo de respuesta corto
 import re
 import requests
 import time
+from datetime import datetime
+
 
 WEB = "http://localhost:8081"
 FLOWABLE = "http://localhost:8080/flowable-ui/process-api"
@@ -155,8 +157,69 @@ def camino_modificaciones_y_rechazo(numero):
     completar(instancia, "archivarSolicitud")
     return curso, resultado(instancia)
 
+# Se alternan para que el historial tenga tareas de distintas personas (§4.3.3).
+ADMINISTRATIVOS = ["administrativo", "jefe_admin"]
+DOCENTES = ["docente1", "docente2", "jefe_docente"]
+
+
+def ahora():
+    """Fecha de inicio del curso: la actual, así el timer "fecha programada" dispara enseguida (docs/06 §5)."""
+    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def llevar_a_preparacion(numero, con_modificaciones=False):
+    """Negocia y acepta la propuesta: queda habilitado el acceso y empieza la preparación."""
+    instancia, curso = crear_solicitud(numero)
+    completar(instancia, "registrarYElaborarPropuesta", PROPUESTA)
+    if con_modificaciones:
+        enviar_mensaje(instancia, "modificacionesPropuesta", {"observacionesEmpresa": "Cambiar las fechas."})
+        completar(instancia, "revisarPropuesta", PROPUESTA | {"fechasPosibles": "Martes y jueves"})
+    enviar_mensaje(instancia, "aceptacionPropuesta", {"fechaInicioCurso": ahora()})
+    return instancia, curso
+
+
+def preparar(instancia, numero, aula=True, aula_virtual=False, equipamiento=False):
+    """Las tres ramas en paralelo: inscripciones, materiales y recursos (§1.2)."""
+    administrativo = ADMINISTRATIVOS[numero % 2]
+    enviar_mensaje(instancia, "nominaParticipantes", {"participantes": ["Ana Gómez", "Luis Pérez", "Sofía Díaz"]})
+    completar(instancia, "confeccionarListaDefinitiva", {"listaDefinitiva": "Ana Gómez\nLuis Pérez\nSofía Díaz"})
+    completar(instancia, "prepararMateriales", reclamar_como=administrativo)
+    completar(instancia, "evaluarRecursos", {
+        "requiereAula": aula,
+        "requiereAulaVirtual": aula_virtual,
+        "requiereEquipamiento": equipamiento,
+    }, reclamar_como=administrativo)
+    if aula_virtual:
+        completar(instancia, "solicitarAulaVirtual", reclamar_como=administrativo)
+    if equipamiento:
+        completar(instancia, "contratarEquipamiento", reclamar_como=administrativo)
+
+
+def desarrollar(instancia, numero, equipamiento=False):
+    """Docente, dictado, informe y cierre del expediente; al final se liberan los recursos (§1.4)."""
+    docente = DOCENTES[numero % 3]
+    completar(instancia, "definirDocente", {"docenteAsignado": docente})
+    completar(instancia, "desarrollarCurso")
+    completar(instancia, "elaborarInformeResultados", {"informeResultados": "Curso dictado sin inconvenientes."})
+    completar(instancia, "enviarInformeYArchivarExpediente")
+    if equipamiento:
+        completar(instancia, "liberarEquipamiento", reclamar_como=ADMINISTRATIVOS[numero % 2])
+
+
+def esperar_fin(instancia):
+    """Espera a que la instancia termine y devuelve su resultado."""
+    esperar("que termine la instancia",
+            lambda: primero("/history/historic-process-instances", {"processInstanceId": instancia, "finished": "true"}))
+    return resultado(instancia)
+
+
+def camino_curso_finalizado(numero, aula=True, aula_virtual=False, equipamiento=False, con_modificaciones=False):
+    """Se acepta la propuesta y el curso se prepara, se dicta y se cierra → FINALIZADO."""
+    instancia, curso = llevar_a_preparacion(numero, con_modificaciones)
+    preparar(instancia, numero, aula, aula_virtual, equipamiento)
+    desarrollar(instancia, numero, equipamiento)
+    return curso, esperar_fin(instancia)
+
 if __name__ == "__main__":
-    caminos = [camino_rechazo, camino_sin_respuesta, camino_modificaciones_y_rechazo]
-    for numero, camino in enumerate(caminos, start=2):
-        curso, final = camino(numero)
-        print(f"Curso {curso} ({camino.__name__}): {final}")
+    curso, final = camino_curso_finalizado(5, aula=True, aula_virtual=True, equipamiento=True)
+    print(f"Curso {curso}: {final}")
