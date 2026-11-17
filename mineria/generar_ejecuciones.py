@@ -137,6 +137,26 @@ def camino_rechazo(numero):
     completar(instancia, "archivarSolicitud")
     return curso, resultado(instancia)
 
+def camino_sin_respuesta(numero):
+    """La empresa no responde: dos recordatorios y, al vencer el tercer plazo, se archiva → SIN_RESPUESTA."""
+    instancia, curso = crear_solicitud(numero)
+    completar(instancia, "registrarYElaborarPropuesta", PROPUESTA)
+    completar(instancia, "archivarSolicitud")  # aparece recién después de los tres plazos
+    return curso, resultado(instancia)
+
+
+def camino_modificaciones_y_rechazo(numero):
+    """La empresa pide cambios, recibe la nueva versión y la rechaza → RECHAZADO, con una vuelta de negociación."""
+    instancia, curso = crear_solicitud(numero)
+    completar(instancia, "registrarYElaborarPropuesta", PROPUESTA)
+    enviar_mensaje(instancia, "modificacionesPropuesta", {"observacionesEmpresa": "Bajar el presupuesto."})
+    completar(instancia, "revisarPropuesta", PROPUESTA | {"presupuesto": 120000})
+    enviar_mensaje(instancia, "rechazoPropuesta")
+    completar(instancia, "archivarSolicitud")
+    return curso, resultado(instancia)
+
 if __name__ == "__main__":
-    curso, final = camino_rechazo(2)
-    print(f"Curso {curso}: {final}")
+    caminos = [camino_rechazo, camino_sin_respuesta, camino_modificaciones_y_rechazo]
+    for numero, camino in enumerate(caminos, start=2):
+        curso, final = camino(numero)
+        print(f"Curso {curso} ({camino.__name__}): {final}")
