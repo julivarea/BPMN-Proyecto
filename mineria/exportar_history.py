@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from getpass import getpass
+from collections import Counter
 
 import requests
 
@@ -14,7 +15,23 @@ PROCESS_KEY = "organizarCurso"
 # Opcional: copiar aquÃ­ los IDs BPMN de las actividades y eventos
 # de negociaciÃ³n que se quieran analizar.
 # VacÃ­o = exportar todos los elementos histÃ³ricos finalizados.
-ACTIVIDADES = set()
+ACTIVIDADES = {
+    "solicitudRecibida",
+    "evaluarViabilidad",
+    "comunicarImposibilidad",
+    "finNoViable",
+    "registrarYElaborarPropuesta",
+    "enviarPropuesta",
+    "plazoRespuestaVencido",
+    "enviarRecordatorio",
+    "modificacionesRecibidas",
+    "revisarPropuesta",
+    "rechazoRecibido",
+    "aceptacionRecibida",
+    "archivarSolicitud",
+    "finSolicitudArchivada",
+    "habilitarAccesoEmpresa",
+}
 # Ejemplo ilustrativo:
 # ACTIVIDADES = {"enviarPropuesta", "revisarPropuesta", "recordatorio"}
 
@@ -52,10 +69,48 @@ def consultar_todos(session, recurso, filtros):
 def fecha_iso(valor):
     return datetime.fromisoformat(valor.replace("Z", "+00:00"))
 
+def eventos_ocurridos(actividades):
+    """IDs de los eventos de captura que ocurrieron de verdad.
+
+    Al llegar al gateway de eventos, Flowable activa todos los eventos posibles (aceptación, rechazo,
+    modificaciones, plazo) y, cuando ocurre uno, cancela los demás. Los cancelados también quedan en el
+    historial con fecha de fin, y la API REST no informa que fueron cancelados. Un evento ocurrió si el
+    proceso siguió por su flecha de salida (flujo_<evento>_<destino>, convención del modelo) en la misma
+    ejecución, después de que el evento terminó.
+    """
+    eventos = [
+        a for a in actividades
+        if a["activityType"] == "intermediateCatchEvent" and a.get("endTime")
+    ]
+    ocurridos = set()
+    for flecha in actividades:
+        if flecha["activityType"] != "sequenceFlow":
+            continue
+        candidatos = [
+            evento for evento in eventos
+            if flecha["activityId"].startswith(f"flujo_{evento['activityId']}_")
+            and evento["executionId"] == flecha["executionId"]
+            and fecha_iso(evento["endTime"]) <= fecha_iso(flecha["startTime"])
+        ]
+        if candidatos:
+            # La flecha sale del último evento que terminó antes que ella en esa ejecución.
+            ocurrido = max(candidatos, key=lambda evento: fecha_iso(evento["endTime"]))
+            ocurridos.add(ocurrido["id"])
+    return ocurridos
+
+def resumir(eventos):
+    """Muestra cuántas veces aparece cada actividad, para revisar el CSV de un vistazo."""
+    conteo = Counter(evento["actividad"] for evento in eventos)
+    ancho = max(len(actividad) for actividad in conteo)
+    print(f"\n{'Actividad':<{ancho}}  Veces")
+    print(f"{'-' * ancho}  -----")
+    for actividad, veces in conteo.most_common():
+        print(f"{actividad:<{ancho}}  {veces:>5}")
+
 
 def main():
     usuario = input("Usuario de Flowable: ")
-    clave = getpass("ContraseÃ±a: ")
+    clave = getpass("Contraseña: ")
 
     eventos = []
 
@@ -76,15 +131,23 @@ def main():
             if instancia.get("deleteReason"):
                 continue
 
-            actividades = consultar_todos(
+            actividades = list(consultar_todos(
                 session,
                 "history/historic-activity-instances",
                 {"processInstanceId": instancia["id"]},
-            )
+            ))
+            ocurridos = eventos_ocurridos(actividades)
 
             for actividad in actividades:
-                # No exportar elementos sin fecha de finalizaciÃ³n.
+                # No exportar elementos sin fecha de finalización.
                 if not actividad.get("endTime"):
+                    continue
+
+                # No exportar los eventos que el gateway de eventos canceló.
+                if (
+                    actividad["activityType"] == "intermediateCatchEvent"
+                    and actividad["id"] not in ocurridos
+                ):
                     continue
 
                 if (
@@ -128,7 +191,7 @@ def main():
     with open(
         ARCHIVO_SALIDA, "w", newline="", encoding="utf-8"
     ) as archivo:
-        escritor = csv.DictWriter(archivo, fieldnames=columnas)
+        escritor = csv.DictWriter(archivo, fieldnames=columnas, lineterminator="\n")
         escritor.writeheader()
         escritor.writerows(eventos)
 
@@ -140,6 +203,7 @@ def main():
         f"Generado {ARCHIVO_SALIDA}: "
         f"{len(eventos)} eventos de {cantidad_instancias} instancias."
     )
+    resumir(eventos)
 
 
 if __name__ == "__main__":
