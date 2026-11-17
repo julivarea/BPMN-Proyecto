@@ -129,7 +129,7 @@ Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-
 
 | Timer | Configuración | Nota |
 |-------|---------------|------|
-| 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `proceso.plazo-respuesta`: `P5D` en serio; en la demo, `PROCESO_PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Sin esta variable la instancia falla al llegar al timer: si se inicia desde la Task app, agregarla antes (03-guia-flowable §2) |
+| 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `solicitudes.plazo-respuesta`: `P5D` en serio; en la demo, `PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Sin esta variable la instancia falla al llegar al timer: si se inicia desde la Task app, agregarla antes (03-guia-flowable §2) |
 | fecha programada | `timeDate = ${fechaInicioCurso}` | Fecha ISO-8601 fijada al aceptar. Si ya pasó, se dispara enseguida (útil para la demo) |
 
 ## 6. Regla de negocio
