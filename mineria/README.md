@@ -45,3 +45,24 @@ del §4.3.3 tengan tareas de distintas personas.
 **Ojo:** el conteo de viabilidad incluye los cursos en ejecución que ya hubiera. Si al empezar hay cinco o más, las
 solicitudes que el script quiere aceptar salen `NO_VIABLE` y el script se detiene esperando *Registrar y elaborar
 propuesta*. Para empezar de cero: `docker compose down -v` y repetir la "Primera vez" del README principal.
+
+## Exportar el historial de la negociación
+
+Desde `mineria/`, con el entorno de Python activo (pide usuario y contraseña de Flowable: `admin` / `test`):
+
+```bash
+python exportar_history.py
+```
+
+Genera `eventos.csv`: una fila por actividad (caso, actividad y momento), solo de la etapa de negociación. Es el
+script de la cátedra con tres adaptaciones:
+
+- **Proceso:** `organizarCurso`.
+- **Actividades de la negociación** (`docs/06` §10): desde *recibir solicitud de curso* hasta *Habilitar acceso a
+  la empresa* o un fin anterior (no viable o solicitud archivada). Se excluyen los gateways: son decisiones y
+  uniones del diagrama, no actividades, y en el gráfico serían ruido.
+- **Eventos cancelados:** al llegar a *Esperar respuesta* (gateway de eventos), Flowable activa los cuatro eventos
+  posibles (aceptación, rechazo, modificaciones y el plazo de 5 días) y, cuando ocurre uno, cancela los otros. Los
+  cancelados también quedan en el historial con fecha de fin, y la API REST no informa que fueron cancelados. Sin
+  filtrarlos, cada espera aparecería como si hubieran pasado las cuatro cosas. Un evento se exporta solo si el
+  proceso siguió por su flecha de salida (`flujo_<evento>_<destino>`) en la misma ejecución.
