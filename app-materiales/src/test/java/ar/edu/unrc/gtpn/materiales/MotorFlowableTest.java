@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+import java.util.TimeZone;
+
 import org.flowable.common.engine.impl.persistence.StrongUuidGenerator;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
@@ -25,6 +27,20 @@ class MotorFlowableTest {
     @Test
     void noEjecutaTimersNiTareasAsincronas() {
         assertFalse(configuracion.isAsyncExecutorActivate());
+    }
+
+    @Test
+    void trabajaEnUtcComoElServidorParaQueLasFechasDelHistorialSeanCoherentes() {
+        TimeZone original = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Argentina/Buenos_Aires"));
+
+            MotorFlowable.usarUtc();
+
+            assertEquals("UTC", TimeZone.getDefault().getID());
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 
     @Test

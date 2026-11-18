@@ -238,6 +238,7 @@ final class VentanaDeTareas extends JFrame {
 
     private void cargarTareas() {
         SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        formato.setTimeZone(MotorFlowable.zonaLocal());
         String tareaAnterior = tareaSeleccionada() == null ? null : tareaSeleccionada().getId();
         tareas = servicio.tareasDe(usuario);
         filas.setRowCount(0);

@@ -44,6 +44,7 @@ Como la app escribe en la misma base que el servidor, su motor se configura para
 | `DB_SCHEMA_UPDATE_FALSE` | Las tablas son del servidor: la app no las crea ni las actualiza. Si la versión de la librería no coincide con la de la base, falla al conectar en lugar de modificar el esquema |
 | `setAsyncExecutorActivate(false)` | Los timers y las tareas asíncronas los ejecuta solo el servidor. La app no tiene las clases Java del proceso: si ejecutara esos trabajos, fallarían y las instancias se trabarían |
 | `StrongUuidGenerator` | Genera los IDs con el mismo formato (UUID) que el servidor |
+| Zona horaria UTC (`MotorFlowable.usarUtc()`) | El historial guarda fechas sin zona. El servidor corre en UTC: si la app escribiera en la hora local (UTC-3), las fechas que ella completa quedarían 3 horas antes y las duraciones de las ramas (§4.3.2) saldrían negativas. Las fechas se muestran igual en la hora local de la máquina |
 
 `MotorFlowableTest` verifica estas tres cosas: si alguien las cambia, `./mvnw verify` falla. No se conecta a ninguna
 base, así que corre también en CI.
