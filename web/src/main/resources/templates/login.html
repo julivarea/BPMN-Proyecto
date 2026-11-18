@@ -10,7 +10,7 @@
     <p class="mensaje" th:if="${param.salida}">Cerraste la sesión.</p>
     <p class="error" th:if="${param.expirada}">La página estaba desactualizada o tu sesión venció. Ingresá de nuevo.</p>
     <p class="error" th:if="${param.error}">No se pudo ingresar: revisá el usuario y la contraseña.</p>
-    <form class="formulario" th:action="@{/login}" method="post">
+    <form class="formulario formulario-compacto" th:action="@{/login}" method="post">
         <label>Usuario
             <input type="text" name="username" autocomplete="username" required autofocus>
         </label>

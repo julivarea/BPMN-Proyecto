@@ -9,7 +9,7 @@
     <h1>Definir docente</h1>
     <p>Elegí quién desarrollará el curso de la solicitud
         <strong th:text="${tarea.solicitud() == null ? '—' : tarea.solicitud()}">42</strong>.</p>
-    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/definir-docente'}" method="post">
+    <form class="formulario formulario-compacto" th:action="@{'/tareas/' + ${tarea.id()} + '/definir-docente'}" method="post">
         <label for="docenteAsignado">Docente responsable</label>
         <select id="docenteAsignado" name="docenteAsignado" required>
             <option value="" selected disabled>Seleccioná un docente</option>

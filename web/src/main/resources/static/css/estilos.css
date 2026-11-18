@@ -76,10 +76,26 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 .sesion button:hover, a.sesion:hover { background: rgba(255, 255, 255, 0.1); }
 
 /* Formularios */
-.formulario { display: grid; gap: 0.75rem; max-width: 22rem; }
+/* Ocupan todo el ancho del contenido; los chicos (login, elegir un docente) usan .formulario-compacto. */
+.formulario { display: grid; gap: 0.75rem; }
+.formulario-compacto { max-width: 22rem; }
 .formulario label { display: grid; gap: 0.3rem; font-weight: 600; }
-.formulario input, .formulario textarea { padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5rem; font: inherit; }
-.formulario fieldset { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid #cfd5df; border-radius: 0.5rem; }
+.formulario input, .formulario textarea { width: 100%; padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5rem; font: inherit; }
+.formulario textarea { min-height: 6rem; resize: vertical; }
+/* Los campos de cada grupo se reparten en columnas según el ancho; los de texto largo ocupan la fila entera. */
+.formulario fieldset {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.75rem 1rem;
+    padding: 1rem;
+    border: 1px solid #cfd5df;
+    border-radius: 0.5rem;
+}
+.formulario fieldset legend { padding: 0 0.4rem; font-weight: 600; }
+.formulario fieldset label:has(textarea), .formulario fieldset .ancho { grid-column: 1 / -1; }
+
+/* Las áreas de texto de las pantallas de tareas traen cols fijas: se adaptan al ancho disponible. */
+main textarea { width: 100%; max-width: 100%; }
 .formulario button {
     justify-self: start;
     padding: 0.55rem 1.2rem;
@@ -151,7 +167,6 @@ select { padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5r
     main { padding: 1.25rem 0.75rem; }
     .tabla { min-width: 36rem; }
     .tabla .accion { white-space: nowrap; }
-    .formulario { max-width: none; }
 }
 
 .mensaje, .error { padding: 0.6rem 0.9rem; border-radius: 0.5rem; }
