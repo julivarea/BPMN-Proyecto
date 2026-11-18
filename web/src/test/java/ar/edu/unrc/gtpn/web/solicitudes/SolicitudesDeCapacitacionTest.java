@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.ResourceAccessException;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
@@ -29,7 +33,8 @@ class SolicitudesDeCapacitacionTest {
     private final SolicitudesRepository repositorio = mock(SolicitudesRepository.class);
     private final ClienteFlowable flowable = mock(ClienteFlowable.class);
     private final SolicitudesDeCapacitacion solicitudes =
-            new SolicitudesDeCapacitacion(repositorio, flowable, new SolicitudesProperties("P5D"));
+            new SolicitudesDeCapacitacion(repositorio, flowable, new SolicitudesProperties("P5D"),
+                    TransactionOperations.withoutTransaction());
 
     @Test
     void unaEmpresaNuevaSeRegistraConElCuitSoloConDigitos() {
@@ -84,6 +89,26 @@ class SolicitudesDeCapacitacionTest {
         assertThrows(SolicitudNoRegistrada.class, () -> solicitudes.solicitar(solicitud(CUIT, "Acme SA")));
 
         verify(repositorio, never()).vincularInstancia(anyLong(), any());
+        verify(repositorio).eliminarCurso(42L);
+    }
+
+    @Test
+    void elCursoSeConfirmaEnLaBaseAntesDeIniciarLaInstancia() {
+        // Una instancia que termina al iniciarse (no viable) actualiza el curso desde el motor: tiene que existir ya.
+        TransactionOperations transacciones = mock(TransactionOperations.class);
+        when(transacciones.execute(any())).thenAnswer(
+                llamada -> llamada.<TransactionCallback<?>>getArgument(0).doInTransaction(null));
+        SolicitudesDeCapacitacion servicio = new SolicitudesDeCapacitacion(repositorio, flowable,
+                new SolicitudesProperties("P5D"), transacciones);
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn("instancia-1");
+
+        servicio.solicitar(solicitud(CUIT, "Acme SA"));
+
+        InOrder orden = inOrder(transacciones, flowable);
+        orden.verify(transacciones).execute(any());
+        orden.verify(flowable).iniciarPorMensaje(any(), any(), anyMap());
     }
 
     @Test

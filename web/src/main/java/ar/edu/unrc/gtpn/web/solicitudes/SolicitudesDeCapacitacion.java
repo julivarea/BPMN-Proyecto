@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.RestClientException;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
@@ -28,21 +28,37 @@ public class SolicitudesDeCapacitacion {
     private final SolicitudesRepository repositorio;
     private final ClienteFlowable flowable;
     private final SolicitudesProperties propiedades;
+    private final TransactionOperations transacciones;
 
     public SolicitudesDeCapacitacion(SolicitudesRepository repositorio, ClienteFlowable flowable,
-            SolicitudesProperties propiedades) {
+            SolicitudesProperties propiedades, TransactionOperations transacciones) {
         this.repositorio = repositorio;
         this.flowable = flowable;
         this.propiedades = propiedades;
+        this.transacciones = transacciones;
     }
 
-    /** Devuelve el id del curso creado, que es también la businessKey de su instancia. */
-    @Transactional
+    /**
+     * Devuelve el id del curso creado, que es también la businessKey de su instancia.
+     *
+     * <p>El curso se confirma en la base <b>antes</b> de iniciar la instancia: el listener de fin del proceso actualiza
+     * el estado del curso, y una instancia que termina al iniciarse (no viable) lo hace antes de que esta solicitud
+     * termine. Con todo en una sola transacción, el curso todavía no existiría para el listener y quedaría en curso
+     * para siempre. Si Flowable no inicia la instancia, el curso recién creado se elimina.
+     */
     public long solicitar(SolicitudFormulario solicitud) {
         String cuit = soloDigitos(solicitud.cuit());
-        long empresaId = empresaSolicitante(cuit, solicitud.razonSocial().strip());
-        long cursoId = repositorio.crearCurso(empresaId, solicitud);
-        String instanciaId = iniciarProceso(cursoId, solicitud.nombre().strip());
+        long cursoId = transacciones.execute(estado -> {
+            long empresaId = empresaSolicitante(cuit, solicitud.razonSocial().strip());
+            return repositorio.crearCurso(empresaId, solicitud);
+        });
+        String instanciaId;
+        try {
+            instanciaId = iniciarProceso(cursoId, solicitud.nombre().strip());
+        } catch (SolicitudNoRegistrada error) {
+            repositorio.eliminarCurso(cursoId);
+            throw error;
+        }
         repositorio.vincularInstancia(cursoId, instanciaId);
         return cursoId;
     }

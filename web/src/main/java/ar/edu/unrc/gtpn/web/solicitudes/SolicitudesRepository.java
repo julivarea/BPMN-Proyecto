@@ -56,6 +56,11 @@ public class SolicitudesRepository {
                 .single();
     }
 
+    /** Elimina un curso que no llegó a tener instancia (Flowable no la inició). */
+    void eliminarCurso(long cursoId) {
+        jdbc.sql("DELETE FROM curso WHERE id = :cursoId").param("cursoId", cursoId).update();
+    }
+
     void vincularInstancia(long cursoId, String instanciaId) {
         jdbc.sql("UPDATE curso SET process_instance_id = :instanciaId WHERE id = :cursoId")
                 .param("instanciaId", instanciaId)
