@@ -2,6 +2,7 @@ package ar.edu.unrc.gtpn.web.empresa;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ar.edu.unrc.gtpn.web.flowable.Actividad;
@@ -42,6 +43,13 @@ public enum EstadoDelCurso {
     private static final Set<String> INFORME = Set.of(
             "elaborarInformeResultados", "enviarInformeYArchivarExpediente", "liberarRecursos", "notificarCierre");
 
+    /**
+     * Liberación de recursos al cerrar el curso. La compensación no espera a las tareas de usuario (docs/05,
+     * limitación 2): con *Liberar equipamiento* pendiente el proceso ya llegó a su fin, pero la instancia sigue
+     * abierta hasta que se la completa. Se llega acá por el cierre normal o por una cancelación.
+     */
+    private static final Set<String> LIBERACION = Set.of("liberarAula", "liberarAulaVirtual", "liberarEquipamiento");
+
     /** Subproceso de cancelación, que interrumpe el curso en cualquier etapa. */
     private static final Set<String> CANCELACION = Set.of("cancelacion", "cancelacionRecibida", "preparacionCancelada");
 
@@ -75,8 +83,11 @@ public enum EstadoDelCurso {
     /**
      * Estado de una instancia activa, según sus actividades en curso. La cancelación gana sobre todo lo demás; si no
      * hay ninguna actividad conocida, la instancia está en la negociación previa a la aceptación.
+     *
+     * @param resultado variable {@code resultado} de la instancia; solo se consulta si el curso está liberando recursos,
+     *                  para distinguir el cierre normal ({@code FINALIZADO}) de una cancelación ({@code CANCELADO})
      */
-    static EstadoDelCurso derivar(List<Actividad> actividades) {
+    static EstadoDelCurso derivar(List<Actividad> actividades, Supplier<String> resultado) {
         Set<String> ids = actividades.stream()
                 .map(Actividad::id)
                 .collect(Collectors.toSet());
@@ -85,6 +96,9 @@ public enum EstadoDelCurso {
         }
         if (contieneAlguna(ids, DESARROLLO)) {
             return EN_DESARROLLO;
+        }
+        if (contieneAlguna(ids, LIBERACION)) {
+            return "CANCELADO".equals(resultado.get()) ? CANCELADO : FINALIZADO;
         }
         if (contieneAlguna(ids, INFORME)) {
             return EN_ELABORACION_DEL_INFORME;

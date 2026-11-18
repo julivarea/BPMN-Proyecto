@@ -118,6 +118,15 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 .tabla th, .tabla td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e3e7ef; text-align: left; }
 .tabla th { font-size: 0.85rem; color: #5b6478; text-transform: uppercase; letter-spacing: 0.03em; }
 .tabla .accion { text-align: right; }
+/* Tabla de cursos de la empresa: columnas propias (curso, solicitado, programa, estado, acción) y texto que se parte. */
+.tabla-cursos th:nth-child(1) { width: 20%; }
+.tabla-cursos th:nth-child(2) { width: 12%; }
+.tabla-cursos th:nth-child(3) { width: 34%; }
+.tabla-cursos th:nth-child(4) { width: 17%; }
+.tabla-cursos th:nth-child(5) { width: 17%; }
+.tabla-cursos td { overflow-wrap: anywhere; }
+.tabla-cursos td:nth-child(2) { white-space: nowrap; }
+.tabla-cursos td:nth-child(3) { white-space: normal; }
 .nota { color: #5b6478; font-size: 0.9rem; }
 
 h2 { margin-top: 2rem; font-size: 1.15rem; }

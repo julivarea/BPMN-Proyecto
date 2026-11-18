@@ -33,4 +33,14 @@ public record CursoDeLaEmpresa(
         String estado,
         String instanciaId,
         LocalDateTime creadoEn) {
+
+    /**
+     * El mismo curso con lo que el proceso ya definió pero guarda en la base recién al terminar: lo acordado al
+     * aceptar la propuesta y el informe de resultados.
+     */
+    public CursoDeLaEmpresa conAcuerdo(LocalDateTime fechaInicio, String programa, BigDecimal presupuesto,
+            String informe) {
+        return new CursoDeLaEmpresa(id, nombre, descripcion, participantesEstimados, fechasPreferidas, programa,
+                presupuesto, fechaInicio, informe, estado, instanciaId, creadoEn);
+    }
 }
