@@ -45,7 +45,7 @@ Con el entorno Docker levantado ([04-entorno-desarrollo.md](04-entorno-desarroll
 ./mvnw -pl app-comunicaciones compile exec:java
 ```
 
-Muestra las solicitudes en curso (las instancias activas de `organizarCurso`), identificadas por su `businessKey`.
+Muestra las solicitudes en curso (las instancias activas de `organizarCurso`) como `businessKey · curso · vN`: el nombre del curso (variable `nombreCurso`, que la web carga al iniciar la instancia) y la última versión de la propuesta enviada (`versionPropuesta`). Se leen con `includeProcessVariables=true`.
 Al elegir una, se habilitan solo los botones de las comunicaciones que esa instancia está esperando en ese momento
 (§6). *Actualizar* vuelve a consultar. El aspecto es el mismo que el de la app de materiales (FlatLaf, un 25 % más
 grande; se cambia agregando, por ejemplo, `-Dflatlaf.uiScale=1.5` al comando).

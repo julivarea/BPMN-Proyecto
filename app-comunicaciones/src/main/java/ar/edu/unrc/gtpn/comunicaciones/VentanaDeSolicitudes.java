@@ -1,7 +1,7 @@
 package ar.edu.unrc.gtpn.comunicaciones;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
@@ -74,17 +74,21 @@ final class VentanaDeSolicitudes extends JFrame {
         pie.add(seleccion, BorderLayout.CENTER);
         pie.add(actualizar, BorderLayout.EAST);
 
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT, UIScale.scale(8), 0));
+        // Cuadrícula y no FlowLayout: con cinco botones largos, un FlowLayout no baja de línea dentro del panel y los
+        // últimos (la nómina y la cancelación) quedan cortados fuera de la ventana.
+        JPanel botonesDeComunicacion = new JPanel(new GridLayout(0, 3, UIScale.scale(8), UIScale.scale(8)));
+        JPanel acciones = new JPanel(new BorderLayout(0, UIScale.scale(6)));
         JLabel etiquetaAcciones = new JLabel("Comunicaciones:");
         etiquetaAcciones.putClientProperty("FlatLaf.styleClass", "light");
-        acciones.add(etiquetaAcciones);
+        acciones.add(etiquetaAcciones, BorderLayout.NORTH);
+        acciones.add(botonesDeComunicacion, BorderLayout.CENTER);
         for (Comunicacion comunicacion : Comunicacion.values()) {
             JButton boton = new JButton(comunicacion.etiqueta());
             boton.putClientProperty("JButton.buttonType", "roundRect");
             boton.setEnabled(false);
             boton.addActionListener(evento -> enviar(comunicacion));
             botones.put(comunicacion, boton);
-            acciones.add(boton);
+            botonesDeComunicacion.add(boton);
         }
 
         JPanel sur = new JPanel(new BorderLayout(0, UIScale.scale(10)));
@@ -100,7 +104,7 @@ final class VentanaDeSolicitudes extends JFrame {
         setContentPane(contenido);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(UIScale.scale(820), UIScale.scale(500));
+        setSize(UIScale.scale(820), UIScale.scale(560));
         setLocationRelativeTo(null);
         cargarSolicitudes();
     }
@@ -122,7 +126,7 @@ final class VentanaDeSolicitudes extends JFrame {
         }
         filas.setRowCount(0);
         for (Solicitud solicitud : solicitudes) {
-            filas.addRow(new Object[] {solicitud.clave(), FORMATO_FECHA.format(solicitud.iniciada())});
+            filas.addRow(new Object[] {solicitud.descripcion(), FORMATO_FECHA.format(solicitud.iniciada())});
         }
         // Se conserva la solicitud elegida si sigue en curso, para no perder el contexto tras enviar.
         boolean restaurada = false;
@@ -143,7 +147,7 @@ final class VentanaDeSolicitudes extends JFrame {
         Solicitud solicitud = seleccionada();
         seleccion.setText(solicitud == null
                 ? "Elegí una solicitud de la lista."
-                : "Solicitud seleccionada: " + solicitud.clave());
+                : "Solicitud seleccionada: " + solicitud.descripcion());
         habilitarComunicaciones(solicitud);
     }
 

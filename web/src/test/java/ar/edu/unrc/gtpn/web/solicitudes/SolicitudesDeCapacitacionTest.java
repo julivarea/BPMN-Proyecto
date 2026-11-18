@@ -51,7 +51,7 @@ class SolicitudesDeCapacitacionTest {
         long cursoId = solicitudes.solicitar(solicitud(CUIT, "Acme SA"));
 
         assertEquals(42L, cursoId);
-        verify(flowable).iniciarPorMensaje("solicitudCapacitacion", "42", Map.of("plazoRespuesta", "P5D"));
+        verify(flowable).iniciarPorMensaje("solicitudCapacitacion", "42", Map.of("plazoRespuesta", "P5D", "nombreCurso", "Excel avanzado"));
         verify(repositorio).vincularInstancia(42L, "instancia-1");
     }
 

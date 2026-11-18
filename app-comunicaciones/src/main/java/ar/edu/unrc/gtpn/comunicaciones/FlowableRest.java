@@ -50,17 +50,29 @@ class FlowableRest {
 
     /** Solicitudes cuya instancia del proceso sigue en curso, de la más vieja a la más nueva. */
     List<Solicitud> solicitudesEnCurso() {
-        JsonNode respuesta = enviar("GET", "/runtime/process-instances?processDefinitionKey=organizarCurso&size="
-                + MAXIMO_RESULTADOS, null);
+        JsonNode respuesta = enviar("GET", "/runtime/process-instances?processDefinitionKey=organizarCurso"
+                + "&includeProcessVariables=true&size=" + MAXIMO_RESULTADOS, null);
         List<Solicitud> solicitudes = new ArrayList<>();
         for (JsonNode instancia : respuesta.get("data")) {
             solicitudes.add(new Solicitud(
                     instancia.get("id").asText(),
                     instancia.path("businessKey").asText("(sin clave)"),
-                    Instant.parse(instancia.get("startTime").asText())));
+                    Instant.parse(instancia.get("startTime").asText()),
+                    variable(instancia, "nombreCurso").map(JsonNode::asText).orElse(null),
+                    variable(instancia, "versionPropuesta").map(JsonNode::asInt).orElse(0)));
         }
         solicitudes.sort(Comparator.comparing(Solicitud::iniciada));
         return solicitudes;
+    }
+
+    /** Valor de una variable de la instancia (viene en {@code variables} gracias a includeProcessVariables). */
+    private static Optional<JsonNode> variable(JsonNode instancia, String nombre) {
+        for (JsonNode variable : instancia.path("variables")) {
+            if (nombre.equals(variable.path("name").asText())) {
+                return Optional.of(variable.path("value")).filter(valor -> !valor.isNull());
+            }
+        }
+        return Optional.empty();
     }
 
     /**

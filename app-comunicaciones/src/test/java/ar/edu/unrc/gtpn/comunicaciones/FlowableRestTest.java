@@ -58,7 +58,7 @@ class FlowableRestTest {
 
         flowable.solicitudesEnCurso();
 
-        assertEquals("/process-api/runtime/process-instances?processDefinitionKey=organizarCurso&size=500",
+        assertEquals("/process-api/runtime/process-instances?processDefinitionKey=organizarCurso&includeProcessVariables=true&size=500",
                 ultimoPedido.getRequestURI().toString());
         assertEquals("Basic YWRtaW46dGVzdA==", ultimoPedido.getRequestHeaders().getFirst("Authorization"));
     }
@@ -74,6 +74,22 @@ class FlowableRestTest {
         assertEquals(List.of(
                 new Solicitud("i1", "42", Instant.parse("2026-11-08T10:00:00Z")),
                 new Solicitud("i2", "43", Instant.parse("2026-11-09T10:00:00Z"))), flowable.solicitudesEnCurso());
+    }
+
+    @Test
+    void solicitudesEnCursoLeeElNombreDelCursoYLaVersionDeLaPropuestaDeSusVariables() {
+        responder(200, """
+                {"data": [
+                  {"id": "i1", "businessKey": "42", "startTime": "2026-11-08T10:00:00.000Z",
+                   "variables": [{"name": "nombreCurso", "value": "Excel avanzado"},
+                                 {"name": "versionPropuesta", "value": 2}]},
+                  {"id": "i2", "businessKey": "43", "startTime": "2026-11-09T10:00:00.000Z", "variables": []}],
+                 "total": 2}""");
+
+        assertEquals(List.of(
+                new Solicitud("i1", "42", Instant.parse("2026-11-08T10:00:00Z"), "Excel avanzado", 2),
+                new Solicitud("i2", "43", Instant.parse("2026-11-09T10:00:00Z"), null, 0)),
+                flowable.solicitudesEnCurso());
     }
 
     @Test

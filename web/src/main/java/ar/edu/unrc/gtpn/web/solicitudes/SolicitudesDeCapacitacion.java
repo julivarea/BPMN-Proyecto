@@ -22,6 +22,8 @@ public class SolicitudesDeCapacitacion {
     // Nombres definidos en el modelo BPMN: cambiarlos rompe el inicio del proceso.
     static final String MENSAJE_DE_INICIO = "solicitudCapacitacion";
     static final String PLAZO_RESPUESTA = "plazoRespuesta";
+    // Para mostrar la solicitud por su nombre en la app de comunicaciones, que no accede a la base de la institución.
+    static final String NOMBRE_CURSO = "nombreCurso";
 
     private final SolicitudesRepository repositorio;
     private final ClienteFlowable flowable;
@@ -40,15 +42,15 @@ public class SolicitudesDeCapacitacion {
         String cuit = soloDigitos(solicitud.cuit());
         long empresaId = empresaSolicitante(cuit, solicitud.razonSocial().strip());
         long cursoId = repositorio.crearCurso(empresaId, solicitud);
-        String instanciaId = iniciarProceso(cursoId);
+        String instanciaId = iniciarProceso(cursoId, solicitud.nombre().strip());
         repositorio.vincularInstancia(cursoId, instanciaId);
         return cursoId;
     }
 
-    private String iniciarProceso(long cursoId) {
+    private String iniciarProceso(long cursoId, String nombreCurso) {
         try {
             return flowable.iniciarPorMensaje(MENSAJE_DE_INICIO, String.valueOf(cursoId),
-                    Map.of(PLAZO_RESPUESTA, propiedades.plazoRespuesta()));
+                    Map.of(PLAZO_RESPUESTA, propiedades.plazoRespuesta(), NOMBRE_CURSO, nombreCurso));
         } catch (RestClientException error) {
             throw new SolicitudNoRegistrada(error);
         }
