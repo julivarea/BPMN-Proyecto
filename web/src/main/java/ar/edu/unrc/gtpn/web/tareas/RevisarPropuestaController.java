@@ -1,5 +1,6 @@
 package ar.edu.unrc.gtpn.web.tareas;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +78,7 @@ public class RevisarPropuestaController {
             model.addAttribute("tarea", tarea);
             model.addAttribute("curso", curso);
             model.addAttribute("propuesta", propuesta);
+            model.addAttribute("observaciones", observacionesDeLaEmpresa(tarea));
             model.addAttribute("seccion", sec);
             return "tareas/revisar-propuesta";
         } catch (Exception e) {
@@ -85,11 +87,16 @@ public class RevisarPropuestaController {
         }
     }
 
+    /**
+     * Completa la revisión con la nueva versión de la propuesta. La decisión (aceptar, pedir modificaciones o rechazar)
+     * la toma la empresa y llega por la app de comunicaciones: acá solo se corrige la propuesta según sus observaciones.
+     */
     @PostMapping("/tareas/{id}/revisar-propuesta")
-    public String procesarDecision(@PathVariable String id,
+    public String guardarNuevaVersion(@PathVariable String id,
                                   @RequestParam(defaultValue = "administracion") String seccion,
-                                  @RequestParam String decision,
-                                  @RequestParam(required = false, defaultValue = "") String observaciones,
+                                  @RequestParam String programa,
+                                  @RequestParam BigDecimal presupuesto,
+                                  @RequestParam String fechasPosibles,
                                   Principal usuario,
                                   RedirectAttributes redirect) {
         String sec = sanitizarSeccion(seccion);
@@ -99,25 +106,37 @@ public class RevisarPropuestaController {
             if (!"revisarPropuesta".equals(tarea.clave())) {
                 throw new AccionNoPermitida("La tarea seleccionada no es de revisar propuesta.");
             }
+            if (tarea.solicitud() == null) {
+                throw new AccionNoPermitida("No se pudo obtener la clave del curso.");
+            }
 
+            Long cursoId = Long.parseLong(tarea.solicitud());
+            int nuevaVersion = propuestasRepository.ultimaVersionDe(cursoId) + 1;
+            String observaciones = observacionesDeLaEmpresa(tarea);
+
+            // 1. Completar en Flowable (valida asignado y permisos antes de guardar)
             bandeja.completar(usuario.getName(), id, Map.of(
-                    "decision", decision,
-                    "observaciones", observaciones
+                    "programa", programa,
+                    "presupuesto", presupuesto,
+                    "fechasPosibles", fechasPosibles
             ));
 
-            String mensaje = switch (decision) {
-                case "ACEPTADA" -> "Propuesta aceptada con éxito.";
-                case "MODIFICAR" -> "Se ha solicitado modificar la propuesta.";
-                case "RECHAZADA" -> "Propuesta rechazada.";
-                default -> "Tarea completada.";
-            };
+            // 2. Persistir la nueva versión, con las observaciones de la empresa que la motivaron
+            propuestasRepository.guardar(new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles,
+                    observaciones));
 
-            redirect.addFlashAttribute("mensaje", mensaje);
+            redirect.addFlashAttribute("mensaje", "Propuesta v" + nuevaVersion + " registrada y tarea completada.");
         } catch (AccionNoPermitida e) {
             redirect.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "Error al procesar la revisión: " + e.getMessage());
         }
         return "redirect:/" + sec;
+    }
+
+    /** Lo que pidió la empresa al solicitar modificaciones (variable {@code observacionesEmpresa}), o null. */
+    private String observacionesDeLaEmpresa(Tarea tarea) {
+        Object observaciones = flowable.variables(tarea.instanciaId()).get("observacionesEmpresa");
+        return observaciones == null ? null : observaciones.toString();
     }
 }

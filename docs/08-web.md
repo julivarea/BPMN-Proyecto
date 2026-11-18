@@ -65,7 +65,7 @@ web/
     │   │       ├── ConfeccionarListaDefinitivaController.java  pantalla /tareas/{id}/confeccionar-lista-definitiva: la nómina editable
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
     │   │       ├── EvaluarRecursosController.java    pantalla /tareas/{id}/evaluar-recursos: recursos que necesita el curso
-    │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: la propuesta y su decisión
+    │   │       ├── RevisarPropuestaController.java   pantalla /tareas/{id}/revisar-propuesta: las observaciones de la empresa y la nueva versión
     │   │       ├── DefinirDocenteController.java     pantalla /tareas/{id}/definir-docente: elige el docente del curso
     │   │       ├── ElaborarInformeController.java    pantalla /tareas/{id}/elaborar-informe: el informe de resultados
     │   │       ├── EnviarInformeController.java      pantalla /tareas/{id}/enviar-informe: consulta, envía y archiva
@@ -93,7 +93,7 @@ web/
     │               ├── confeccionar-lista-definitiva.html  datos del curso y la nómina editable de inscriptos
     │               ├── elaborar-propuesta.html  datos del curso, formulario de la propuesta y enlace a su PDF
     │               ├── evaluar-recursos.html   datos de la solicitud y las tres casillas de recursos
-    │               ├── revisar-propuesta.html   la última propuesta con su PDF, y la decisión del administrativo
+    │               ├── revisar-propuesta.html   la última propuesta con su PDF, las observaciones de la empresa y el formulario de la nueva versión
     │               ├── definir-docente.html     selección del docente que desarrollará el curso
     │               ├── elaborar-informe.html    datos del curso y el informe de resultados editable
     │               └── enviar-informe.html      datos del curso, el informe y la confirmación del archivo
@@ -116,7 +116,7 @@ web/
             ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
             ├── EvaluarRecursosControllerTest.java     la pantalla de recursos: formulario, al menos un recurso y confirmación
-            ├── RevisarPropuestaControllerTest.java    la pantalla de revisión: formulario y decisión del administrativo
+            ├── RevisarPropuestaControllerTest.java    la pantalla de revisión: observaciones de la empresa y nueva versión
             ├── ElaborarInformeControllerTest.java     el informe de resultados: formulario, texto obligatorio y guardado
             └── EnviarInformeControllerTest.java       el envío y archivo: informe, curso, confirmación y permisos
 ```
@@ -351,7 +351,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
-| `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y la decisión (aceptar, pedir modificaciones o rechazar) completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ConfeccionarListaDefinitivaControllerTest` | La pantalla de la lista definitiva desde el navegador: el asignado ve el formulario con la nómina que envió la empresa, una lista vacía vuelve con el error y no completa la tarea, y una lista con participantes completa pasando `listaDefinitiva` (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `DefinirDocenteControllerTest` | La pantalla del jefe docente: consulta los miembros del grupo, permite elegir un docente válido y completa `definirDocente` con `docenteAsignado` (`@WebMvcTest`) | `./mvnw -pl web verify` |
