@@ -1,0 +1,19 @@
+
+Instancias analizadas: 15
+Recorridos diferentes: 6
+
+Los tres recorridos más frecuentes:
+
+3 casos (20.0 %)
+Evaluar viabilidad → Registrar y elaborar propuesta → Enviar propuesta → Revisar propuesta → Enviar propuesta → Habilitar acceso a la empresa
+
+3 casos (20.0 %)
+Evaluar viabilidad → Registrar y elaborar propuesta → Enviar propuesta → Habilitar acceso a la empresa
+
+3 casos (20.0 %)
+Evaluar viabilidad → Registrar y elaborar propuesta → Enviar propuesta → Archivar solicitud
+
+Archivos generados:
+- recorridos.png
+- modelo_descubierto.png
+- modelo_descubierto.bpmn
