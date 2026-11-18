@@ -5,10 +5,10 @@ Análisis de la etapa de negociación del proceso (la previa a la preparación d
 Contenido:
 - `generar_ejecuciones.py`: genera historial de prueba con todos los resultados posibles (issue #33).
 - `exportar_history.py`: script de la cátedra, adaptado al proceso `organizarCurso`; genera el CSV a partir del
-  historial de Flowable. *(pendiente, #34)*
+  historial de Flowable. (issue #34)
 - `analizar.py`: script de la cátedra; gráfico del comportamiento observado y los tres recorridos más frecuentes.
-  *(pendiente, #35)*
-- El CSV utilizado, una captura de los resultados y la conclusión que compara con el modelo BPMN. *(pendiente, #35)*
+- El CSV utilizado, una captura de los resultados y la conclusión que compara con el modelo BPMN.
+- `conclusion.md`: comparación con el modelo BPMN y limitaciones del análisis.
 
 Preparación del entorno de Python: ver [docs/04-entorno-desarrollo.md](../docs/04-entorno-desarrollo.md).
 
@@ -66,3 +66,26 @@ script de la cátedra con tres adaptaciones:
   cancelados también quedan en el historial con fecha de fin, y la API REST no informa que fueron cancelados. Sin
   filtrarlos, cada espera aparecería como si hubieran pasado las cuatro cosas. Un evento se exporta solo si el
   proceso siguió por su flecha de salida (`flujo_<evento>_<destino>`) en la misma ejecución.
+
+## Analizar la negociación
+
+Desde `mineria/`, con el entorno de Python activo y `eventos.csv` ya generado:
+
+```bash
+python analizar.py | tee resultados.txt
+```
+
+Es el script de la cátedra. Genera:
+
+- `resultados.txt`: cantidad de instancias, recorridos distintos y los tres más frecuentes con cantidad y porcentaje.
+- `recorridos.png`: grafo de sucesión directa (cuántas veces una actividad siguió a otra).
+- `modelo_descubierto.png` y `modelo_descubierto.bpmn`: modelo BPMN descubierto a partir de las ejecuciones.
+
+La comparación con el modelo y las limitaciones del análisis están en [conclusion.md](conclusion.md).
+
+## Reproducir todo el análisis
+
+1. Entorno levantado y web con plazo corto (ver "Generar ejecuciones de prueba").
+2. `python generar_ejecuciones.py`
+3. `python exportar_history.py` (usuario `admin`, contraseña `test`)
+4. `python analizar.py | tee resultados.txt`
