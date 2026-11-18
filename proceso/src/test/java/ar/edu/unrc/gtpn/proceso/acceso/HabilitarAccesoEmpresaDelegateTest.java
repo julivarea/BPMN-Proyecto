@@ -29,7 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 class HabilitarAccesoEmpresaDelegateTest {
 
-    private static final String CLAVE = "clave-de-prueba";
+    private static final String CLAVE = "clave123";
 
     private final CuentasDeEmpresa cuentas = mock(CuentasDeEmpresa.class);
     private final DelegateExecution ejecucion = mock(DelegateExecution.class);
@@ -51,16 +51,16 @@ class HabilitarAccesoEmpresaDelegateTest {
         delegate.execute(ejecucion);
 
         ArgumentCaptor<String> hash = ArgumentCaptor.forClass(String.class);
-        verify(cuentas).crear(eq(3L), eq("instituto-abc-s-a-3"), hash.capture());
+        verify(cuentas).crear(eq(3L), eq("Instituto ABC S.A."), hash.capture());
         assertNotEquals(CLAVE, hash.getValue(), "la clave no se guarda en claro");
-        assertTrue(encriptador.matches(CLAVE, hash.getValue()), "se guarda el BCrypt de la clave generada");
+        assertTrue(encriptador.matches(CLAVE, hash.getValue()), "se guarda el BCrypt de la clave de las empresas");
         verify(ejecucion).setVariable("accesoHabilitado", true);
     }
 
     @Test
     void laSegundaContratacionReutilizaLaCuentaSinCrearOtraYHabilitaElAcceso() {
         when(cuentas.buscarPorCurso(7))
-                .thenReturn(Optional.of(new EmpresaDelCurso(3, "Instituto ABC S.A.", "instituto-abc-s-a-3")));
+                .thenReturn(Optional.of(new EmpresaDelCurso(3, "Instituto ABC S.A.", "Instituto ABC S.A.")));
 
         delegate.execute(ejecucion);
 
@@ -89,22 +89,39 @@ class HabilitarAccesoEmpresaDelegateTest {
     }
 
     @Test
-    void elUsuarioSaleDeLaRazonSocialSinAcentosYConElIdDeLaEmpresa() {
-        assertEquals("instituto-abc-s-a-3",
-                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(3, "Instituto ABC S.A.", null)));
-        assertEquals("nunez-y-asociados-12",
-                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(12, "Núñez y Asociados", null)));
-        assertEquals("empresa-5",
-                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(5, "   ", null)));
+    void elUsuarioEsLaRazonSocialTalCualSeEscribio() {
+        assertEquals("Instituto ABC S.A.",
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(3, "  Instituto ABC S.A. ", null), u -> false));
+        assertEquals("Núñez y Asociados",
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(12, "Núñez y Asociados", null), u -> false));
+        assertEquals("empresa",
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(5, "   ", null), u -> false));
     }
 
     @Test
-    void laClaveAleatoriaEsDistintaCadaVezYNoEsVacia() {
-        String una = HabilitarAccesoEmpresaDelegate.claveAleatoria();
-        String otra = HabilitarAccesoEmpresaDelegate.claveAleatoria();
+    void siElUsuarioYaEstaTomadoSeLeAgregaElIdDeLaEmpresa() {
+        assertEquals("JV Enterprises 4",
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(4, "JV Enterprises", null),
+                        "JV Enterprises"::equals));
+    }
 
-        assertNotEquals(una, otra);
-        assertFalse(una.isEmpty());
-        assertEquals(16, una.length());
+    @Test
+    void unaRazonSocialMuyLargaSeRecortaAlLargoDelUsuario() {
+        String larga = "A".repeat(150);
+
+        assertEquals(100,
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(4, larga, null), u -> false).length());
+        assertEquals(100,
+                HabilitarAccesoEmpresaDelegate.usuarioDe(new EmpresaDelCurso(4, larga, null), u -> true).length());
+    }
+
+    @Test
+    void laCreacionConsultaSiElUsuarioEstaTomado() {
+        when(cuentas.buscarPorCurso(7)).thenReturn(Optional.of(new EmpresaDelCurso(4, "JV Enterprises", null)));
+        when(cuentas.existeUsuario("JV Enterprises")).thenReturn(true);
+
+        delegate.execute(ejecucion);
+
+        verify(cuentas).crear(eq(4L), eq("JV Enterprises 4"), anyString());
     }
 }

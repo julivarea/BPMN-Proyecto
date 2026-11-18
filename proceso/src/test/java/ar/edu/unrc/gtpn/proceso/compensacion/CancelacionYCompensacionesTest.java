@@ -62,6 +62,11 @@ class CancelacionYCompensacionesTest {
             }
 
             @Override
+            public boolean existeUsuario(String usuario) {
+                return false;
+            }
+
+            @Override
             public void crear(long empresaId, String usuario, String passwordHash) {
                 // el acceso se habilita igual; la cuenta no se guarda en los tests del proceso
             }

@@ -150,7 +150,7 @@ antes de `<definitions>`: Flowable 6.8 deja de reconocer la versión de DMN.
 |-------|------|-------|----------|
 | `viabilidad.ContarCursosEnEjecucionListener` | Execution listener `start` | *Evaluar viabilidad* | Cuenta las instancias de `organizarCurso` (todas las versiones) que siguen abiertas y tienen `accesoHabilitado = true`, y guarda `cursosEnEjecucion` (§3.1 y aclaración del profesor) |
 | `notificacion.NotificarEmpresaDelegate` | Delegate | *Comunicar imposibilidad*, *Enviar propuesta*, *Enviar recordatorio*, *Enviar confirmación*, *Notificar cierre* | Simula el envío a la empresa. Una sola clase; cada tarea la configura con el campo `asunto` |
-| `acceso.HabilitarAccesoEmpresaDelegate` | Delegate | *Habilitar acceso a la empresa* | Crea la cuenta de la empresa o reutiliza la existente, vincula el curso (§4.1.2) y fija `accesoHabilitado = true` |
+| `acceso.HabilitarAccesoEmpresaDelegate` | Delegate | *Habilitar acceso a la empresa* | Crea la cuenta de la empresa (usuario = razón social, clave `clave123`) o reutiliza la existente, vincula el curso (§4.1.2) y fija `accesoHabilitado = true` |
 | `recursos.ReservarAulaDelegate` | Delegate | *Reservar aula* | Simula el web service de aulas (§4.1.3) y guarda `aulaAsignada` |
 | `recursos.LiberarAulaDelegate` | Delegate | *Liberar aula* | Simula la liberación del aula física |
 | `recursos.LiberarAulaVirtualDelegate` | Delegate | *Liberar aula virtual* | Simula la liberación del aula virtual |

@@ -62,6 +62,14 @@ class CuentasDeEmpresaJdbcTest {
     }
 
     @Test
+    void elUsuarioTomadoSeDetectaSinDistinguirMayusculas() {
+        cuentas.crear(3, "Instituto ABC S.A.", "$2a$10$hash-de-prueba");
+
+        assertTrue(cuentas.existeUsuario("instituto abc s.a."));
+        assertFalse(cuentas.existeUsuario("Otra Empresa"));
+    }
+
+    @Test
     void unCursoInexistenteNoDevuelveEmpresa() {
         assertEquals(Optional.empty(), cuentas.buscarPorCurso(99));
     }

@@ -23,6 +23,8 @@ public final class CuentasDeEmpresaJdbc implements CuentasDeEmpresa {
             + " LEFT JOIN cuenta_empresa ce ON ce.empresa_id = e.id"
             + " WHERE c.id = ?";
 
+    private static final String EXISTE_USUARIO = "SELECT 1 FROM cuenta_empresa WHERE lower(usuario) = lower(?)";
+
     private static final String CREACION =
             "INSERT INTO cuenta_empresa (empresa_id, usuario, password_hash) VALUES (?, ?, ?)";
 
@@ -63,6 +65,19 @@ public final class CuentasDeEmpresaJdbc implements CuentasDeEmpresa {
             }
         } catch (SQLException error) {
             throw new ErrorDeInstitucion("No se pudo consultar la empresa del curso " + cursoId, error);
+        }
+    }
+
+    @Override
+    public boolean existeUsuario(String usuario) {
+        try (Connection conexion = abrir();
+                PreparedStatement consulta = conexion.prepareStatement(EXISTE_USUARIO)) {
+            consulta.setString(1, usuario);
+            try (ResultSet fila = consulta.executeQuery()) {
+                return fila.next();
+            }
+        } catch (SQLException error) {
+            throw new ErrorDeInstitucion("No se pudo consultar el usuario " + usuario, error);
         }
     }
 

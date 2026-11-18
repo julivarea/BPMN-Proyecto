@@ -112,9 +112,10 @@ Las apps de escritorio no escriben en esta base. La app de materiales solo usa l
 
 - **Consulta:** un join `curso → empresa → cuenta_empresa` por `curso.id` (el `businessKey` de la instancia) devuelve
   la empresa y su usuario, si ya tiene cuenta.
-- **Primera contratación:** se genera un usuario a partir de la razón social con el id de la empresa al final
-  (`Instituto ABC S.A.`, id 3 → `instituto-abc-s-a-3`, así dos empresas homónimas no chocan) y una clave aleatoria de
-  16 caracteres. Se guarda el hash **BCrypt** en `password_hash` y el envío de las credenciales se simula con un log.
+- **Primera contratación:** el usuario es la razón social tal como la escribió la empresa en el formulario (el login
+  no distingue mayúsculas). Si otra cuenta ya lo usa (mismo nombre y distinto CUIT), se le agrega el id de la empresa:
+  `JV Enterprises` → `JV Enterprises 4`. La clave es **`clave123` para todas las empresas** (entorno de demostración).
+  Se guarda el hash **BCrypt** en `password_hash` y el envío de las credenciales se simula con un log.
 - **Segunda contratación:** la cuenta se reutiliza; no se escribe nada y no se reenvían credenciales.
 - En los dos casos la variable `accesoHabilitado` queda en `true`, que es lo que cuenta *Cursos en ejecución*.
 

@@ -15,6 +15,9 @@ public interface CuentasDeEmpresa {
      */
     Optional<EmpresaDelCurso> buscarPorCurso(long cursoId);
 
+    /** Si ya hay una cuenta con ese usuario, sin distinguir mayúsculas (el login tampoco las distingue). */
+    boolean existeUsuario(String usuario);
+
     /**
      * Crea la cuenta de la empresa. La clave se guarda encriptada con BCrypt.
      *

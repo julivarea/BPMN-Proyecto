@@ -19,7 +19,7 @@ public class CuentaEmpresaRepositoryJdbc implements CuentaEmpresaRepository {
         return jdbc.sql("""
                 SELECT empresa_id, usuario, password_hash
                 FROM cuenta_empresa
-                WHERE usuario = :usuario
+                WHERE lower(usuario) = lower(:usuario)
                 """)
                 .param("usuario", usuario)
                 .query((fila, numero) -> new CuentaEmpresa(
