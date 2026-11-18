@@ -82,9 +82,10 @@ class SolicitudControllerTest {
     }
 
     @Test
-    void sinTokenCsrfNoSeAceptaLaSolicitud() throws Exception {
+    void sinTokenCsrfNoSeAceptaLaSolicitudYSeVuelveAlFormularioConUnAviso() throws Exception {
         mvc.perform(post("/solicitar").param("cuit", "30-12345678-9"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/solicitar?expirada"));
 
         verify(solicitudes, never()).solicitar(any());
     }

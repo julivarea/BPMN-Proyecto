@@ -9,15 +9,15 @@
 </head>
 <body>
 
-<!-- seccion: "inicio", "empresas", "administracion", "docentes" o "" (ninguna). Marca el enlace de la página actual. -->
+<!-- seccion: "solicitar", "empresas", "administracion", "docentes" o "" (ninguna). Marca el enlace de la página actual. -->
 <header class="encabezado" th:fragment="encabezado(seccion)">
     <div class="encabezado-contenido">
         <a class="marca" th:href="@{/}">Institución de capacitación</a>
         <nav aria-label="Secciones del sitio">
-            <a th:href="@{/}" th:aria-current="${seccion == 'inicio'} ? 'page'">Inicio</a>
-            <a sec:authorize="hasRole('EMPRESA')" th:href="@{/empresas}" th:aria-current="${seccion == 'empresas'} ? 'page'">Empresas</a>
-            <a sec:authorize="hasRole('ADMINISTRACION')" th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Administración</a>
-            <a sec:authorize="hasRole('DOCENTES')" th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Docentes</a>
+            <a sec:authorize="!isAuthenticated() or hasRole('EMPRESA')" th:href="@{/solicitar}" th:aria-current="${seccion == 'solicitar'} ? 'page'">Solicitar curso</a>
+            <a sec:authorize="hasRole('EMPRESA')" th:href="@{/empresas}" th:aria-current="${seccion == 'empresas'} ? 'page'">Mis cursos</a>
+            <a sec:authorize="hasRole('ADMINISTRACION')" th:href="@{/administracion}" th:aria-current="${seccion == 'administracion'} ? 'page'">Mis tareas</a>
+            <a sec:authorize="hasRole('DOCENTES')" th:href="@{/docentes}" th:aria-current="${seccion == 'docentes'} ? 'page'">Mis tareas</a>
         </nav>
         <!-- Usuario autenticado, o el enlace para ingresar. -->
         <form class="sesion" sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">

@@ -7,6 +7,8 @@
 <main>
     <h1>Ingresar</h1>
     <p>Ingresá con tu usuario y contraseña. El sistema identifica si es una cuenta del personal o de una empresa.</p>
+    <p class="mensaje" th:if="${param.salida}">Cerraste la sesión.</p>
+    <p class="error" th:if="${param.expirada}">La página estaba desactualizada o tu sesión venció. Ingresá de nuevo.</p>
     <p class="error" th:if="${param.error}">No se pudo ingresar: revisá el usuario y la contraseña.</p>
     <form class="formulario" th:action="@{/login}" method="post">
         <label>Usuario

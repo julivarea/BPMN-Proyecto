@@ -29,7 +29,8 @@ web/
     ├── main/
     │   ├── java/ar/edu/unrc/gtpn/web/
     │   │   ├── WebApplication.java        arranque de Spring Boot; lee las propiedades de application.yml
-    │   │   ├── Secciones.java             URL → página de las secciones sin controller propio: / y /login (§3)
+    │   │   ├── InicioController.java      la raíz (/) lleva a la pantalla de trabajo de cada usuario; /login con sesión vuelve a la raíz (§3)
+    │   │   ├── BarraFinalFilter.java      redirige /solicitar/ a /solicitar (Spring MVC ya no reconoce la barra final) (§3)
     │   │   ├── empresa/                   portal de empresas: sus cursos y su estado (§3, §5)
     │   │   │   ├── PortalEmpresaController.java       páginas /empresas y /empresas/cursos/{id}: listado y ficha
     │   │   │   ├── CursosDeLaEmpresaRepository.java   SQL de los cursos, siempre filtrado por empresa
@@ -78,7 +79,6 @@ web/
     │       │   └── estilos.css            estilos de todo el sitio: colores, encabezado, tablas, formularios (§3)
     │       └── templates/                 páginas Thymeleaf
     │           ├── fragmentos.html        partes comunes: cabecera, encabezado con navegación y sesión, mensajes (§3)
-    │           ├── index.html             inicio (sección pública)
     │           ├── login.html             login del personal (§5)
     │           ├── error.html             página de error (404, 403, 500…)
     │           ├── empresa/
@@ -123,10 +123,15 @@ web/
 
 ## 3. Páginas
 
-**Secciones.** El sitio tiene cuatro: pública (`/`), empresas (`/empresas`), administración (`/administracion`) y
-docentes (`/docentes`). Administración y Docentes muestran la bandeja de tareas del usuario (§4), que es lo que hace
-el personal en el sitio. Empresas muestra el portal con sus cursos (`PortalEmpresaController`, §5). Solo `/` y
-`/login` quedan como vistas directas en `Secciones.java`; una sección con su propio controller se saca de ahí.
+**Secciones.** El sitio tiene cuatro: solicitud pública (`/solicitar`), empresas (`/empresas`), administración
+(`/administracion`) y docentes (`/docentes`). Administración y Docentes muestran la bandeja de tareas del usuario (§4),
+que es lo que hace el personal en el sitio. Empresas muestra el portal con sus cursos (`PortalEmpresaController`, §5).
+
+**Entrada y direcciones.** No hay página de inicio: `/` (`InicioController`) lleva a cada usuario a su pantalla de
+trabajo. Con la sesión iniciada: `/administracion`, `/docentes` o `/empresas`, según el rol (si tiene varios, gana ese
+orden). Sin sesión: `/solicitar`. Es también adonde vuelve el sitio después de ingresar sin una página pedida, y adonde
+va `/login` si ya hay sesión. Una dirección con barra final (`/solicitar/`) se redirige a la misma sin barra
+(`BarraFinalFilter`; 301 en GET, 308 con otros métodos para no perder los datos).
 
 **Fragmentos.** Toda página arranca así, con las partes comunes de `fragmentos.html`:
 
@@ -148,7 +153,7 @@ el personal en el sitio. Empresas muestra el portal con sus cursos (`PortalEmpre
 | Fragmento | Qué hace |
 |-----------|----------|
 | `cabecera(titulo)` | `<head>`: título de la pestaña y hoja de estilos |
-| `encabezado(seccion)` | Barra superior con la navegación. `seccion` (`inicio`, `empresas`, `administracion`, `docentes` o `''`) marca el enlace de la página actual |
+| `encabezado(seccion)` | Barra superior con la navegación. `seccion` (`solicitar`, `empresas`, `administracion`, `docentes` o `''`) marca el enlace de la página actual. Enlaces: *Solicitar curso* (sin sesión o empresa), *Mis cursos* (empresa) y *Mis tareas* (personal) |
 | `mensajes` | Muestra los atributos `mensaje` (éxito) y `error` del modelo, si existen |
 
 **Mensajes al usuario.** Después de un formulario se hace *redirect* (para que recargar la página no lo reenvíe) y el
@@ -322,7 +327,12 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 - Una sección o ruta nueva que requiera rol se agrega con una línea en `SeguridadConfig`.
 
 **En las páginas.** El encabezado muestra el usuario y el botón *Salir* cuando hay sesión, o *Ingresar* cuando no
-(atributos `sec:` de Thymeleaf). *Salir* es un formulario `POST /logout`.
+(atributos `sec:` de Thymeleaf). *Salir* es un formulario `POST /logout`, pero `/logout` se acepta con GET o POST y sin
+token CSRF, y vuelve a `/login?salida`: con un token viejo (por ejemplo, tras reiniciar el servidor) daba un 403.
+
+**Sesión vencida.** Un formulario enviado sin sesión trae un token CSRF que ya no vale. En lugar de un 403, se vuelve
+al formulario público (`/solicitar?expirada`) o al login (`/login?expirada`) con un aviso. Con sesión, un rechazo sigue
+siendo un 403.
 
 **En los controllers.** El usuario logueado se recibe como parámetro: `Principal usuario` y `usuario.getName()`. Es el
 que hay que comparar con el asignado de la tarea (§4).

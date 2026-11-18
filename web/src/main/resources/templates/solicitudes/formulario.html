@@ -2,9 +2,10 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos :: cabecera('Solicitar capacitación')}"></head>
 <body>
-<header th:replace="~{fragmentos :: encabezado('empresas')}"></header>
+<header th:replace="~{fragmentos :: encabezado('solicitar')}"></header>
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
+    <p class="error" th:if="${param.expirada}">La página estaba desactualizada y no se pudo enviar la solicitud. Completá el formulario y enviala de nuevo.</p>
     <h1>Solicitar capacitación</h1>
 
     <form class="formulario" th:action="@{/solicitar}" th:object="${solicitud}" method="post">
