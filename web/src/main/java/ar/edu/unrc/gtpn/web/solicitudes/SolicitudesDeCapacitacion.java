@@ -57,12 +57,20 @@ public class SolicitudesDeCapacitacion {
      * para siempre. Si Flowable no inicia la instancia, el curso recién creado se elimina.
      */
     public SolicitudRegistrada solicitar(SolicitudFormulario solicitud) {
-        String cuit = soloDigitos(solicitud.cuit());
+        return solicitar(solicitud, Optional.empty());
+    }
+
+    /** Con una empresa con sesión, la solicitud va a su nombre: se ignoran el CUIT y la razón social del formulario. */
+    public SolicitudRegistrada solicitar(SolicitudFormulario solicitud, Optional<Empresa> empresaConSesion) {
         long cursoId = transacciones.execute(estado -> {
-            long empresaId = empresaSolicitante(cuit, solicitud.razonSocial().strip());
+            long empresaId = empresaConSesion
+                    .map(Empresa::id)
+                    .orElseGet(() -> empresaSolicitante(soloDigitos(solicitud.cuit()), solicitud.razonSocial().strip()));
             return repositorio.crearCurso(empresaId, solicitud);
         });
+
         InstanciaIniciada instancia;
+        
         try {
             instancia = iniciarProceso(cursoId, solicitud.nombre().strip());
         } catch (SolicitudNoRegistrada error) {
