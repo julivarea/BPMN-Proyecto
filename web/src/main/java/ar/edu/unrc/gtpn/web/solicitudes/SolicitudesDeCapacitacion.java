@@ -9,9 +9,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.RestClientException;
+import org.springframework.security.core.Authentication;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresaRepository;
 
 /**
  * Registra la solicitud de una empresa en la base de la institución e inicia su instancia del proceso, vinculada al
@@ -25,18 +27,22 @@ public class SolicitudesDeCapacitacion {
     static final String PLAZO_RESPUESTA = "plazoRespuesta";
     // Para mostrar la solicitud por su nombre en la app de comunicaciones, que no accede a la base de la institución.
     static final String NOMBRE_CURSO = "nombreCurso";
+    // Rol con el que inicia sesión una empresa (AutenticacionEmpresa).
+    static final String ROL_EMPRESA = "ROLE_EMPRESA";
 
     private final SolicitudesRepository repositorio;
     private final ClienteFlowable flowable;
     private final SolicitudesProperties propiedades;
     private final TransactionOperations transacciones;
+    private final CuentaEmpresaRepository cuentas;
 
     public SolicitudesDeCapacitacion(SolicitudesRepository repositorio, ClienteFlowable flowable,
-            SolicitudesProperties propiedades, TransactionOperations transacciones) {
+            SolicitudesProperties propiedades, TransactionOperations transacciones, CuentaEmpresaRepository cuentas) {
         this.repositorio = repositorio;
         this.flowable = flowable;
         this.propiedades = propiedades;
         this.transacciones = transacciones;
+        this.cuentas = cuentas;
     }
 
     /**
@@ -66,6 +72,17 @@ public class SolicitudesDeCapacitacion {
         repositorio.vincularInstancia(cursoId, instancia.id());
         // La única forma de que el proceso termine al iniciarse es que la solicitud no sea viable.
         return new SolicitudRegistrada(cursoId, !instancia.terminada());
+    }
+
+    // Empresa con la que inició sesión el usuario, o vacío si no hay sesión o no es una empresa.
+    public Optional<Empresa> empresaConSesion(Authentication sesion) {
+        boolean esEmpresa = sesion != null && sesion.getAuthorities().stream()
+                .anyMatch(permiso -> ROL_EMPRESA.equals(permiso.getAuthority()));
+        if (!esEmpresa) {
+            return Optional.empty();
+        }
+        return cuentas.buscarPorUsuario(sesion.getName())
+                .flatMap(cuenta -> repositorio.empresaPorId(cuenta.empresaId()));
     }
 
     private InstanciaIniciada iniciarProceso(long cursoId, String nombreCurso) {

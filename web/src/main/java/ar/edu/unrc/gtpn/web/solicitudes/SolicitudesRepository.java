@@ -1,5 +1,7 @@
 package ar.edu.unrc.gtpn.web.solicitudes;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -22,10 +24,21 @@ public class SolicitudesRepository {
     }
 
     Optional<Empresa> empresaPorCuit(String cuit) {
-        return jdbc.sql("SELECT id, razon_social FROM empresa WHERE cuit = :cuit")
+        return jdbc.sql("SELECT id, cuit, razon_social FROM empresa WHERE cuit = :cuit")
                 .param("cuit", cuit)
-                .query((fila, numero) -> new Empresa(fila.getLong("id"), fila.getString("razon_social")))
+                .query(SolicitudesRepository::empresa)
                 .optional();
+    }
+
+    Optional<Empresa> empresaPorId(long id) {
+        return jdbc.sql("SELECT id, cuit, razon_social FROM empresa WHERE id = :id")
+                .param("id", id)
+                .query(SolicitudesRepository::empresa)
+                .optional();
+    }
+
+    private static Empresa empresa(ResultSet fila, int numero) throws SQLException {
+        return new Empresa(fila.getLong("id"), fila.getString("cuit"), fila.getString("razon_social"));
     }
 
     long crearEmpresa(String cuit, String razonSocial) {
