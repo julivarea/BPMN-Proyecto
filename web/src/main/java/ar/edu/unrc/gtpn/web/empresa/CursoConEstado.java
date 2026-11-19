@@ -18,9 +18,9 @@ public record CursoConEstado(CursoDeLaEmpresa curso, EstadoDelCurso estado, List
         return !actividades.isEmpty();
     }
 
-    /** Si el curso ya terminó y tiene informe de resultados para consultar. */
+    /** Si el curso ya terminó (o solo falta liberar recursos) y tiene informe de resultados para consultar. */
     public boolean tieneInforme() {
-        return estado == EstadoDelCurso.FINALIZADO
+        return (estado == EstadoDelCurso.FINALIZADO || estado == EstadoDelCurso.EN_CIERRE)
                 && curso.informeResultados() != null
                 && !curso.informeResultados().isBlank();
     }

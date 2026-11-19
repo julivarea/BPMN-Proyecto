@@ -116,7 +116,7 @@ class PortalEmpresaControllerTest {
     }
 
     @Test
-    void conLiberarEquipamientoPendienteTrasElCierreElCursoYaEstaFinalizadoConSuInforme() throws Exception {
+    void conLiberarEquipamientoPendienteTrasElCierreElCursoEstaFinalizandoConSuInforme() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
         when(flowable.actividadesActivas("instancia-10"))
@@ -129,13 +129,13 @@ class PortalEmpresaControllerTest {
 
         mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.containsString("Finalizado")))
+                .andExpect(content().string(Matchers.containsString("Finalizando: liberando recursos")))
                 .andExpect(content().string(Matchers.containsString("Todos aprobaron")))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("En negociación"))));
     }
 
     @Test
-    void conLiberarEquipamientoPendienteTrasUnaCancelacionElCursoEstaCancelado() throws Exception {
+    void conLiberarEquipamientoPendienteTrasUnaCancelacionElCursoSeEstaCancelando() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
         when(flowable.actividadesActivas("instancia-10"))
@@ -144,7 +144,7 @@ class PortalEmpresaControllerTest {
 
         mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.containsString("Cancelado")));
+                .andExpect(content().string(Matchers.containsString("Cancelándose: liberando recursos")));
     }
 
     @Test

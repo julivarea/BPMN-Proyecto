@@ -247,8 +247,14 @@ activa se deriva de `actividadesActivas`:
 | *Enviar confirmación*, *Definir docente* o la espera de la fecha | Confirmado y pendiente de inicio |
 | *Desarrollar curso* | En desarrollo |
 | *Elaborar informe de resultados* o el cierre | En elaboración del informe |
+| *Liberar aula*, *Liberar aula virtual* o *Liberar equipamiento* pendientes (`resultado` = `FINALIZADO`) | Finalizando: liberando recursos |
+| Esas mismas liberaciones pendientes, con `resultado` = `CANCELADO` | Cancelándose: liberando recursos |
 | Ninguna conocida | En negociación |
 | Subproceso de *Cancelación* | Cancelado |
+
+*Liberar equipamiento* es una tarea de usuario: mientras esté pendiente la instancia sigue abierta, por eso el portal
+muestra el cierre en curso. En "Finalizando" el informe de resultados ya se puede consultar. Al completarse la
+tarea la instancia termina y el estado pasa a `FINALIZADO` o `CANCELADO` (el que dejó el proceso en `curso.estado`).
 
 En el detalle de un curso en preparación se listan las tareas y esperas de las ramas paralelas, sin compuertas ni el
 subproceso contenedor. Si Flowable no responde, el portal muestra el estado persistido en vez de romper el listado.

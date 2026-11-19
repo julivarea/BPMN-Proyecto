@@ -19,6 +19,10 @@ public enum EstadoDelCurso {
     EN_DESARROLLO("En desarrollo"),
     EN_ELABORACION_DEL_INFORME("En elaboración del informe"),
     EN_CURSO("En curso"),
+    /** Cierre normal con la liberación de recursos todavía pendiente (por ejemplo, *Liberar equipamiento*). */
+    EN_CIERRE("Finalizando: liberando recursos"),
+    /** Cancelación con la liberación de recursos todavía pendiente. */
+    EN_CANCELACION("Cancelándose: liberando recursos"),
     FINALIZADO("Finalizado"),
     CANCELADO("Cancelado"),
     RECHAZADO("Rechazado"),
@@ -44,9 +48,10 @@ public enum EstadoDelCurso {
             "elaborarInformeResultados", "enviarInformeYArchivarExpediente", "liberarRecursos", "notificarCierre");
 
     /**
-     * Liberación de recursos al cerrar el curso. La compensación no espera a las tareas de usuario (docs/05,
-     * limitación 2): con *Liberar equipamiento* pendiente el proceso ya llegó a su fin, pero la instancia sigue
-     * abierta hasta que se la completa. Se llega acá por el cierre normal o por una cancelación.
+     * Liberación de recursos al cerrar el curso. Mientras *Liberar equipamiento* siga pendiente la instancia está
+     * abierta (y el aviso de cierre, en una cancelación, todavía no salió): se muestra como "finalizando" o
+     * "cancelándose" hasta que la liberación se completa y la instancia termina. Se llega acá por el cierre normal o
+     * por una cancelación.
      */
     private static final Set<String> LIBERACION = Set.of("liberarAula", "liberarAulaVirtual", "liberarEquipamiento");
 
@@ -98,7 +103,7 @@ public enum EstadoDelCurso {
             return EN_DESARROLLO;
         }
         if (contieneAlguna(ids, LIBERACION)) {
-            return "CANCELADO".equals(resultado.get()) ? CANCELADO : FINALIZADO;
+            return "CANCELADO".equals(resultado.get()) ? EN_CANCELACION : EN_CIERRE;
         }
         if (contieneAlguna(ids, INFORME)) {
             return EN_ELABORACION_DEL_INFORME;
