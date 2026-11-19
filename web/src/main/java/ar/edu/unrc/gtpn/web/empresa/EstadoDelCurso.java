@@ -2,7 +2,6 @@ package ar.edu.unrc.gtpn.web.empresa;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ar.edu.unrc.gtpn.web.flowable.Actividad;
@@ -21,7 +20,7 @@ public enum EstadoDelCurso {
     EN_CURSO("En curso"),
     /** Cierre normal con la liberación de recursos todavía pendiente (por ejemplo, *Liberar equipamiento*). */
     EN_CIERRE("Finalizando: liberando recursos"),
-    /** Cancelación con la liberación de recursos todavía pendiente. */
+    /** Cancelación en curso: se compensan los recursos y falta confirmarlo antes de notificar el cierre. */
     EN_CANCELACION("Cancelándose: liberando recursos"),
     FINALIZADO("Finalizado"),
     CANCELADO("Cancelado"),
@@ -48,15 +47,19 @@ public enum EstadoDelCurso {
             "elaborarInformeResultados", "enviarInformeYArchivarExpediente", "liberarRecursos", "notificarCierre");
 
     /**
-     * Liberación de recursos al cerrar el curso. Mientras *Liberar equipamiento* siga pendiente la instancia está
-     * abierta (y el aviso de cierre, en una cancelación, todavía no salió): se muestra como "finalizando" o
-     * "cancelándose" hasta que la liberación se completa y la instancia termina. Se llega acá por el cierre normal o
-     * por una cancelación.
+     * Liberación de recursos al cerrar el curso con normalidad. Mientras *Liberar equipamiento* (tarea de usuario)
+     * siga pendiente la instancia está abierta: se muestra como "finalizando" hasta que termina.
      */
     private static final Set<String> LIBERACION = Set.of("liberarAula", "liberarAulaVirtual", "liberarEquipamiento");
 
-    /** Subproceso de cancelación, que interrumpe el curso en cualquier etapa. */
-    private static final Set<String> CANCELACION = Set.of("cancelacion", "cancelacionRecibida", "preparacionCancelada");
+    /**
+     * Subproceso de cancelación. Mientras está activo se lanzan las compensaciones y se espera a que terminen
+     * (*Liberar equipamiento* y *Confirmar compensaciones*): el curso se está cancelando. Cuando termina, el proceso
+     * notifica el cierre y la instancia concluye con el estado persistido.
+     */
+    private static final Set<String> CANCELACION = Set.of(
+            "cancelacion", "cancelacionRecibida", "lanzarCompensacionAula", "lanzarCompensacionAulaVirtual",
+            "lanzarCompensacionEquipamiento", "confirmarCompensaciones", "preparacionCancelada");
 
     /** Tipos de actividad que se le muestran a la empresa: tareas y esperas, no compuertas ni subprocesos. */
     private static final Set<String> TIPOS_VISIBLES = Set.of(
@@ -88,22 +91,19 @@ public enum EstadoDelCurso {
     /**
      * Estado de una instancia activa, según sus actividades en curso. La cancelación gana sobre todo lo demás; si no
      * hay ninguna actividad conocida, la instancia está en la negociación previa a la aceptación.
-     *
-     * @param resultado variable {@code resultado} de la instancia; solo se consulta si el curso está liberando recursos,
-     *                  para distinguir el cierre normal ({@code FINALIZADO}) de una cancelación ({@code CANCELADO})
      */
-    static EstadoDelCurso derivar(List<Actividad> actividades, Supplier<String> resultado) {
+    static EstadoDelCurso derivar(List<Actividad> actividades) {
         Set<String> ids = actividades.stream()
                 .map(Actividad::id)
                 .collect(Collectors.toSet());
         if (contieneAlguna(ids, CANCELACION)) {
-            return CANCELADO;
+            return EN_CANCELACION;
         }
         if (contieneAlguna(ids, DESARROLLO)) {
             return EN_DESARROLLO;
         }
         if (contieneAlguna(ids, LIBERACION)) {
-            return "CANCELADO".equals(resultado.get()) ? EN_CANCELACION : EN_CIERRE;
+            return EN_CIERRE;
         }
         if (contieneAlguna(ids, INFORME)) {
             return EN_ELABORACION_DEL_INFORME;

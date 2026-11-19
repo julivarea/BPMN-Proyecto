@@ -247,14 +247,14 @@ activa se deriva de `actividadesActivas`:
 | *Enviar confirmación*, *Definir docente* o la espera de la fecha | Confirmado y pendiente de inicio |
 | *Desarrollar curso* | En desarrollo |
 | *Elaborar informe de resultados* o el cierre | En elaboración del informe |
-| *Liberar aula*, *Liberar aula virtual* o *Liberar equipamiento* pendientes (`resultado` = `FINALIZADO`) | Finalizando: liberando recursos |
-| Esas mismas liberaciones pendientes, con `resultado` = `CANCELADO` | Cancelándose: liberando recursos |
+| *Liberar aula*, *Liberar aula virtual* o *Liberar equipamiento* pendientes, ya cerrado el curso | Finalizando: liberando recursos |
 | Ninguna conocida | En negociación |
-| Subproceso de *Cancelación* | Cancelado |
+| Subproceso de *Cancelación* (compensaciones, *Liberar equipamiento*, *Confirmar compensaciones*) | Cancelándose: liberando recursos |
 
 *Liberar equipamiento* es una tarea de usuario: mientras esté pendiente la instancia sigue abierta, por eso el portal
-muestra el cierre en curso. En "Finalizando" el informe de resultados ya se puede consultar. Al completarse la
-tarea la instancia termina y el estado pasa a `FINALIZADO` o `CANCELADO` (el que dejó el proceso en `curso.estado`).
+muestra el cierre en curso. En "Finalizando" el informe de resultados ya se puede consultar. Una cancelación se muestra
+como "Cancelándose" mientras el subproceso de cancelación espera las compensaciones. Al terminar la instancia el estado
+pasa a `FINALIZADO` o `CANCELADO` (el que dejó el proceso en `curso.estado`).
 
 En el detalle de un curso en preparación se listan las tareas y esperas de las ramas paralelas, sin compuertas ni el
 subproceso contenedor. Si Flowable no responde, el portal muestra el estado persistido en vez de romper el listado.
@@ -281,7 +281,8 @@ aplica la web, en un solo lugar: **`tareas/BandejaDeTareas`**.
 | Método | Regla |
 |--------|-------|
 | `reclamar(usuario, tareaId)` | Solo una tarea disponible para los grupos del usuario. Si otro la reclamó antes (Flowable responde 409), lo informa |
-| `completar(usuario, tareaId, variables)` | Solo el asignado completa su tarea: una tarea de grupo se reclama antes. *Preparar materiales* no se completa desde la web (se hace en la app de materiales, §4.2.1) |
+| `completar(usuario, tareaId, variables)` | Solo el asignado completa su tarea: una tarea de grupo se reclama antes. *Preparar materiales* no se completa desde la web (se hace en la app de materiales, §4.2.1). *Confirmar compensaciones* no se completa mientras haya liberaciones pendientes en su instancia (05-decisiones, limitación 2) |
+| `motivoDeBloqueo(tarea)` | Por qué una tarea todavía no se puede completar (hoy, solo *Confirmar compensaciones*), o `null`. La bandeja lo muestra en lugar del botón *Completar* |
 
 Si una regla no se cumple, el servicio lanza `AccionNoPermitida` con un mensaje para el usuario, y no llama a Flowable.
 **Toda pantalla que reclame o complete una tarea lo hace a través de `BandejaDeTareas`**, nunca llamando a
@@ -292,7 +293,8 @@ la persona en el historial es la asignación, y de eso dependen las consultas de
 las tareas asignadas al usuario, con *Completar*, y las disponibles para sus grupos, con *Reclamar*. Cada tarea indica
 la **solicitud** a la que pertenece: la empresa y el curso, buscados en la base con una sola consulta por la
 `businessKey` de su instancia (el ID del curso), o la `businessKey` si la instancia no tiene curso en la base. *Preparar materiales*
-aparece sin botones, con la indicación de la app de materiales. Los botones envían a `/tareas/{id}/reclamar` y
+aparece sin botones, con la indicación de la app de materiales. *Confirmar compensaciones* aparece sin el botón
+*Completar* y con la indicación de qué liberación falta, hasta que se completa. Los botones envían a `/tareas/{id}/reclamar` y
 `/tareas/{id}/completar` y vuelven a la sección de la que se vino.
 
 **Tareas que cargan datos.** El *Completar* de la bandeja no envía variables. Una tarea que necesita datos para que el
@@ -372,7 +374,7 @@ un formulario sin `th:action` es rechazado con un 403.
 | `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
 | `PortalEmpresaControllerTest` | El portal de empresas: una empresa recibe 404 al abrir el curso de otra (escenario 10), el detalle en preparación muestra las actividades de las ramas paralelas y el estado se deriva de Flowable o del persistido (`@WebMvcTest`) | `./mvnw -pl web verify` |
-| `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
+| `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, *Confirmar compensaciones* queda bloqueada mientras haya liberaciones pendientes, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |

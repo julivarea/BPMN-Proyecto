@@ -97,6 +97,46 @@ class BandejaControllerTest {
     }
 
     @Test
+    void confirmarCompensacionesNoSeOfreceMientrasHayLiberacionesPendientes() throws Exception {
+        Tarea confirmar = tarea("t7", "Confirmar compensaciones", "confirmarCompensaciones", "administrativo");
+        when(flowable.tareasAsignadas("administrativo")).thenReturn(List.of(confirmar));
+        when(flowable.tareasDeLaInstancia("instancia-1")).thenReturn(List.of(confirmar,
+                tarea("t8", "Liberar equipamiento", "liberarEquipamiento", null)));
+
+        mvc.perform(get("/administracion").with(user("administrativo").roles("ADMINISTRACION")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Primero hay que completar: Liberar equipamiento.")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("/tareas/t7/completar"))));
+    }
+
+    @Test
+    void confirmarCompensacionesSeOfreceCuandoYaNoQuedanLiberaciones() throws Exception {
+        Tarea confirmar = tarea("t7", "Confirmar compensaciones", "confirmarCompensaciones", "administrativo");
+        when(flowable.tareasAsignadas("administrativo")).thenReturn(List.of(confirmar));
+        when(flowable.tareasDeLaInstancia("instancia-1")).thenReturn(List.of(confirmar));
+
+        mvc.perform(get("/administracion").with(user("administrativo").roles("ADMINISTRACION")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("/tareas/t7/completar")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Primero hay que completar"))));
+    }
+
+    @Test
+    void completarConfirmarCompensacionesConLiberacionesPendientesArmandoLaUrlNoLaCompleta() throws Exception {
+        Tarea confirmar = tarea("t7", "Confirmar compensaciones", "confirmarCompensaciones", "administrativo");
+        when(flowable.tarea("t7")).thenReturn(confirmar);
+        when(flowable.tareasDeLaInstancia("instancia-1")).thenReturn(List.of(confirmar,
+                tarea("t8", "Liberar equipamiento", "liberarEquipamiento", null)));
+
+        mvc.perform(post("/tareas/t7/completar").param("seccion", "administracion")
+                        .with(user("administrativo").roles("ADMINISTRACION")).with(csrf()))
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("error",
+                        "Todavía no se puede completar esta tarea. Primero hay que completar: Liberar equipamiento."));
+        verify(flowable, never()).completar(any(), anyMap());
+    }
+
+    @Test
     void sinTokenCsrfNoSeAceptaElFormulario() throws Exception {
         mvc.perform(post("/tareas/t1/completar").with(user("jefe_admin").roles("ADMINISTRACION")))
                 .andExpect(status().isForbidden());

@@ -147,6 +147,18 @@ public class ClienteFlowable {
         accionSobreTarea(tareaId, Map.of("action", "complete", "variables", comoLista(variables)));
     }
 
+    /** Tareas de usuario pendientes de una instancia. */
+    public List<Tarea> tareasDeLaInstancia(String instanciaId) {
+        return http.get()
+                .uri(uri -> uri.path("/runtime/tasks")
+                        .queryParam("processInstanceId", instanciaId)
+                        .queryParam("size", MAXIMO_RESULTADOS)
+                        .build())
+                .retrieve()
+                .body(PAGINA_DE_TAREAS)
+                .data();
+    }
+
     /** Variables de una instancia en curso. */
     public Map<String, Object> variables(String instanciaId) {
         List<Variable> variables = http.get().uri("/runtime/process-instances/{id}/variables", instanciaId)

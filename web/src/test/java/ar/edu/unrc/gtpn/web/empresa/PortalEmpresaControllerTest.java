@@ -135,12 +135,14 @@ class PortalEmpresaControllerTest {
     }
 
     @Test
-    void conLiberarEquipamientoPendienteTrasUnaCancelacionElCursoSeEstaCancelando() throws Exception {
+    void mientrasLaCancelacionEsperaLasCompensacionesElCursoSeEstaCancelando() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
-        when(flowable.actividadesActivas("instancia-10"))
-                .thenReturn(List.of(new Actividad("liberarEquipamiento", "Liberar equipamiento", "userTask")));
-        when(flowable.variables("instancia-10")).thenReturn(Map.of("resultado", "CANCELADO"));
+        when(flowable.actividadesActivas("instancia-10")).thenReturn(List.of(
+                new Actividad("cancelacion", "Cancelación", "subProcess"),
+                new Actividad("confirmarCompensaciones", "Confirmar compensaciones", "userTask"),
+                new Actividad("liberarEquipamiento", "Liberar equipamiento", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of());
 
         mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
                 .andExpect(status().isOk())

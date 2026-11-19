@@ -1,6 +1,7 @@
 package ar.edu.unrc.gtpn.web.tareas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -61,6 +62,48 @@ class BandejaDeTareasTest {
 
         assertThrows(AccionNoPermitida.class, () -> bandeja.completar("administrativo", "t1", Map.of()));
         verify(flowable, never()).completar(any(), anyMap());
+    }
+
+    @Test
+    void confirmarCompensacionesSeCompletaCuandoYaNoHayLiberacionesPendientes() {
+        Tarea confirmar = tarea("t1", "confirmarCompensaciones", "administrativo");
+        when(flowable.tarea("t1")).thenReturn(confirmar);
+        when(flowable.tareasDeLaInstancia("instancia-1")).thenReturn(List.of(confirmar));
+
+        bandeja.completar("administrativo", "t1", Map.of());
+
+        verify(flowable).completar("t1", Map.of());
+    }
+
+    @Test
+    void confirmarCompensacionesNoSeCompletaMientrasHayaLiberacionesPendientes() {
+        Tarea confirmar = tarea("t1", "confirmarCompensaciones", "administrativo");
+        when(flowable.tarea("t1")).thenReturn(confirmar);
+        when(flowable.tareasDeLaInstancia("instancia-1")).thenReturn(List.of(confirmar,
+                tarea("t2", "liberarEquipamiento", null)));
+
+        var error = assertThrows(AccionNoPermitida.class, () -> bandeja.completar("administrativo", "t1", Map.of()));
+
+        assertEquals("Todavía no se puede completar esta tarea. Primero hay que completar: Tarea liberarEquipamiento.",
+                error.getMessage());
+        verify(flowable, never()).completar(any(), anyMap());
+    }
+
+    @Test
+    void soloConfirmarCompensacionesQuedaBloqueadaPorLasLiberaciones() {
+        Tarea otra = tarea("t1", "archivarSolicitud", "jefe_admin");
+
+        assertNull(bandeja.motivoDeBloqueo(otra));
+        verify(flowable, never()).tareasDeLaInstancia(any());
+    }
+
+    @Test
+    void siNoSePuedeConsultarLasLiberacionesNoSeBloqueaYDecideFlowable() {
+        Tarea confirmar = tarea("t1", "confirmarCompensaciones", "administrativo");
+        when(flowable.tareasDeLaInstancia("instancia-1"))
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("sin conexión"));
+
+        assertNull(bandeja.motivoDeBloqueo(confirmar));
     }
 
     @Test

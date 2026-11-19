@@ -40,7 +40,7 @@
                         >
                             01/12/2026 09:00
                         </td>
-                        <td class="accion">
+                        <td class="accion" th:with="bloqueo=${bandeja.motivoDeBloqueo(tarea)}">
                             <!-- Pantalla para elaborar propuesta (#13) -->
                             <a
                                 th:if="${tarea.clave() == 'registrarYElaborarPropuesta' || tarea.clave() == 'elaborarPropuesta'}"
@@ -107,7 +107,7 @@
 
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && tarea.clave() != 'elaborarInformeResultados' && tarea.clave() != 'enviarInformeYArchivarExpediente' && bandeja.seCompletaEnLaWeb(tarea)}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && tarea.clave() != 'elaborarInformeResultados' && tarea.clave() != 'enviarInformeYArchivarExpediente' && bandeja.seCompletaEnLaWeb(tarea) && bloqueo == null}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >
@@ -120,6 +120,13 @@
                                     Completar
                                 </button>
                             </form>
+
+                            <!-- Tarea que todavía no se puede completar (por ejemplo, Confirmar compensaciones) -->
+                            <span
+                                th:if="${bloqueo != null}"
+                                class="nota"
+                                th:text="${bloqueo}"
+                            ></span>
 
                             <!-- Indicador para tareas externas -->
                             <span

@@ -98,16 +98,6 @@ public class PortalEmpresaController {
         }
     }
 
-    /** Variable {@code resultado} de la instancia, o null si no se puede leer. */
-    private String resultadoDe(CursoDeLaEmpresa curso) {
-        try {
-            Object resultado = flowable.variables(curso.instanciaId()).get("resultado");
-            return resultado == null ? null : resultado.toString();
-        } catch (RestClientException error) {
-            return null;
-        }
-    }
-
     /** La cuenta de la empresa logueada. Un usuario sin cuenta de empresa no entra al portal. */
     private CuentaEmpresa cuentaDe(Principal usuario) {
         return cuentas.buscarPorUsuario(usuario.getName())
@@ -137,7 +127,7 @@ public class PortalEmpresaController {
             return new CursoConEstado(curso, persistido, List.of());
         }
 
-        EstadoDelCurso estado = EstadoDelCurso.derivar(activas, () -> resultadoDe(curso));
+        EstadoDelCurso estado = EstadoDelCurso.derivar(activas);
         List<Actividad> visibles = conActividades && estado == EstadoDelCurso.EN_PREPARACION
                 ? EstadoDelCurso.actividadesDePreparacion(activas)
                 : List.of();

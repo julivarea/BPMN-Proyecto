@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
@@ -21,6 +22,15 @@ public class BandejaDeTareas {
 
     /** Tareas que tienen su propia aplicación y no se completan desde la web (enunciado 4.2.1). */
     static final Set<String> SE_COMPLETAN_FUERA_DE_LA_WEB = Set.of("prepararMateriales");
+
+    /**
+     * Tarea con la que termina la cancelación. Flowable no deja completarla mientras haya liberaciones sin terminar
+     * (05-decisiones, limitación 2), así que la web no ofrece completarla hasta entonces.
+     */
+    static final String CONFIRMAR_COMPENSACIONES = "confirmarCompensaciones";
+
+    /** Liberaciones que son tareas de usuario y hay que completar antes de confirmar las compensaciones. */
+    static final Set<String> LIBERACIONES_DE_USUARIO = Set.of("liberarEquipamiento");
 
     private final ClienteFlowable flowable;
 
@@ -38,6 +48,30 @@ public class BandejaDeTareas {
 
     public boolean seCompletaEnLaWeb(Tarea tarea) {
         return !SE_COMPLETAN_FUERA_DE_LA_WEB.contains(tarea.clave());
+    }
+
+    /**
+     * Por qué la tarea todavía no se puede completar, o {@code null} si se puede. Hoy solo aplica a *Confirmar
+     * compensaciones*: queda bloqueada mientras haya liberaciones pendientes en la misma instancia. Si no se puede
+     * consultar a Flowable no se bloquea: al completar, Flowable decide.
+     */
+    public String motivoDeBloqueo(Tarea tarea) {
+        if (!CONFIRMAR_COMPENSACIONES.equals(tarea.clave())) {
+            return null;
+        }
+        List<String> pendientes;
+        try {
+            pendientes = flowable.tareasDeLaInstancia(tarea.instanciaId()).stream()
+                    .filter(otra -> LIBERACIONES_DE_USUARIO.contains(otra.clave()))
+                    .map(Tarea::nombre)
+                    .toList();
+        } catch (RestClientException error) {
+            return null;
+        }
+        if (pendientes.isEmpty()) {
+            return null;
+        }
+        return "Primero hay que completar: " + String.join(", ", pendientes) + ".";
     }
 
     /** Asigna al usuario una tarea disponible para sus grupos. */
@@ -61,6 +95,10 @@ public class BandejaDeTareas {
         }
         if (!seCompletaEnLaWeb(tarea)) {
             throw new AccionNoPermitida("Esta tarea se completa desde la app de materiales.");
+        }
+        String bloqueo = motivoDeBloqueo(tarea);
+        if (bloqueo != null) {
+            throw new AccionNoPermitida("Todavía no se puede completar esta tarea. " + bloqueo);
         }
         try {
             flowable.completar(tareaId, variables);
