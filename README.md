@@ -105,4 +105,5 @@ Usuarios de prueba, pgAdmin, puertos y más comandos: [docs/04-entorno-desarroll
 | [App de materiales](docs/09-app-materiales.md) | Motor embebido y su configuración, login, tareas *Preparar materiales*, consultas del §4.3 |
 | [App de comunicaciones](docs/10-app-comunicaciones.md) | Cliente REST, solicitudes en curso y cómo se habilitan y envían las comunicaciones de la empresa |
 | [Informe técnico](docs/11-informe-tecnico.md) | Análisis consolidado del stack, arquitectura, modelo BPMN, base de datos, ejecución y pendientes |
+| [Escenarios de la defensa](docs/12-escenarios-defensa.md) | Cómo preparar y recorrer los 11 escenarios del §5, con los scripts de `scripts/escenarios/` |
 | [Cómo trabajamos](CONTRIBUTING.md) | Issues, ramas, commits y convenciones de código |

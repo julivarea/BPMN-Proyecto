@@ -72,3 +72,31 @@ pip install pm4py pandas requests
 
 Con el entorno levantado y algunas instancias ejecutadas, se exporta el historial a CSV y se analiza con esos
 scripts. La carpeta `.venv/` no se commitea.
+
+## Escenarios de la defensa
+
+Los scripts de `scripts/escenarios/` dejan el sistema en el estado inicial de los escenarios que no arrancan de
+cero. Crean las solicitudes con el formulario de la web (así existen en la base de la institución) y las avanzan
+por la API REST de Flowable. Usan el entorno de Python de `mineria/`, con un paquete más:
+
+```bash
+mineria/.venv/bin/pip install "psycopg[binary]"    # para limpiar.py
+```
+
+Con el entorno levantado y la web corriendo, desde la raíz del repo:
+
+| Script | Deja listo |
+|--------|-----------|
+| `preparar_escenario_1.py` | 1 curso esperando *Definir docente* |
+| `preparar_escenario_4.py` | 1 solicitud con la propuesta enviada y un plazo de 1 minuto: se archiva sola en unos 3 minutos |
+| `preparar_escenario_5.py` | 5 cursos en preparación: una solicitud nueva termina como no viable |
+| `preparar_escenario_6.py` | 1 curso en preparación con el aula reservada y el equipamiento contratado, para cancelarlo |
+| `limpiar.py` | Borra todas las solicitudes (Flowable y base de la institución) para otro ensayo |
+
+```bash
+mineria/.venv/bin/python scripts/escenarios/preparar_escenario_5.py
+```
+
+El límite de la regla de viabilidad es de 5 cursos en ejecución: el 6 y el 1 avisan si no hay lugar. `limpiar.py`
+pide confirmación y no toca usuarios, grupos ni el proceso desplegado; también borra el historial que usa la minería
+(`generar_ejecuciones.py` lo vuelve a generar). Cómo recorrer cada escenario: `docs/12-escenarios-defensa.md`.
