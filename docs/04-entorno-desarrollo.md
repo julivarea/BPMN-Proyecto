@@ -87,9 +87,10 @@ Con el entorno levantado y la web corriendo, desde la raíz del repo:
 
 | Script | Deja listo |
 |--------|-----------|
+| `preparar_escenario_1.py` | 1 curso esperando *Definir docente* |
+| `preparar_escenario_4.py` | 1 solicitud con la propuesta enviada y un plazo de 1 minuto: se archiva sola en unos 3 minutos |
 | `preparar_escenario_5.py` | 5 cursos en preparación: una solicitud nueva termina como no viable |
 | `preparar_escenario_6.py` | 1 curso en preparación con el aula reservada y el equipamiento contratado, para cancelarlo |
-| `preparar_escenario_1.py` | 1 curso esperando *Definir docente* |
 | `limpiar.py` | Borra todas las solicitudes (Flowable y base de la institución) para otro ensayo |
 
 ```bash
@@ -98,4 +99,4 @@ mineria/.venv/bin/python scripts/escenarios/preparar_escenario_5.py
 
 El límite de la regla de viabilidad es de 5 cursos en ejecución: el 6 y el 1 avisan si no hay lugar. `limpiar.py`
 pide confirmación y no toca usuarios, grupos ni el proceso desplegado; también borra el historial que usa la minería
-(`generar_ejecuciones.py` lo vuelve a generar). Cómo recorrer cada escenario: `docs/11-escenarios-defensa.md`.
+(`generar_ejecuciones.py` lo vuelve a generar). Cómo recorrer cada escenario: `docs/12-escenarios-defensa.md`.
