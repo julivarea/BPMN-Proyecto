@@ -24,6 +24,7 @@ import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.ResourceAccessException;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
+import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
 
 /** Registro de solicitudes (W-01, W-02, 05-decisiones), con dobles del repositorio y del cliente de Flowable. */
 class SolicitudesDeCapacitacionTest {
@@ -38,6 +39,7 @@ class SolicitudesDeCapacitacionTest {
 
     @Test
     void unaEmpresaNuevaSeRegistraConElCuitSoloConDigitos() {
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
         when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.empty());
         when(repositorio.crearEmpresa(CUIT, "Acme SA")).thenReturn(1L);
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
@@ -51,17 +53,31 @@ class SolicitudesDeCapacitacionTest {
     void laSolicitudIniciaSuInstanciaConElCursoComoBusinessKeyYLaVincula() {
         when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
-        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn("instancia-1");
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
 
-        long cursoId = solicitudes.solicitar(solicitud(CUIT, "Acme SA"));
+        SolicitudRegistrada registrada = solicitudes.solicitar(solicitud(CUIT, "Acme SA"));
 
-        assertEquals(42L, cursoId);
+        assertEquals(new SolicitudRegistrada(42L, true), registrada);
         verify(flowable).iniciarPorMensaje("solicitudCapacitacion", "42", Map.of("plazoRespuesta", "P5D", "nombreCurso", "Excel avanzado"));
         verify(repositorio).vincularInstancia(42L, "instancia-1");
     }
 
     @Test
+    void siElProcesoTerminaAlIniciarseLaSolicitudQuedaRegistradaPeroNoViable() {
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-9", true));
+
+        SolicitudRegistrada registrada = solicitudes.solicitar(solicitud(CUIT, "Acme SA"));
+
+        assertEquals(new SolicitudRegistrada(42L, false), registrada);
+        verify(repositorio).vincularInstancia(42L, "instancia-9");
+        verify(repositorio, never()).eliminarCurso(anyLong());
+    }
+
+    @Test
     void unaEmpresaYaRegistradaNoSeDuplicaAunqueCambienMayusculasYEspacios() {
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
         when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
 
         solicitudes.solicitar(solicitud("30-12345678-9", "  ACME SA "));
@@ -102,7 +118,7 @@ class SolicitudesDeCapacitacionTest {
                 new SolicitudesProperties("P5D"), transacciones);
         when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
-        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn("instancia-1");
+        when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
 
         servicio.solicitar(solicitud(CUIT, "Acme SA"));
 

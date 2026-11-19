@@ -11,6 +11,7 @@ import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.RestClientException;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
+import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
 
 /**
  * Registra la solicitud de una empresa en la base de la institución e inicia su instancia del proceso, vinculada al
@@ -41,29 +42,33 @@ public class SolicitudesDeCapacitacion {
     /**
      * Devuelve el id del curso creado, que es también la businessKey de su instancia.
      *
+     * <p>Si el proceso termina al iniciarse (no viable), la solicitud queda registrada y el resultado lo indica, para que
+     * la web se lo informe a quien la envió.
+     *
      * <p>El curso se confirma en la base <b>antes</b> de iniciar la instancia: el listener de fin del proceso actualiza
      * el estado del curso, y una instancia que termina al iniciarse (no viable) lo hace antes de que esta solicitud
      * termine. Con todo en una sola transacción, el curso todavía no existiría para el listener y quedaría en curso
      * para siempre. Si Flowable no inicia la instancia, el curso recién creado se elimina.
      */
-    public long solicitar(SolicitudFormulario solicitud) {
+    public SolicitudRegistrada solicitar(SolicitudFormulario solicitud) {
         String cuit = soloDigitos(solicitud.cuit());
         long cursoId = transacciones.execute(estado -> {
             long empresaId = empresaSolicitante(cuit, solicitud.razonSocial().strip());
             return repositorio.crearCurso(empresaId, solicitud);
         });
-        String instanciaId;
+        InstanciaIniciada instancia;
         try {
-            instanciaId = iniciarProceso(cursoId, solicitud.nombre().strip());
+            instancia = iniciarProceso(cursoId, solicitud.nombre().strip());
         } catch (SolicitudNoRegistrada error) {
             repositorio.eliminarCurso(cursoId);
             throw error;
         }
-        repositorio.vincularInstancia(cursoId, instanciaId);
-        return cursoId;
+        repositorio.vincularInstancia(cursoId, instancia.id());
+        // La única forma de que el proceso termine al iniciarse es que la solicitud no sea viable.
+        return new SolicitudRegistrada(cursoId, !instancia.terminada());
     }
 
-    private String iniciarProceso(long cursoId, String nombreCurso) {
+    private InstanciaIniciada iniciarProceso(long cursoId, String nombreCurso) {
         try {
             return flowable.iniciarPorMensaje(MENSAJE_DE_INICIO, String.valueOf(cursoId),
                     Map.of(PLAZO_RESPUESTA, propiedades.plazoRespuesta(), NOMBRE_CURSO, nombreCurso));

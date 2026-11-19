@@ -50,15 +50,18 @@ public class ClienteFlowable {
                 .build();
     }
 
-    /** Inicia una instancia del proceso con su mensaje de inicio y devuelve su ID. */
-    public String iniciarPorMensaje(String mensaje, String businessKey, Map<String, Object> variables) {
+    /**
+     * Inicia una instancia del proceso con su mensaje de inicio y devuelve su ID y si ya terminó: una instancia que
+     * no es viable termina dentro de la misma llamada (docs/06 §4).
+     */
+    public InstanciaIniciada iniciarPorMensaje(String mensaje, String businessKey, Map<String, Object> variables) {
         var pedido = Map.of("message", mensaje, "businessKey", businessKey, "variables", comoLista(variables));
-        return http.post().uri("/runtime/process-instances")
+        Instancia instancia = http.post().uri("/runtime/process-instances")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(pedido)
                 .retrieve()
-                .body(Instancia.class)
-                .id();
+                .body(Instancia.class);
+        return new InstanciaIniciada(instancia.id(), Boolean.TRUE.equals(instancia.ended()));
     }
 
     /**
@@ -230,7 +233,7 @@ public class ClienteFlowable {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Instancia(String id, String businessKey) {
+    record Instancia(String id, String businessKey, Boolean ended) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

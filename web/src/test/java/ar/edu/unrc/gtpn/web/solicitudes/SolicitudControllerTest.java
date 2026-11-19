@@ -8,6 +8,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,10 +49,28 @@ class SolicitudControllerTest {
 
     @Test
     void unaSolicitudValidaSeRegistraYRedirigeALaConfirmacion() throws Exception {
+        when(solicitudes.solicitar(any())).thenReturn(new SolicitudRegistrada(42L, true));
+
         mvc.perform(envio("30-12345678-9", "Acme SA"))
                 .andExpect(redirectedUrl("/solicitar/enviada"));
 
         verify(solicitudes).solicitar(any());
+    }
+
+    @Test
+    void unaSolicitudNoViableVuelveAlFormularioConUnAvisoEnLugarDeLaConfirmacion() throws Exception {
+        when(solicitudes.solicitar(any())).thenReturn(new SolicitudRegistrada(42L, false));
+
+        mvc.perform(envio("30-12345678-9", "Acme SA"))
+                .andExpect(redirectedUrl("/solicitar"))
+                .andExpect(flash().attribute("aviso", SolicitudController.AVISO_NO_VIABLE));
+    }
+
+    @Test
+    void elAvisoDeUnaSolicitudNoViableSeMuestraEnElFormulario() throws Exception {
+        mvc.perform(get("/solicitar").flashAttr("aviso", SolicitudController.AVISO_NO_VIABLE))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("alcanzó el límite de cursos")));
     }
 
     @Test

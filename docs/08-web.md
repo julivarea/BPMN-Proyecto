@@ -50,9 +50,9 @@ web/
     │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña contra Flowable; grupos → roles
     │   │   │   └── SeguridadConfig.java               qué rol requiere cada ruta, página de login y salida
     │   │   ├── solicitudes/               formulario público de solicitud de capacitación (§3, §6)
-    │   │   │   ├── SolicitudController.java       página /solicitar: valida, registra y redirige a la confirmación
+    │   │   │   ├── SolicitudController.java       página /solicitar: valida, registra y redirige a la confirmación (o vuelve con un aviso si no es viable)
     │   │   │   ├── SolicitudFormulario.java       datos del formulario y sus reglas de validación
-    │   │   │   ├── SolicitudesDeCapacitacion.java registra empresa y curso e inicia la instancia, en una transacción
+    │   │   │   ├── SolicitudesDeCapacitacion.java registra empresa y curso, inicia la instancia e informa si es viable
     │   │   │   ├── SolicitudesRepository.java     SQL de empresa y curso, y la descripción de cada solicitud
     │   │   │   ├── SolicitudesProperties.java     plazo de respuesta (propiedad solicitudes.plazo-respuesta)
     │   │   │   ├── Empresa.java                   empresa ya registrada: id y razón social
@@ -201,6 +201,12 @@ desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
 errores, vuelve a mostrar el formulario con lo que se cargó y el error junto a cada campo. Si los datos son válidos,
 registra la solicitud (§6) y redirige a `/solicitar/enviada`, así recargar la confirmación no repite el envío.
 
+**Solicitud no viable.** Con cinco o más cursos en ejecución el proceso termina dentro de la misma llamada que lo
+inicia (*Comunicar imposibilidad* solo escribe en el log del servidor). La respuesta de Flowable lo indica (`ended`), y
+en ese caso `SolicitudController` no va a la confirmación: vuelve a `/solicitar` con el atributo flash `aviso`, que el
+fragmento `mensajes` muestra en ámbar arriba del formulario. La solicitud igual queda registrada, con estado
+`NO_VIABLE`.
+
 ## 4. Conexión con Flowable
 
 ### El cliente
@@ -212,7 +218,7 @@ falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HT
 | Método | Llamada REST | Para qué |
 |--------|--------------|----------|
 | `gruposDelUsuario(usuario, clave)` | `GET /identity/groups?member=…`, con las credenciales del usuario | Login (§5): valida la contraseña y devuelve los grupos |
-| `iniciarPorMensaje(mensaje, businessKey, variables)` | `POST /runtime/process-instances` | Formulario de solicitud: inicia la instancia y devuelve su ID |
+| `iniciarPorMensaje(mensaje, businessKey, variables)` | `POST /runtime/process-instances` | Formulario de solicitud: inicia la instancia y devuelve su ID y si ya terminó (`ended`: el proceso no viable termina al iniciarse) |
 | `tareasAsignadas(usuario)` | `GET /runtime/tasks?assignee=…` | Tareas del usuario |
 | `tareasDisponibles(usuario)` | `GET /runtime/tasks?candidateUser=…` | Tareas de sus grupos que puede reclamar |
 | `tarea(tareaId)` | `GET /runtime/tasks/{id}` | Leer una tarea para verificar a quién está asignada |
@@ -347,8 +353,10 @@ un formulario sin `th:action` es rechazado con un 403.
 - **Una migración pusheada no se edita.** Los cambios van en una nueva: `V2__descripcion.sql`, `V3__…`.
 - **Acceso:** con `JdbcClient` y SQL explícito, desde el repositorio de cada funcionalidad.
 - **Vínculo con el proceso:** el curso se guarda antes de iniciar la instancia. La instancia se inicia con
-  `businessKey = curso.id` y su ID se guarda en `curso.process_instance_id`. Las tres operaciones van en una
-  transacción (`SolicitudesDeCapacitacion`): si Flowable falla, no queda el curso sin instancia (ver 05-decisiones).
+  `businessKey = curso.id` y su ID se guarda en `curso.process_instance_id`. El curso se **confirma antes** de iniciar la
+  instancia (`SolicitudesDeCapacitacion`): una instancia que termina al iniciarse, como la no viable, actualiza el estado
+  del curso desde el motor y el curso tiene que existir ya. Si Flowable no inicia la instancia, se elimina el curso
+  recién creado.
 
 ## 7. Tests
 

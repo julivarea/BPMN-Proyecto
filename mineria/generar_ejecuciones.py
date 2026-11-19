@@ -60,7 +60,10 @@ def crear_solicitud(numero):
         "fechasPreferidas": "Cualquier día hábil",
     })
     respuesta.raise_for_status()
-    if not respuesta.url.endswith("/solicitar/enviada"):
+    # Una solicitud viable termina en la confirmación; una no viable vuelve al formulario con un aviso.
+    aceptada = respuesta.url.endswith("/solicitar/enviada")
+    no_viable = respuesta.url.endswith("/solicitar") and 'class="aviso"' in respuesta.text
+    if not (aceptada or no_viable):
         raise RuntimeError(f"La web no aceptó la solicitud {numero}: revisá la consola de la web.")
     return instancia_mas_reciente()
 

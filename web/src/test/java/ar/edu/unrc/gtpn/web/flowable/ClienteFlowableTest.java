@@ -47,10 +47,21 @@ class ClienteFlowableTest {
                 .andRespond(withSuccess("""
                         {"id": "instancia-1", "businessKey": "42"}""", MediaType.APPLICATION_JSON));
 
-        String instancia = cliente.iniciarPorMensaje("solicitudCapacitacion", "42", Map.of("plazoRespuesta", "P5D"));
+        InstanciaIniciada instancia = cliente.iniciarPorMensaje("solicitudCapacitacion", "42", Map.of("plazoRespuesta", "P5D"));
 
-        assertEquals("instancia-1", instancia);
+        assertEquals(new InstanciaIniciada("instancia-1", false), instancia);
         servidor.verify();
+    }
+
+    @Test
+    void iniciarPorMensajeInformaSiLaInstanciaTerminoAlIniciarse() {
+        servidor.expect(requestTo(URL + "/runtime/process-instances"))
+                .andRespond(withSuccess("""
+                        {"id": "instancia-2", "businessKey": "43", "ended": true}""", MediaType.APPLICATION_JSON));
+
+        InstanciaIniciada instancia = cliente.iniciarPorMensaje("solicitudCapacitacion", "43", Map.of());
+
+        assertEquals(new InstanciaIniciada("instancia-2", true), instancia);
     }
 
     @Test

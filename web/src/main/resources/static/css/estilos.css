@@ -256,6 +256,7 @@ select { padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5r
     .tabla .accion { white-space: nowrap; }
 }
 
-.mensaje, .error { padding: 0.6rem 0.9rem; border-radius: 0.5rem; }
+.mensaje, .error, .aviso { padding: 0.6rem 0.9rem; border-radius: 0.5rem; }
 .mensaje { background: #e8f5ec; border: 1px solid #b7dfc3; color: #1e5e33; }
 .error { background: #fdeceb; border: 1px solid #f3c0bc; color: #8a1f17; }
+.aviso { background: #fff6e0; border: 1px solid #f1d58a; color: #7a5200; }
