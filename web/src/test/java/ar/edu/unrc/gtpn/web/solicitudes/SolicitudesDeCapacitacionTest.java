@@ -22,6 +22,9 @@ import org.mockito.InOrder;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresa;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
@@ -148,5 +151,30 @@ class SolicitudesDeCapacitacionTest {
     private static SolicitudFormulario solicitud(String cuit, String razonSocial) {
         return new SolicitudFormulario(cuit, razonSocial, "Ana Pérez", "ana@acme.com", null, "Excel avanzado",
                 "Curso para el área contable", 10, "Marzo, por la mañana");
+    }
+
+        @Test
+    void sinSesionNoHayEmpresaConSesion() {
+        assertEquals(Optional.empty(), solicitudes.empresaConSesion(null));
+    }
+
+    @Test
+    void elPersonalNoCuentaComoEmpresaConSesion() {
+        var sesion = new UsernamePasswordAuthenticationToken("jefe_admin", null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRACION")));
+
+        assertEquals(Optional.empty(), solicitudes.empresaConSesion(sesion));
+        verify(cuentas, never()).buscarPorUsuario(any());
+    }
+
+    @Test
+    void unaEmpresaConSesionEsLaDeSuCuenta() {
+        var sesion = new UsernamePasswordAuthenticationToken("ammu", null,
+                List.of(new SimpleGrantedAuthority("ROLE_EMPRESA")));
+        var acme = new Empresa(7L, CUIT, "Acme SA");
+        when(cuentas.buscarPorUsuario("ammu")).thenReturn(Optional.of(new CuentaEmpresa(7L, "ammu", "hash")));
+        when(repositorio.empresaPorId(7L)).thenReturn(Optional.of(acme));
+
+        assertEquals(Optional.of(acme), solicitudes.empresaConSesion(sesion));
     }
 }

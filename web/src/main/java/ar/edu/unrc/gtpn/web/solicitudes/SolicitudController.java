@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.security.core.Authentication;
+
+import java.util.Optional;
 
 import jakarta.validation.Valid;
 
@@ -27,7 +30,12 @@ public class SolicitudController {
     }
 
     @GetMapping("/solicitar")
-    String formulario(@ModelAttribute("solicitud") SolicitudFormulario solicitud) {
+    String formulario(@ModelAttribute("solicitud") SolicitudFormulario solicitud, Authentication sesion,
+            Model modelo) {
+        solicitudes.empresaConSesion(sesion).ifPresent(empresa -> {
+            modelo.addAttribute("solicitud", solicitud.conEmpresa(empresa.cuit(), empresa.razonSocial()));
+            modelo.addAttribute("empresaConSesion", true);
+        });
         return FORMULARIO;
     }
 

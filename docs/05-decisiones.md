@@ -61,6 +61,11 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   deshacer lo hecho en Flowable, así que si fallara el último `UPDATE` quedaría una instancia sin curso. Se acepta
   porque es una actualización simple sobre una fila recién insertada.  
 
+- **Solicitud con sesión de empresa (§4.1, §4.1.2).** Si una empresa inició sesión, `/solicitar` precarga su CUIT y
+  razón social, los bloquea y registra la solicitud a nombre de su empresa: el servidor ignora el CUIT y la razón
+  social que lleguen del formulario. Sin sesión, el formulario sigue siendo público. Limitación: sin sesión, alguien
+  que conozca el CUIT y la razón social exactos de una empresa podría solicitar a su nombre.
+  
 ## Pendientes
 
 - **Falta de aulas físicas (escenario 7 de la defensa).** No se modela por ahora: el enunciado no dice qué pasa

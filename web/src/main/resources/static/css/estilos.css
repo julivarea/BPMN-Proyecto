@@ -130,6 +130,8 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 /* Botón principal y secundario (Cancelar) lado a lado al pie del formulario. */
 .acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
 
+/* Campos de solo lectura (por ejemplo, CUIT y razón social con sesión de empresa) */
+.formulario input[readonly] { background: #f3f4f6; color: #5b6478; cursor: not-allowed; }
 /* Datos de la solicitud o del curso que se muestran arriba de un formulario. */
 .detalles {
     margin-bottom: 1.5rem;
