@@ -92,10 +92,18 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   de otra empresa registra igual la solicitud a nombre de la empresa con sesión. Sin sesión, el formulario sigue siendo
   público y un CUIT ya registrado con otra razón social se rechaza con el error junto a ese campo.
 
-- **Fecha de inicio no anterior a hoy (§3.5, §4.2.2).** La app de comunicaciones rechaza una fecha de inicio anterior
-  al día actual. La de hoy sí se acepta, aunque su hora ya haya pasado: el timer "fecha programada" dispara
-  enseguida, que es lo que usan las pruebas y la demo ("fechas cercanas", §3.5).  
-  
+- **Fecha de inicio: no anterior a hoy, con zona horaria y hora por defecto (§3.5, §4.2.2).** La app de comunicaciones
+  valida y completa la fecha acordada al aceptar la propuesta:
+  - No admite una fecha anterior al día actual. La de hoy sí, aunque su hora ya haya pasado: el timer "fecha
+    programada" dispara enseguida, que es lo que usan las pruebas y la demo ("fechas cercanas", §3.5).
+  - Sin hora, un día futuro empieza a las 09:00 y **hoy empieza dentro de 1 minuto**: el curso queda habilitado apenas
+    termina la preparación, sin esperar a una hora del día. Es una comodidad para probar y para las demos.
+  - La fecha viaja con el desfase de la zona de la app (`2026-12-01T09:00:00-03:00`). El servidor de Flowable corre en
+    UTC: sin el desfase leería la hora local como UTC y el timer vencería 3 horas antes. El listener de fin del proceso
+    y el portal aceptan la fecha con o sin desfase y guardan o muestran la hora local que escribió la empresa.
+  - *Desarrollar curso* queda habilitado cuando se cumplen las tres condiciones: terminó *Preparar curso*, se definió el
+    docente y llegó la fecha. No alcanza con que llegue la fecha.
+
 ## Pendientes
 
 - **Falta de aulas físicas (escenario 7 de la defensa).** No se modela por ahora: el enunciado no dice qué pasa

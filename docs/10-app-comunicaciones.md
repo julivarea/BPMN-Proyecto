@@ -89,9 +89,11 @@ usa el cliente para habilitarlas y enviarlas:
   ejecución con `PUT /runtime/executions/{executionId}` y
   `{"action": "messageEventReceived", "messageName": …, "variables": […]}`. Después se vuelve a consultar, porque las
   comunicaciones habilitadas cambian.
-- **Datos:** la aceptación convierte la fecha acordada al ISO-8601 que espera el timer (`2026-12-01T09:00:00`); se
-  acepta `AAAA-MM-DD`, `DD/MM/AAAA` y los mismos con hora (sin hora se usa 09:00). Las modificaciones envían las
-  observaciones tal cual; el rechazo no lleva datos.
+- **Datos:** la aceptación convierte la fecha acordada al ISO-8601 con el desfase de la zona de la app que espera el
+  timer (`2026-12-01T09:00:00-03:00`); se acepta `AAAA-MM-DD`, `DD/MM/AAAA` y los mismos con hora (`HH:mm`). Sin hora:
+  un día futuro empieza a las 09:00 y **hoy empieza dentro de 1 minuto**, para que el curso quede habilitado apenas
+  termina la preparación (pruebas y demos). Una fecha anterior a hoy se rechaza; hoy con una hora ya pasada se acepta.
+  Las modificaciones envían las observaciones tal cual; el rechazo no lleva datos.
 - **Camino que se destraba:** aceptación → preparación del curso con la fecha programada; rechazo → *Archivar
   solicitud*; modificaciones → *Revisar propuesta*. Los tres caminos están cubiertos en
   `proceso/src/test/java/ar/edu/unrc/gtpn/proceso/NegociacionTest.java` (rechazo y modificaciones) y en

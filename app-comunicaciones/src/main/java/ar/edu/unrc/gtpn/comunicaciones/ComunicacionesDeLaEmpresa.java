@@ -1,8 +1,10 @@
 package ar.edu.unrc.gtpn.comunicaciones;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
@@ -19,22 +21,40 @@ import java.util.function.Function;
  */
 final class ComunicacionesDeLaEmpresa {
 
-    /** Hora que se usa cuando la empresa acuerda una fecha sin hora. */
+    /** Hora de inicio cuando se acuerda una fecha futura sin hora. */
     private static final LocalTime HORA_POR_DEFECTO = LocalTime.of(9, 0);
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    /** Cuando la fecha sin hora es la de hoy, el curso empieza dentro de este tiempo: queda habilitado enseguida. */
+    private static final long MINUTOS_PARA_HOY_SIN_HORA = 1;
+    /** Fecha y hora con el desfase de la zona de la app, que Flowable no puede suponer (su servidor corre en UTC). */
+    private static final DateTimeFormatter ISO_CON_DESFASE = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
     private static final DateTimeFormatter CON_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter SIN_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     /** Formatos aceptados para la fecha acordada, en orden: el primero que entienda el texto, gana. */
-    private static final List<Function<String, LocalDateTime>> FORMATOS = List.of(
-            LocalDateTime::parse,
-            fecha -> LocalDate.parse(fecha).atTime(HORA_POR_DEFECTO),
-            fecha -> LocalDateTime.parse(fecha, CON_HORA),
-            fecha -> LocalDate.parse(fecha, SIN_HORA).atTime(HORA_POR_DEFECTO));
+    private static final List<Function<String, FechaAcordada>> FORMATOS = List.of(
+            texto -> conHora(LocalDateTime.parse(texto)),
+            texto -> new FechaAcordada(LocalDate.parse(texto), null),
+            texto -> conHora(LocalDateTime.parse(texto, CON_HORA)),
+            texto -> new FechaAcordada(LocalDate.parse(texto, SIN_HORA), null));
+
+    /** Día acordado y su hora, o {@code null} si la empresa no la indicó. */
+    private record FechaAcordada(LocalDate dia, LocalTime hora) {
+    }
+
+    private static FechaAcordada conHora(LocalDateTime fecha) {
+        return new FechaAcordada(fecha.toLocalDate(), fecha.toLocalTime());
+    }
 
     private final FlowableRest flowable;
+    private final Clock reloj;
 
     ComunicacionesDeLaEmpresa(FlowableRest flowable) {
+        this(flowable, Clock.systemDefaultZone());
+    }
+
+    /** Con el reloj explícito, para poder probar las fechas. */
+    ComunicacionesDeLaEmpresa(FlowableRest flowable, Clock reloj) {
         this.flowable = flowable;
+        this.reloj = reloj;
     }
 
     /**
@@ -65,15 +85,15 @@ final class ComunicacionesDeLaEmpresa {
     }
 
     /** Variables del proceso que acompañan al mensaje. */
-    private static Map<String, Object> variables(Comunicacion comunicacion, String dato) {
+    private Map<String, Object> variables(Comunicacion comunicacion, String dato) {
         Map<String, Object> variables = new LinkedHashMap<>();
         comunicacion.variable().ifPresent(variable -> variables.put(variable, valor(comunicacion, dato)));
         return variables;
     }
 
-    private static Object valor(Comunicacion comunicacion, String dato) {
+    private Object valor(Comunicacion comunicacion, String dato) {
         if (comunicacion == Comunicacion.ACEPTACION) {
-            return fechaISO(dato);
+            return fechaISO(dato, reloj);
         }
         if (comunicacion == Comunicacion.NOMINA_PARTICIPANTES) {
             return participantes(dato);
@@ -94,27 +114,39 @@ final class ComunicacionesDeLaEmpresa {
     }
 
     /**
-     * Convierte la fecha acordada al formato ISO-8601 que espera el timer del proceso
-     * ({@code 2026-12-01T09:00:00}). Acepta {@code AAAA-MM-DD}, {@code DD/MM/AAAA} y las mismas con hora. No admite
-     * fechas anteriores a hoy; hoy sí, porque las pruebas y la demo usan fechas cercanas (enunciado §3.5).
+     * Convierte la fecha acordada al formato ISO-8601 con desfase que espera el timer del proceso
+     * ({@code 2026-12-01T09:00:00-03:00}). Acepta {@code AAAA-MM-DD}, {@code DD/MM/AAAA} y las mismas con hora.
+     *
+     * <ul>
+     *   <li>Sin hora y de un día futuro: empieza a las 09:00 de ese día.</li>
+     *   <li>Sin hora y de hoy: empieza dentro de un minuto, así el curso queda habilitado apenas termina la preparación
+     *       (para probar y para las demos, enunciado §3.5).</li>
+     *   <li>Con hora: la que se indica. Hoy con una hora que ya pasó se acepta, y el curso queda habilitado enseguida.</li>
+     *   <li>Una fecha anterior a hoy no se admite.</li>
+     * </ul>
+     *
+     * <p>El desfase es el de la zona de la app: Flowable corre en UTC y sin él leería la hora local como UTC.
      */
-    static String fechaISO(String texto) {
-        return fechaISO(texto, LocalDate.now());
-    }
-
-    /** Igual que {@link #fechaISO(String)}, con el día de hoy explícito para poder probarlo. */
-    static String fechaISO(String texto, LocalDate hoy) {
-        LocalDateTime fecha = interpretar(texto);
-        boolean yaPaso = fecha.toLocalDate().isBefore(hoy);
-        if (yaPaso) {
+    static String fechaISO(String texto, Clock reloj) {
+        FechaAcordada acordada = interpretar(texto);
+        LocalDate hoy = LocalDate.now(reloj);
+        if (acordada.dia().isBefore(hoy)) {
             throw new IllegalArgumentException("La fecha de inicio no puede ser anterior a hoy.");
         }
-        return fecha.format(ISO);
+        LocalDateTime inicio;
+        if (acordada.hora() != null) {
+            inicio = acordada.dia().atTime(acordada.hora());
+        } else if (acordada.dia().equals(hoy)) {
+            inicio = LocalDateTime.now(reloj).plusMinutes(MINUTOS_PARA_HOY_SIN_HORA);
+        } else {
+            inicio = acordada.dia().atTime(HORA_POR_DEFECTO);
+        }
+        return inicio.truncatedTo(ChronoUnit.SECONDS).atZone(reloj.getZone()).format(ISO_CON_DESFASE);
     }
 
-    private static LocalDateTime interpretar(String texto) {
+    private static FechaAcordada interpretar(String texto) {
         String fecha = texto.trim();
-        for (Function<String, LocalDateTime> formato : FORMATOS) {
+        for (Function<String, FechaAcordada> formato : FORMATOS) {
             try {
                 return formato.apply(fecha);
             } catch (DateTimeParseException noEra) {

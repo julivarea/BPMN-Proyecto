@@ -14,7 +14,7 @@ import java.util.Optional;
 enum Comunicacion {
 
     ACEPTACION("aceptacionPropuesta", "Aceptar propuesta", "fechaInicioCurso",
-            "Fecha de inicio acordada (AAAA-MM-DD o DD/MM/AAAA)"),
+            "Fecha de inicio acordada: AAAA-MM-DD o DD/MM/AAAA, con hora opcional (HH:mm). Sin hora, hoy empieza en 1 minuto"),
     RECHAZO("rechazoPropuesta", "Rechazar propuesta", null, null),
     MODIFICACIONES("modificacionesPropuesta", "Pedir modificaciones", "observacionesEmpresa",
             "Observaciones para la institución"),

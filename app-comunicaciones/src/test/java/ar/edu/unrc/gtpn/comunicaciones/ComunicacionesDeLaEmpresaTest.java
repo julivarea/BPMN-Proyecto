@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,10 @@ import org.junit.jupiter.api.Test;
 class ComunicacionesDeLaEmpresaTest {
 
     private final FlowableFalso flowable = new FlowableFalso();
-    private final ComunicacionesDeLaEmpresa comunicaciones = new ComunicacionesDeLaEmpresa(flowable);
+    /** Jueves 19/11/2026 a las 20:00 en Buenos Aires (23:00 UTC). */
+    private static final Clock RELOJ = Clock.fixed(Instant.parse("2026-11-19T23:00:00Z"),
+            ZoneId.of("America/Argentina/Buenos_Aires"));
+    private final ComunicacionesDeLaEmpresa comunicaciones = new ComunicacionesDeLaEmpresa(flowable, RELOJ);
     private final Solicitud solicitud = new Solicitud("i1", "42", Instant.parse("2026-11-08T10:00:00Z"));
 
     @Test
@@ -46,7 +50,7 @@ class ComunicacionesDeLaEmpresaTest {
 
         assertEquals("e7", flowable.ejecucionUsada);
         assertEquals("aceptacionPropuesta", flowable.mensajeEnviado);
-        assertEquals(Map.of("fechaInicioCurso", "2026-12-01T09:00:00"), flowable.variablesEnviadas);
+        assertEquals(Map.of("fechaInicioCurso", "2026-12-01T09:00:00-03:00"), flowable.variablesEnviadas);
     }
 
     @Test
@@ -118,11 +122,18 @@ class ComunicacionesDeLaEmpresaTest {
 
     @Test
     void laFechaAcordadaSeAceptaEnLosFormatosHabituales() {
-        LocalDate hoy = LocalDate.of(2026, 11, 1);
-        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01", hoy));
-        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026", hoy));
-        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026 18:30", hoy));
-        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01T18:30:00", hoy));
+        assertEquals("2026-12-01T09:00:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01", RELOJ));
+        assertEquals("2026-12-01T09:00:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026", RELOJ));
+        assertEquals("2026-12-01T18:30:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026 18:30", RELOJ));
+        assertEquals("2026-12-01T18:30:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01T18:30:00", RELOJ));
+    }
+
+    @Test
+    void laFechaLlevaElDesfaseDeLaZonaDeLaApp() {
+        // Flowable corre en UTC: sin desfase leería la hora local como UTC y el curso empezaría horas antes.
+        Clock madrid = Clock.fixed(Instant.parse("2026-11-19T23:00:00Z"), ZoneId.of("Europe/Madrid"));
+
+        assertEquals("2026-12-01T09:00:00+01:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026", madrid));
     }
 
     @Test
@@ -139,23 +150,31 @@ class ComunicacionesDeLaEmpresaTest {
         assertTrue(Comunicacion.RECHAZO.pedido().isEmpty());
     }
 
-        @Test
+    @Test
     void unaFechaDeInicioAnteriorAHoyNoSeAcepta() {
-        LocalDate hoy = LocalDate.of(2026, 11, 19);
-
         var error = assertThrows(IllegalArgumentException.class,
-                () -> ComunicacionesDeLaEmpresa.fechaISO("18/11/2026", hoy));
+                () -> ComunicacionesDeLaEmpresa.fechaISO("18/11/2026", RELOJ));
 
         assertEquals("La fecha de inicio no puede ser anterior a hoy.", error.getMessage());
     }
 
     @Test
-    void laFechaDeHoySeAceptaAunqueSuHoraYaHayaPasado() {
-        LocalDate hoy = LocalDate.of(2026, 11, 19);
-
-        assertEquals("2026-11-19T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("19/11/2026", hoy));
+    void laFechaDeHoyConUnaHoraQueYaPasoSeAcepta() {
+        assertEquals("2026-11-19T08:00:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("19/11/2026 08:00", RELOJ));
     }
-    
+
+    @Test
+    void hoySinHoraElCursoEmpiezaDentroDeUnMinuto() {
+        // Son las 20:00: queda habilitado apenas termina la preparación, sin esperar a una hora del día.
+        assertEquals("2026-11-19T20:01:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("19/11/2026", RELOJ));
+        assertEquals("2026-11-19T20:01:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("2026-11-19", RELOJ));
+    }
+
+    @Test
+    void unDiaFuturoSinHoraEmpiezaALas09() {
+        assertEquals("2026-11-20T09:00:00-03:00", ComunicacionesDeLaEmpresa.fechaISO("20/11/2026", RELOJ));
+    }
+
     /** Doble del cliente REST: recuerda qué mensajes espera la instancia y qué se envió. */
     private static final class FlowableFalso extends FlowableRest {
 

@@ -2,6 +2,7 @@ package ar.edu.unrc.gtpn.web.empresa;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +91,7 @@ public class PortalEmpresaController {
             Object informe = variables.get("informeResultados");
             List<Propuesta> versiones = propuestas.buscarPorCurso(curso.id());
             Propuesta ultima = versiones.isEmpty() ? null : versiones.get(versiones.size() - 1);
-            return curso.conAcuerdo(LocalDateTime.parse(fecha.toString()),
+            return curso.conAcuerdo(LocalDateTime.parse(fecha.toString(), DateTimeFormatter.ISO_DATE_TIME),
                     ultima == null ? null : ultima.programa(), ultima == null ? null : ultima.presupuesto(),
                     informe == null ? null : informe.toString());
         } catch (RestClientException | DateTimeParseException error) {

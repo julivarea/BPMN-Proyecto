@@ -31,7 +31,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | `versionPropuesta` | número | Inicio (0) y *Enviar propuesta* (+1) | PDF de cada versión (web) |
 | `recordatoriosEnviados` | número | *Enviar propuesta* (0) y *Enviar recordatorio* (+1) | XOR "¿se enviaron 2 recordatorios?" |
 | `observacionesEmpresa` | texto | Mensaje de modificaciones | *Revisar propuesta* |
-| `fechaInicioCurso` | fecha ISO-8601 (`2026-12-01T09:00:00`) | Mensaje de aceptación | Timer "fecha programada" |
+| `fechaInicioCurso` | fecha ISO-8601 con desfase (`2026-12-01T09:00:00-03:00`) | Mensaje de aceptación | Timer "fecha programada" |
 | `participantes` | JSON (lista) | Mensaje de nómina | *Confeccionar lista definitiva* |
 | `listaDefinitiva` | texto (un participante por línea) | *Confeccionar lista definitiva* | *Desarrollar curso* |
 | `requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento` | booleano | *Evaluar recursos* | Ramas del gateway inclusivo |
@@ -138,7 +138,7 @@ con `activityRef` a la cadena de la cancelación.
 | Timer | Configuración | Nota |
 |-------|---------------|------|
 | 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `solicitudes.plazo-respuesta`: `P5D` en serio; en la demo, `PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Sin esta variable la instancia falla al llegar al timer: si se inicia desde la Task app, agregarla antes (03-guia-flowable §2) |
-| fecha programada | `timeDate = ${fechaInicioCurso}` | Fecha ISO-8601 fijada al aceptar. Si ya pasó, se dispara enseguida (útil para la demo) |
+| fecha programada | `timeDate = ${fechaInicioCurso}` | Fecha ISO-8601 fijada al aceptar. Con desfase (`-03:00`) el timer vence en el instante correcto; sin desfase, Flowable la lee en la zona de su servidor (UTC) y vencería horas antes. Si ya pasó, se dispara enseguida (útil para la demo) |
 
 ## 6. Regla de negocio
 

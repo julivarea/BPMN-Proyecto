@@ -42,6 +42,20 @@ class RegistrarResultadoDelCursoListenerTest {
     }
 
     @Test
+    void laFechaDeInicioConDesfaseSeGuardaConLaHoraLocalQueEscribioLaEmpresa() {
+        DelegateExecution execution = org.mockito.Mockito.mock(DelegateExecution.class);
+        when(execution.getProcessInstanceBusinessKey()).thenReturn("42");
+        when(execution.getVariable("resultado")).thenReturn("FINALIZADO");
+        when(execution.getVariable("fechaInicioCurso")).thenReturn("2026-12-01T09:00:00-03:00");
+
+        listener.notify(execution);
+
+        ArgumentCaptor<DatosResultadoCurso> datos = ArgumentCaptor.forClass(DatosResultadoCurso.class);
+        verify(cursos).registrarResultado(org.mockito.ArgumentMatchers.eq("42"), datos.capture());
+        assertEquals(LocalDateTime.of(2026, 12, 1, 9, 0), datos.getValue().fechaInicio());
+    }
+
+    @Test
     void permiteDatosOpcionalesAusentes() {
         DelegateExecution execution = org.mockito.Mockito.mock(DelegateExecution.class);
         when(execution.getProcessInstanceBusinessKey()).thenReturn("7");

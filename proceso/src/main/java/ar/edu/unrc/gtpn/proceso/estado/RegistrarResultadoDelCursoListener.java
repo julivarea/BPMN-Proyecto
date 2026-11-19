@@ -3,6 +3,7 @@ package ar.edu.unrc.gtpn.proceso.estado;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 import org.flowable.engine.delegate.DelegateExecution;
@@ -75,7 +76,8 @@ public class RegistrarResultadoDelCursoListener implements ExecutionListener {
         }
         String texto = valor.toString();
         try {
-            return LocalDateTime.parse(texto);
+            // ISO con o sin desfase (2026-12-01T09:00:00 o 2026-12-01T09:00:00-03:00): se guarda la hora local.
+            return LocalDateTime.parse(texto, DateTimeFormatter.ISO_DATE_TIME);
         } catch (DateTimeParseException noEsFechaConHora) {
             return LocalDate.parse(texto).atStartOfDay();
         }

@@ -164,7 +164,9 @@ Reglas:
 
 - Duración: ISO-8601 (`P5D`, `PT1M`), tomada de una variable del proceso: `<timeDuration>${plazo}</timeDuration>`.
 - Fecha: `<timeDate>${fechaInicio}</timeDate>`, con un `java.util.Date` o un texto ISO-8601
-  (`2026-12-01T09:00:00`). Si la fecha ya pasó, el timer se dispara enseguida (sirve para la demo).
+  (`2026-12-01T09:00:00-03:00`). Conviene incluir el desfase: sin él Flowable lee la hora en la zona de su servidor (UTC),
+  y el timer vence 3 horas antes que la hora local argentina. Si la fecha ya pasó, el timer se dispara enseguida (sirve
+  para la demo).
 - El servidor revisa los timers cada pocos segundos: un `PT1M` tarda aproximadamente un minuto en dispararse.
 
 ## 7. Errores comunes (y cómo se ven)

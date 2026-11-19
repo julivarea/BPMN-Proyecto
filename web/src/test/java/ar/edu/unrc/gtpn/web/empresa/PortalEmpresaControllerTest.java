@@ -150,6 +150,20 @@ class PortalEmpresaControllerTest {
     }
 
     @Test
+    void laFechaAcordadaConDesfaseSeMuestraConLaFechaLocal() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("desarrollarCurso", "Desarrollar curso", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of("fechaInicioCurso", "2026-12-02T23:30:00-03:00"));
+        when(propuestas.buscarPorCurso(10L)).thenReturn(List.of());
+
+        mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("02/12/2026")));
+    }
+
+    @Test
     void sinFechaAcordadaElDetalleNoMuestraFechaDeInicio() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
