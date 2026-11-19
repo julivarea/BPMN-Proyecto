@@ -1,10 +1,12 @@
 package ar.edu.unrc.gtpn.web.solicitudes;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -12,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -47,19 +51,72 @@ class SolicitudControllerTest {
                 .andExpect(content().string(Matchers.containsString("Solicitar capacitación")));
     }
 
+    private static final Empresa ACME = new Empresa(7L, "30123456789", "Acme SA");
+
+    @Test
+    void conLaSesionDeUnaEmpresaLaSolicitudVaASuNombreAunqueElEnvioTraigaOtroCuit() throws Exception {
+        when(solicitudes.empresaConSesion(any())).thenReturn(Optional.of(ACME));
+        when(solicitudes.solicitar(any(), any())).thenReturn(new SolicitudRegistrada(42L, true));
+
+        mvc.perform(envio("20-46309379-3", "JV Enterprises").with(user("Acme SA").roles("EMPRESA")))
+                .andExpect(redirectedUrl("/solicitar/enviada"));
+
+        verify(solicitudes).solicitar(any(), eq(Optional.of(ACME)));
+    }
+
+    @Test
+    void conLaSesionDeUnaEmpresaNoSeValidanElCuitNiLaRazonSocialDelEnvio() throws Exception {
+        when(solicitudes.empresaConSesion(any())).thenReturn(Optional.of(ACME));
+        when(solicitudes.solicitar(any(), any())).thenReturn(new SolicitudRegistrada(42L, true));
+
+        mvc.perform(envio("", "   ").with(user("Acme SA").roles("EMPRESA")))
+                .andExpect(redirectedUrl("/solicitar/enviada"));
+
+        verify(solicitudes).solicitar(any(), eq(Optional.of(ACME)));
+    }
+
+    @Test
+    void conLaSesionDeUnaEmpresaUnErrorEnOtroCampoVuelveAlFormularioConElCuitYLaRazonSocialBloqueados() throws Exception {
+        when(solicitudes.empresaConSesion(any())).thenReturn(Optional.of(ACME));
+
+        mvc.perform(envio("30-12345678-9", "Acme SA", "").with(user("Acme SA").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeHasFieldErrors("solicitud", "descripcion"))
+                .andExpect(model().attribute("empresaConSesion", true))
+                .andExpect(content().string(Matchers.containsString("readonly")));
+
+        verify(solicitudes, never()).solicitar(any(), any());
+    }
+
+    @Test
+    void sinSesionDeEmpresaElFormularioDeUnEnvioInvalidoNoBloqueaNingunCampo() throws Exception {
+        mvc.perform(envio("123", "Acme SA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.not(Matchers.containsString("readonly"))));
+    }
+
+    @Test
+    void elErrorDeUnCuitDeOtraEmpresaSeVeEnLaPagina() throws Exception {
+        when(solicitudes.solicitar(any(), any())).thenThrow(new CuitDeOtraEmpresa());
+
+        mvc.perform(envio("30-12345678-9", "Otra Empresa SA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Ese CUIT ya est")));
+    }
+
     @Test
     void unaSolicitudValidaSeRegistraYRedirigeALaConfirmacion() throws Exception {
-        when(solicitudes.solicitar(any())).thenReturn(new SolicitudRegistrada(42L, true));
+        when(solicitudes.solicitar(any(), any())).thenReturn(new SolicitudRegistrada(42L, true));
 
         mvc.perform(envio("30-12345678-9", "Acme SA"))
                 .andExpect(redirectedUrl("/solicitar/enviada"));
 
-        verify(solicitudes).solicitar(any());
+        verify(solicitudes).solicitar(any(), any());
     }
 
     @Test
     void unaSolicitudNoViableVuelveAlFormularioConUnAvisoEnLugarDeLaConfirmacion() throws Exception {
-        when(solicitudes.solicitar(any())).thenReturn(new SolicitudRegistrada(42L, false));
+        when(solicitudes.solicitar(any(), any())).thenReturn(new SolicitudRegistrada(42L, false));
 
         mvc.perform(envio("30-12345678-9", "Acme SA"))
                 .andExpect(redirectedUrl("/solicitar"))
@@ -79,12 +136,12 @@ class SolicitudControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("solicitud", "cuit", "razonSocial"));
 
-        verify(solicitudes, never()).solicitar(any());
+        verify(solicitudes, never()).solicitar(any(), any());
     }
 
     @Test
     void unCuitDeOtraEmpresaMuestraElErrorJuntoALaRazonSocial() throws Exception {
-        when(solicitudes.solicitar(any())).thenThrow(new CuitDeOtraEmpresa());
+        when(solicitudes.solicitar(any(), any())).thenThrow(new CuitDeOtraEmpresa());
 
         mvc.perform(envio("30-12345678-9", "Otra Empresa SA"))
                 .andExpect(status().isOk())
@@ -93,7 +150,7 @@ class SolicitudControllerTest {
 
     @Test
     void siFlowableNoRespondeSeInformaParaReintentar() throws Exception {
-        when(solicitudes.solicitar(any())).thenThrow(new SolicitudNoRegistrada(new RuntimeException("sin respuesta")));
+        when(solicitudes.solicitar(any(), any())).thenThrow(new SolicitudNoRegistrada(new RuntimeException("sin respuesta")));
 
         mvc.perform(envio("30-12345678-9", "Acme SA"))
                 .andExpect(status().isOk())
@@ -106,18 +163,22 @@ class SolicitudControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/solicitar?expirada"));
 
-        verify(solicitudes, never()).solicitar(any());
+        verify(solicitudes, never()).solicitar(any(), any());
     }
 
     /** Envío del formulario con los demás campos válidos. */
     private static MockHttpServletRequestBuilder envio(String cuit, String razonSocial) {
+        return envio(cuit, razonSocial, "Curso para el área contable");
+    }
+
+    private static MockHttpServletRequestBuilder envio(String cuit, String razonSocial, String descripcion) {
         return post("/solicitar").with(csrf())
                 .param("cuit", cuit)
                 .param("razonSocial", razonSocial)
                 .param("contactoNombre", "Ana Pérez")
                 .param("contactoEmail", "ana@acme.com")
                 .param("nombre", "Excel avanzado")
-                .param("descripcion", "Curso para el área contable")
+                .param("descripcion", descripcion)
                 .param("participantesEstimados", "10")
                 .param("fechasPreferidas", "Marzo, por la mañana");
     }

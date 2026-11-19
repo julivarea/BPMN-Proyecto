@@ -12,10 +12,13 @@
         <fieldset>
             <legend>Empresa</legend>
             <label>CUIT
-                <input th:field="*{cuit}" th:readonly="${empresaConSesion}" required>                <span class="error" th:if="${#fields.hasErrors('cuit')}" th:errors="*{cuit}"></span>
+                <input th:field="*{cuit}" th:readonly="${empresaConSesion}" required>
+                <span class="error" th:if="${#fields.hasErrors('cuit')}" th:errors="*{cuit}"></span>
             </label>
             <label>Razón social
-                <input th:field="*{razonSocial}" th:readonly="${empresaConSesion}" required>            </label>
+                <input th:field="*{razonSocial}" th:readonly="${empresaConSesion}" required>
+                <span class="error" th:if="${#fields.hasErrors('razonSocial')}" th:errors="*{razonSocial}"></span>
+            </label>
         </fieldset>
 
         <fieldset>

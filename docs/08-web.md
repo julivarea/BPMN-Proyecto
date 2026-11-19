@@ -201,6 +201,12 @@ desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
 errores, vuelve a mostrar el formulario con lo que se cargó y el error junto a cada campo. Si los datos son válidos,
 registra la solicitud (§6) y redirige a `/solicitar/enviada`, así recargar la confirmación no repite el envío.
 
+**Empresa con sesión.** Quien ingresó con la cuenta de una empresa ve CUIT y razón social cargados y bloqueados. 
+`SolicitudController` resuelve la empresa de la sesión (`SolicitudesDeCapacitacion.empresaConSesion`) tanto al mostrar el 
+formulario como al recibir el envío: con sesión, la solicitud va a su nombre y el CUIT y la razón social enviados no se 
+validan ni se usan, así que no se puede solicitar a nombre de otra empresa armando el envío a mano. Si el envío tiene 
+errores en otros campos, el formulario vuelve con esos dos campos bloqueados.
+
 **Solicitud no viable.** Con cinco o más cursos en ejecución el proceso termina dentro de la misma llamada que lo
 inicia (*Comunicar imposibilidad* solo escribe en el log del servidor). La respuesta de Flowable lo indica (`ended`), y
 en ese caso `SolicitudController` no va a la confirmación: vuelve a `/solicitar` con el atributo flash `aviso`, que el
