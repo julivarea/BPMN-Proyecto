@@ -22,9 +22,13 @@ import org.mockito.InOrder;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresa;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
+import ar.edu.unrc.gtpn.web.seguridad.CuentaEmpresaRepository;
 
 /** Registro de solicitudes (W-01, W-02, 05-decisiones), con dobles del repositorio y del cliente de Flowable. */
 class SolicitudesDeCapacitacionTest {
@@ -32,10 +36,10 @@ class SolicitudesDeCapacitacionTest {
     private static final String CUIT = "30123456789";
 
     private final SolicitudesRepository repositorio = mock(SolicitudesRepository.class);
+    private final CuentaEmpresaRepository cuentas = mock(CuentaEmpresaRepository.class);
     private final ClienteFlowable flowable = mock(ClienteFlowable.class);
-    private final SolicitudesDeCapacitacion solicitudes =
-            new SolicitudesDeCapacitacion(repositorio, flowable, new SolicitudesProperties("P5D"),
-                    TransactionOperations.withoutTransaction());
+    private final SolicitudesDeCapacitacion solicitudes = 
+            new SolicitudesDeCapacitacion(repositorio, flowable, new SolicitudesProperties("P5D"), TransactionOperations.withoutTransaction(),cuentas);
 
     @Test
     void unaEmpresaNuevaSeRegistraConElCuitSoloConDigitos() {
@@ -51,7 +55,7 @@ class SolicitudesDeCapacitacionTest {
 
     @Test
     void laSolicitudIniciaSuInstanciaConElCursoComoBusinessKeyYLaVincula() {
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
         when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
 
@@ -64,7 +68,7 @@ class SolicitudesDeCapacitacionTest {
 
     @Test
     void siElProcesoTerminaAlIniciarseLaSolicitudQuedaRegistradaPeroNoViable() {
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
         when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-9", true));
 
@@ -78,7 +82,7 @@ class SolicitudesDeCapacitacionTest {
     @Test
     void unaEmpresaYaRegistradaNoSeDuplicaAunqueCambienMayusculasYEspacios() {
         when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
 
         solicitudes.solicitar(solicitud("30-12345678-9", "  ACME SA "));
 
@@ -88,7 +92,7 @@ class SolicitudesDeCapacitacionTest {
 
     @Test
     void unCuitRegistradoConOtraRazonSocialSeRechazaSinIniciarElProceso() {
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
 
         assertThrows(CuitDeOtraEmpresa.class, () -> solicitudes.solicitar(solicitud(CUIT, "Otra Empresa SA")));
 
@@ -98,7 +102,7 @@ class SolicitudesDeCapacitacionTest {
 
     @Test
     void siFlowableNoRespondeLaSolicitudNoSeRegistra() {
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
         when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenThrow(new ResourceAccessException("sin respuesta"));
 
@@ -115,8 +119,8 @@ class SolicitudesDeCapacitacionTest {
         when(transacciones.execute(any())).thenAnswer(
                 llamada -> llamada.<TransactionCallback<?>>getArgument(0).doInTransaction(null));
         SolicitudesDeCapacitacion servicio = new SolicitudesDeCapacitacion(repositorio, flowable,
-                new SolicitudesProperties("P5D"), transacciones);
-        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, "Acme SA")));
+                new SolicitudesProperties("P5D"), transacciones, cuentas);
+        when(repositorio.empresaPorCuit(CUIT)).thenReturn(Optional.of(new Empresa(1L, CUIT,"Acme SA")));
         when(repositorio.crearCurso(eq(1L), any())).thenReturn(42L);
         when(flowable.iniciarPorMensaje(any(), any(), anyMap())).thenReturn(new InstanciaIniciada("instancia-1", false));
 
@@ -147,5 +151,30 @@ class SolicitudesDeCapacitacionTest {
     private static SolicitudFormulario solicitud(String cuit, String razonSocial) {
         return new SolicitudFormulario(cuit, razonSocial, "Ana Pérez", "ana@acme.com", null, "Excel avanzado",
                 "Curso para el área contable", 10, "Marzo, por la mañana");
+    }
+
+        @Test
+    void sinSesionNoHayEmpresaConSesion() {
+        assertEquals(Optional.empty(), solicitudes.empresaConSesion(null));
+    }
+
+    @Test
+    void elPersonalNoCuentaComoEmpresaConSesion() {
+        var sesion = new UsernamePasswordAuthenticationToken("jefe_admin", null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRACION")));
+
+        assertEquals(Optional.empty(), solicitudes.empresaConSesion(sesion));
+        verify(cuentas, never()).buscarPorUsuario(any());
+    }
+
+    @Test
+    void unaEmpresaConSesionEsLaDeSuCuenta() {
+        var sesion = new UsernamePasswordAuthenticationToken("ammu", null,
+                List.of(new SimpleGrantedAuthority("ROLE_EMPRESA")));
+        var acme = new Empresa(7L, CUIT, "Acme SA");
+        when(cuentas.buscarPorUsuario("ammu")).thenReturn(Optional.of(new CuentaEmpresa(7L, "ammu", "hash")));
+        when(repositorio.empresaPorId(7L)).thenReturn(Optional.of(acme));
+
+        assertEquals(Optional.of(acme), solicitudes.empresaConSesion(sesion));
     }
 }

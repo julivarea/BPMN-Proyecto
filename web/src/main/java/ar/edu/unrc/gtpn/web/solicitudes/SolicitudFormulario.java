@@ -46,4 +46,10 @@ public record SolicitudFormulario(
 
         @NotBlank(message = "Describí las fechas preferidas.")
         String fechasPreferidas) {
+
+        /** El mismo formulario, con el CUIT y la razón social de la empresa con sesión. */
+        SolicitudFormulario conEmpresa(String cuit, String razonSocial) {
+                return new SolicitudFormulario(cuit, razonSocial, contactoNombre, contactoEmail, contactoTelefono, nombre,
+                        descripcion, participantesEstimados, fechasPreferidas);
+        }        
 }
