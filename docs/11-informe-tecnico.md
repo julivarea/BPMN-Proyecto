@@ -175,7 +175,9 @@ En `organizarCurso.bpmn20.xml`:
 | `Liberar aula` | `LiberarAulaDelegate`, compensación |
 | `Liberar aula virtual` | `LiberarAulaVirtualDelegate`, compensación |
 
-`Liberar equipamiento` es una user task de compensación, no una service task.
+`Liberar equipamiento` es una user task de compensación, no una service task. Al completarse, un task listener
+(`EquipamientoLiberadoListener`) envía la señal `equipamientoLiberado`, que la cancelación espera antes de ejecutar
+`Notificar cierre` (`docs/05-decisiones.md`, limitación 2).
 *Habilitar acceso a la empresa* ya persiste la cuenta: `HabilitarAccesoEmpresaDelegate` consulta y crea
 `cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). La reserva y la
 liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, con implementación simulada
@@ -191,7 +193,9 @@ liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, co
 - **Task listener `create` en `Confeccionar lista definitiva`**:
   `AsignarAdministrativoConMenosTareasListener`; asigna la tarea al administrativo con menos
   tareas pendientes y desempata alfabéticamente por ID de usuario.
-- Expresiones BPMN que fijan `resultado`, versión, recordatorios y cancelación.
+- **Task listener `complete` en `Liberar equipamiento`**:
+  `EquipamientoLiberadoListener`; envía la señal `equipamientoLiberado` a la cancelación de su propia instancia.
+- Expresiones BPMN que fijan `resultado`, versión, recordatorios, cancelación y `equipamientoContratado`.
 - `resultado=RECHAZADO` al tomar el flujo de rechazo y `SIN_RESPUESTA` al superar dos
   recordatorios.
 
@@ -200,9 +204,10 @@ liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, co
 El modelo incluye negociación con eventos de mensaje y timer parametrizado, paralelo de
 inscripciones/materiales/recursos, gateway inclusivo para aula física/aula virtual/
 equipamiento, subproceso de cancelación, compensaciones y desarrollo docente. Las decisiones
-de `docs/05-decisiones.md` explican los gateways de unión, la compensación intermedia y el
-paso asíncrono necesario porque la app de materiales no contiene las clases del módulo
-`proceso`.
+de `docs/05-decisiones.md` explican los gateways de unión, la compensación intermedia, la
+cancelación (la compensación se lanza afuera del subproceso de evento y el cierre espera la
+liberación del equipamiento) y el paso asíncrono necesario porque la app de materiales no
+contiene las clases del módulo `proceso`.
 
 ## 4. Despliegue y ejecución
 
@@ -360,7 +365,8 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 - Rechazo; dos recordatorios y cierre por falta de respuesta.
 - Cinco cursos en ejecución y camino `NO_VIABLE`.
 - Cancelación durante preparación con solo las compensaciones de recursos efectivamente
-  gestionados.
+  gestionados; con equipamiento contratado, el cierre se notifica recién al completar *Liberar
+  equipamiento*.
 - Asignación por carga, claim obligatorio para tareas de grupo y rechazo de completar tareas
   ajenas.
 - Registro web, `businessKey`/`process_instance_id`, habilitación y aislamiento por empresa.

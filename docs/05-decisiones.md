@@ -21,6 +21,7 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
    - Fines con nombre según el resultado: no viable, solicitud archivada, cancelación, curso finalizado.
 
    Mejora la lectura del diagrama. Cada fin con nombre corresponde a un resultado distinto, que el Execution
+   Listener de fin registra en la base de la institución.
 
 4. **Nombres de tareas y eventos normalizados.** Los eventos se nombran con verbo + objeto ("recibir aceptación de
    propuesta"), y se corrigieron la ortografía ("Notificar Desición" → "Comunicar imposibilidad de realizar el
@@ -42,11 +43,30 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
    documentales. Los datos reales viven en variables del proceso y en la base de la institución. El editor de
    Flowable, además, no los conserva.
 
+8. **La cancelación compensa y cierra afuera del subproceso de evento.** El diagrama compensa dentro del subproceso
+   de evento *Cancelación*, lo termina con un fin de error que atrapa un borde de error en *Preparar curso* y recién
+   ahí notifica el cierre. En el modelo, el subproceso de evento solo marca `resultado = CANCELADO` y termina, y lo que
+   sigue lo decide el proceso principal:
+
+   1. XOR "¿Preparación cancelada?".
+   2. **Sí:** evento intermedio de compensación "Liberar recursos", que libera solo lo ya gestionado.
+   3. XOR "¿Se contrató equipamiento?": con equipamiento contratado, el flujo espera el evento de señal "recibir
+      liberación del equipamiento"; sin equipamiento, sigue directo.
+   4. XOR de unión, *Notificar cierre* y el fin "cancelación".
+
+   Se mantiene lo que pide el diagrama y el §1.3: se interrumpe la preparación, se compensan solo los recursos
+   efectivamente gestionados y el cierre se notifica una vez concluidas las compensaciones, incluida *Liberar
+   equipamiento*, que es una tarea de usuario. Lo que cambia es dónde se lanza la compensación y cómo se espera.
+   Motivos en las limitaciones 1 y 2.
+
 ## Aclaraciones e interpretaciones
 
 - **Cursos en ejecución (§1.1, §3.1).** Por aclaración del profesor, para evaluar la viabilidad cuentan los cursos
   que ya pasaron por *Habilitar acceso de la empresa*. No cuentan todas las instancias sin finalizar, como sugiere
   el texto del §3.1.
+- **Alcance de la cancelación (§1.3).** Vale solo durante *Preparar curso*, que es donde el enunciado la ubica: el
+  subproceso de evento *Cancelación* pertenece a ese subproceso. Cuando la preparación termina, la cancelación deja de
+  estar disponible, y tampoco se puede cancelar dos veces (el evento es interruptor).
 - **"Aplicación móvil" (§1.4).** *Definir docente* es una tarea de usuario como cualquier otra. El §4 solo pide un
   sitio web y dos apps de escritorio, y el §4.1.4 ubica esta función en el sitio. No cambia el modelo.
 - **CUIT registrado con otra razón social (§4.1.1).** Si una solicitud trae un CUIT que ya existe con otra razón
@@ -80,13 +100,34 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
    lo que *Preparar curso* se corta. Después del subproceso va un XOR "¿Preparación cancelada?":
    - **No:** *Enviar confirmación*, el camino normal.
    - **Sí:** compensación "Liberar recursos", lanzada afuera del subproceso, donde sí funciona y libera solo los
-     recursos ya gestionados; después *Notificar cierre* y fin.
+     recursos ya gestionados; después la espera de la liberación del equipamiento (limitación 2), *Notificar cierre*
+     y fin.
 
-   El modelo ya no tiene fin de error ni borde de error.
+   El modelo no tiene fin de error ni borde de error.
 
-2. **La compensación no espera a las tareas de usuario.** Si hay que *Liberar equipamiento* (tarea de usuario),
-   Flowable crea la tarea y sigue sin esperarla: *Notificar cierre* se ejecuta antes de que alguien la complete.
-   El proceso sí termina recién cuando se completa. **Se acepta** y se menciona en el informe.
+2. **El flujo no espera a las tareas de usuario de una compensación.** *Liberar equipamiento* es una tarea de usuario.
+   Al lanzar la compensación Flowable la crea, pero el flujo que la lanzó sigue de largo: lo que viene después se
+   ejecuta enseguida. Esto afecta distinto a los dos cierres:
+   - **Cierre normal.** Después de *Liberar recursos* solo hay un evento de fin. Alcanza con eso: la instancia no
+     termina mientras la tarea siga activa, así que concluye recién al completarla, como pide el §1.4.
+   - **Cancelación.** Después de *Liberar recursos* hay una actividad, *Notificar cierre*, que no puede salir antes
+     de que terminen las compensaciones (§1.3). Sin una espera explícita, la empresa recibiría el aviso con la
+     liberación del equipamiento todavía pendiente.
+
+   **Solución (aplicada en el modelo), solo en la cancelación:**
+   - la variable `equipamientoContratado` se fija en `true` con un task listener `complete` de *Contratar
+     equipamiento*;
+   - después de *Liberar recursos*, el XOR "¿Se contrató equipamiento?" manda a un evento intermedio de captura de
+     señal (`equipamientoLiberado`) si es **sí**, y directo a la unión si es **no**;
+   - un task listener `complete` de *Liberar equipamiento* (`EquipamientoLiberadoListener`) envía esa señal;
+   - la señal se entrega solo a la ejecución de la propia instancia que la espera, no a todas las que estén
+     esperando: liberar el equipamiento de un curso no desbloquea la cancelación de otro. En el cierre normal no hay
+     quien la espere y el listener no hace nada.
+
+   La espera la resuelve el modelo y no requiere que nadie complete tareas de relleno. Mientras la liberación esté
+   pendiente la instancia sigue abierta: el portal de la empresa muestra el curso como "Cancelándose: liberando
+   recursos" (o "Finalizando: liberando recursos" en el cierre normal) y `curso.estado` pasa a su valor final cuando la
+   instancia termina.
 
 3. **No se pueden usar eventos intermedios de envío de mensaje.** Flowable 6.8 rechaza el despliegue si el modelo
    tiene un evento intermedio que *lanza* un mensaje. **Solución:** los envíos a la empresa (*Enviar propuesta*,

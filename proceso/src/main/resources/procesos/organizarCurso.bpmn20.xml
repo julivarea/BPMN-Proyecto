@@ -9,6 +9,7 @@
   <message id="modificacionesPropuesta" name="modificacionesPropuesta"></message>
   <message id="nominaParticipantes" name="nominaParticipantes"></message>
   <message id="cancelacionCurso" name="cancelacionCurso"></message>
+  <signal id="equipamientoLiberado" name="equipamientoLiberado"></signal>
   <process id="organizarCurso" name="Institución" isExecutable="true">
     <extensionElements>
       <flowable:executionListener event="end" class="ar.edu.unrc.gtpn.proceso.estado.RegistrarResultadoDelCursoListener"></flowable:executionListener>
@@ -63,7 +64,14 @@
         <flowNodeRef>flujo_unirArchivo_archivarSolicitud</flowNodeRef>
         <flowNodeRef>flujo_comunicarImposibilidad_finNoViable</flowNodeRef>
         <flowNodeRef>flujo_enviarPropuesta_unirEspera</flowNodeRef>
-        <flowNodeRef>flujo_liberarRecursosCancelacion_notificarCierre</flowNodeRef>
+        <flowNodeRef>flujo_liberarRecursosCancelacion_gatewayEquipamientoContratado</flowNodeRef>
+        <flowNodeRef>gatewayEquipamientoContratado</flowNodeRef>
+        <flowNodeRef>liberacionEquipamientoRecibida</flowNodeRef>
+        <flowNodeRef>unirCierre</flowNodeRef>
+        <flowNodeRef>flujo_gatewayEquipamientoContratado_liberacionEquipamientoRecibida</flowNodeRef>
+        <flowNodeRef>flujo_gatewayEquipamientoContratado_unirCierre</flowNodeRef>
+        <flowNodeRef>flujo_liberacionEquipamientoRecibida_unirCierre</flowNodeRef>
+        <flowNodeRef>flujo_unirCierre_notificarCierre</flowNodeRef>
         <flowNodeRef>flujo_notificarCierre_finCancelacion</flowNodeRef>
         <flowNodeRef>flujo_prepararCurso_gatewayPreparacionCancelada</flowNodeRef>
         <flowNodeRef>flujo_gatewayPreparacionCancelada_enviarConfirmacion</flowNodeRef>
@@ -262,6 +270,7 @@
       <serviceTask id="liberarAulaVirtual" name="Liberar aula virtual" isForCompensation="true" flowable:class="ar.edu.unrc.gtpn.proceso.recursos.LiberarAulaVirtualDelegate"></serviceTask>
       <userTask id="contratarEquipamiento" name="Contratar equipamiento" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
         <extensionElements>
+          <flowable:taskListener event="complete" expression="${task.setVariable('equipamientoContratado', true)}"></flowable:taskListener>
           <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
@@ -272,6 +281,7 @@
       </boundaryEvent>
       <userTask id="liberarEquipamiento" name="Liberar equipamiento" isForCompensation="true" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
         <extensionElements>
+          <flowable:taskListener event="complete" class="ar.edu.unrc.gtpn.proceso.compensacion.EquipamientoLiberadoListener"></flowable:taskListener>
           <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
@@ -324,6 +334,11 @@
     <intermediateThrowEvent id="liberarRecursosCancelacion" name="Liberar recursos">
       <compensateEventDefinition></compensateEventDefinition>
     </intermediateThrowEvent>
+    <exclusiveGateway id="gatewayEquipamientoContratado" name="¿Se contrató equipamiento?" default="flujo_gatewayEquipamientoContratado_unirCierre"></exclusiveGateway>
+    <intermediateCatchEvent id="liberacionEquipamientoRecibida" name="recibir liberación del equipamiento">
+      <signalEventDefinition signalRef="equipamientoLiberado"></signalEventDefinition>
+    </intermediateCatchEvent>
+    <exclusiveGateway id="unirCierre"></exclusiveGateway>
     <userTask id="definirDocente" name="Definir docente que realizará el curso" flowable:assignee="jefe_docente" flowable:formFieldValidation="true">
       <extensionElements>
         <flowable:formProperty id="docenteAsignado" name="docenteAsignado" type="string" required="true"></flowable:formProperty>
@@ -366,7 +381,13 @@
     <sequenceFlow id="flujo_unirArchivo_archivarSolicitud" sourceRef="unirArchivo" targetRef="archivarSolicitud"></sequenceFlow>
     <sequenceFlow id="flujo_comunicarImposibilidad_finNoViable" sourceRef="comunicarImposibilidad" targetRef="finNoViable"></sequenceFlow>
     <sequenceFlow id="flujo_enviarPropuesta_unirEspera" sourceRef="enviarPropuesta" targetRef="unirEspera"></sequenceFlow>
-    <sequenceFlow id="flujo_liberarRecursosCancelacion_notificarCierre" sourceRef="liberarRecursosCancelacion" targetRef="notificarCierre"></sequenceFlow>
+    <sequenceFlow id="flujo_liberarRecursosCancelacion_gatewayEquipamientoContratado" sourceRef="liberarRecursosCancelacion" targetRef="gatewayEquipamientoContratado"></sequenceFlow>
+    <sequenceFlow id="flujo_gatewayEquipamientoContratado_liberacionEquipamientoRecibida" name="SI" sourceRef="gatewayEquipamientoContratado" targetRef="liberacionEquipamientoRecibida">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${execution.getVariable('equipamientoContratado') == true}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flujo_gatewayEquipamientoContratado_unirCierre" name="NO" sourceRef="gatewayEquipamientoContratado" targetRef="unirCierre"></sequenceFlow>
+    <sequenceFlow id="flujo_liberacionEquipamientoRecibida_unirCierre" sourceRef="liberacionEquipamientoRecibida" targetRef="unirCierre"></sequenceFlow>
+    <sequenceFlow id="flujo_unirCierre_notificarCierre" sourceRef="unirCierre" targetRef="notificarCierre"></sequenceFlow>
     <sequenceFlow id="flujo_notificarCierre_finCancelacion" sourceRef="notificarCierre" targetRef="finCancelacion"></sequenceFlow>
     <sequenceFlow id="flujo_prepararCurso_gatewayPreparacionCancelada" sourceRef="prepararCurso" targetRef="gatewayPreparacionCancelada"></sequenceFlow>
     <sequenceFlow id="flujo_gatewayPreparacionCancelada_enviarConfirmacion" name="NO" sourceRef="gatewayPreparacionCancelada" targetRef="enviarConfirmacion"></sequenceFlow>
@@ -453,7 +474,7 @@
         <omgdc:Bounds height="80.0" width="100.0" x="1330.0" y="560.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="notificarCierre" id="BPMNShape_notificarCierre">
-        <omgdc:Bounds height="80.0" width="100.0" x="4600.0" y="120.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="4890.0" y="120.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="enviarConfirmacion" id="BPMNShape_enviarConfirmacion">
         <omgdc:Bounds height="80.0" width="100.0" x="4730.0" y="340.0"></omgdc:Bounds>
@@ -471,7 +492,7 @@
         <omgdc:Bounds height="80.0" width="100.0" x="5800.0" y="340.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="finCancelacion" id="BPMNShape_finCancelacion">
-        <omgdc:Bounds height="28.0" width="28.0" x="4766.0" y="146.0"></omgdc:Bounds>
+        <omgdc:Bounds height="28.0" width="28.0" x="5056.0" y="146.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="finNoViable" id="BPMNShape_finNoViable">
         <omgdc:Bounds height="28.0" width="28.0" x="1062.0" y="442.0"></omgdc:Bounds>
@@ -557,6 +578,15 @@
       <bpmndi:BPMNShape bpmnElement="gatewayPreparacionCancelada" id="BPMNShape_gatewayPreparacionCancelada">
         <omgdc:Bounds height="40.0" width="40.0" x="4470.0" y="360.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="gatewayEquipamientoContratado" id="BPMNShape_gatewayEquipamientoContratado" isMarkerVisible="true">
+        <omgdc:Bounds height="40.0" width="40.0" x="4600.0" y="140.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="liberacionEquipamientoRecibida" id="BPMNShape_liberacionEquipamientoRecibida">
+        <omgdc:Bounds height="30.0" width="30.0" x="4700.0" y="95.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="unirCierre" id="BPMNShape_unirCierre" isMarkerVisible="true">
+        <omgdc:Bounds height="40.0" width="40.0" x="4800.0" y="140.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="liberarRecursosCancelacion" id="BPMNShape_liberarRecursosCancelacion">
         <omgdc:Bounds height="30.0" width="30.0" x="4535.0" y="145.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
@@ -621,9 +651,30 @@
         <omgdi:waypoint x="1534.940034965035" y="600.0"></omgdi:waypoint>
         <omgdi:waypoint x="1595.0" y="600.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flujo_liberarRecursosCancelacion_notificarCierre" id="BPMNEdge_flujo_liberarRecursosCancelacion_notificarCierre" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="0.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="4564.949992699294" y="160.0"></omgdi:waypoint>
-        <omgdi:waypoint x="4599.99999999998" y="160.0"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="flujo_liberarRecursosCancelacion_gatewayEquipamientoContratado" id="BPMNEdge_flujo_liberarRecursosCancelacion_gatewayEquipamientoContratado" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+        <omgdi:waypoint x="4565.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4600.0" y="160.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_gatewayEquipamientoContratado_liberacionEquipamientoRecibida" id="BPMNEdge_flujo_gatewayEquipamientoContratado_liberacionEquipamientoRecibida" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">
+        <omgdi:waypoint x="4620.0" y="140.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4620.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4700.0" y="110.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_gatewayEquipamientoContratado_unirCierre" id="BPMNEdge_flujo_gatewayEquipamientoContratado_unirCierre" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+        <omgdi:waypoint x="4640.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4800.0" y="160.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="20.0" x="4710.0" y="164.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_liberacionEquipamientoRecibida_unirCierre" id="BPMNEdge_flujo_liberacionEquipamientoRecibida_unirCierre" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+        <omgdi:waypoint x="4730.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4820.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4820.0" y="140.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_unirCierre_notificarCierre" id="BPMNEdge_flujo_unirCierre_notificarCierre" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
+        <omgdi:waypoint x="4840.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4890.0" y="160.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_inicioPrepararCurso_iniciarPreparacion" id="BPMNEdge_flujo_inicioPrepararCurso_iniciarPreparacion" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="2501.9499986876863" y="377.0"></omgdi:waypoint>
@@ -727,8 +778,8 @@
         <omgdi:waypoint x="1822.0" y="377.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_notificarCierre_finCancelacion" id="BPMNEdge_flujo_notificarCierre_finCancelacion" flowable:sourceDockerX="100.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="14.0" flowable:targetDockerY="14.0">
-        <omgdi:waypoint x="4700.0" y="160.0"></omgdi:waypoint>
-        <omgdi:waypoint x="4766.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="4990.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="5056.0" y="160.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_solicitudRecibida_evaluarViabilidad" id="BPMNEdge_flujo_solicitudRecibida_evaluarViabilidad" flowable:sourceDockerX="15.25" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="332.4499996127869" y="357.0"></omgdi:waypoint>

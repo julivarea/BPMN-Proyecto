@@ -40,7 +40,7 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 | P-07 | Aceptada la propuesta, en paralelo y sin dependencias: Inscripciones (recibir nómina → lista definitiva, sin verificar cada participante), Materiales, Recursos. | 1.2 |
 | P-08 | Recursos: evaluar y realizar una o varias de: reservar aula física, solicitar aula virtual, contratar equipamiento; al menos una; deben completarse todas las elegidas. | 1.2 |
 | P-09 | La preparación concluye cuando terminan las tres ramas. | 1.2 |
-| P-10 | Durante *Preparar curso* la empresa puede cancelar: se interrumpe la preparación y se compensan **solo** los recursos efectivamente gestionados (liberar aula física, aula virtual, equipamiento); luego se notifica el cierre y finaliza. | 1.3 |
+| P-10 | Durante *Preparar curso* la empresa puede cancelar: se interrumpe la preparación y se compensan **solo** los recursos efectivamente gestionados (liberar aula física, aula virtual, equipamiento); luego, concluidas las compensaciones (incluida *Liberar equipamiento*, tarea de usuario), se notifica el cierre y finaliza. | 1.3 |
 | P-11 | Concluida la preparación se envía la confirmación; el jefe docente define el docente (uno de los tres, puede ser él). | 1.4 |
 | P-12 | El docente elegido se guarda en una variable y queda asignado a *Desarrollar curso*; alcanzada la fecha programada registra la finalización del dictado. | 1.4 |
 | P-13 | El jefe docente elabora el informe de resultados; el jefe administrativo lo envía a la empresa y archiva el expediente. | 1.4 |

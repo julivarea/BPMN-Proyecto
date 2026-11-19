@@ -3,6 +3,7 @@ package ar.edu.unrc.gtpn.proceso.compensacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -124,6 +125,158 @@ class CancelacionYCompensacionesTest {
         assertTerminoCon("finCursoFinalizado", "FINALIZADO");
     }
 
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void cancelarConEquipamientoContratadoNoNotificaElCierreHastaQueSeLibereElEquipamiento() {
+        llegarAPreparacion();
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+
+        recibirMensaje("cancelacionCurso", Map.of());
+
+        // Enunciado 1.3: el cierre se notifica una vez concluidas las compensaciones. Liberar el equipamiento es una
+        // tarea de usuario: hasta que se complete, el proceso no notifica ni termina.
+        assertTrue(liberacionesEjecutadas().contains("liberarAula"), "el aula se libera sola");
+        assertNotNull(tareaPendiente("liberarEquipamiento"), "queda pendiente liberar el equipamiento");
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"), "no se puede notificar el cierre todavía");
+        assertNull(historial.createHistoricProcessInstanceQuery().processInstanceId(instancia).singleResult().getEndTime(),
+                "la instancia sigue abierta");
+
+        java.util.Date antesDeLiberar = new java.util.Date();
+        completar("liberarEquipamiento", Map.of());
+
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+        // La señal sale al completarse la tarea, en la misma transacción: el aviso nunca precede a la liberación.
+        assertFalse(fin("notificarCierre", true).before(antesDeLiberar),
+                "el cierre se notifica después de liberar el equipamiento");
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void liberarElEquipamientoDeUnaCancelacionNoDesbloqueaLaDeOtraInstancia() {
+        cancelarConEquipamientoContratado();
+        String primera = instancia;
+        cancelarConEquipamientoContratado();
+        String segunda = instancia;
+
+        instancia = primera;
+        completar("liberarEquipamiento", Map.of());
+
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+        instancia = segunda;
+        assertNotNull(tareaPendiente("liberarEquipamiento"), "la otra cancelación sigue esperando su liberación");
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"), "la señal de una instancia no llega a la otra");
+        completar("liberarEquipamiento", Map.of());
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void cancelarConLosTresRecursosGestionadosLiberaTodoYEsperaElEquipamiento() {
+        llegarAPreparacion();
+        recibirMensaje("nominaParticipantes", Map.of());
+        evaluarRecursos(true, true, true);
+        completar("solicitarAulaVirtual", Map.of());
+        completar("contratarEquipamiento", Map.of());
+        assertNotNull(tareaPendiente("confeccionarListaDefinitiva"));
+        assertNotNull(tareaPendiente("prepararMateriales"));
+
+        recibirMensaje("cancelacionCurso", Map.of());
+
+        assertTrue(liberacionesEjecutadas().containsAll(Set.of("liberarAula", "liberarAulaVirtual")));
+        assertNull(tareaPendiente("confeccionarListaDefinitiva"), "las ramas pendientes se interrumpen");
+        assertNull(tareaPendiente("prepararMateriales"), "las ramas pendientes se interrumpen");
+        assertNotNull(tareaPendiente("liberarEquipamiento"));
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"));
+        completar("liberarEquipamiento", Map.of());
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void unaVezTerminadaLaPreparacionYaNoSeAceptaLaCancelacion() {
+        llegarAPreparacion();
+        recibirMensaje("nominaParticipantes", Map.of());
+        completar("confeccionarListaDefinitiva", Map.of());
+        completar("prepararMateriales", Map.of());
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+        ejecutarJobsPendientes();
+
+        // Enunciado 1.3: la cancelación es "durante Preparar curso"; ya concluida, no hay a qué cancelar.
+        assertNull(runtime.createExecutionQuery().processInstanceId(instancia)
+                .messageEventSubscriptionName("cancelacionCurso").singleResult());
+        assertNotNull(tareaPendiente("definirDocente"));
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void despuesDeCancelarNoSeAceptaUnaSegundaCancelacion() {
+        cancelarConEquipamientoContratado();
+
+        assertNull(runtime.createExecutionQuery().processInstanceId(instancia)
+                .messageEventSubscriptionName("cancelacionCurso").singleResult());
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void cancelarMientrasSeEsperaLaLiberacionDelCierreNormalNoLoRompe() {
+        llegarAPreparacion();
+        recibirMensaje("nominaParticipantes", Map.of());
+        completar("confeccionarListaDefinitiva", Map.of());
+        completar("prepararMateriales", Map.of());
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+        ejecutarJobsPendientes();
+        completar("definirDocente", Map.of("docenteAsignado", "docente1"));
+        ejecutarJobsPendientes();
+        completar("desarrollarCurso", Map.of());
+        completar("elaborarInformeResultados", Map.of());
+        completar("enviarInformeYArchivarExpediente", Map.of());
+        assertNotNull(tareaPendiente("liberarEquipamiento"));
+
+        long suscripciones = runtime.createExecutionQuery().processInstanceId(instancia)
+                .messageEventSubscriptionName("cancelacionCurso").count();
+
+        // Observación: el curso ya está terminado, no debería poder cancelarse.
+        assertEquals(0, suscripciones, "no se debe poder cancelar un curso ya finalizado");
+        completar("liberarEquipamiento", Map.of());
+        assertTerminoPasandoPor("finCursoFinalizado", "FINALIZADO");
+    }
+
+    private void cancelarConEquipamientoContratado() {
+        llegarAPreparacion();
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+        recibirMensaje("cancelacionCurso", Map.of());
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void elCierreNormalConEquipamientoEsperaSuLiberacionYTerminaAlCompletarla() {
+        llegarAPreparacion();
+        recibirMensaje("nominaParticipantes", Map.of());
+        completar("confeccionarListaDefinitiva", Map.of());
+        completar("prepararMateriales", Map.of());
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+        ejecutarJobsPendientes();
+        completar("definirDocente", Map.of("docenteAsignado", "docente1"));
+        ejecutarJobsPendientes();
+        completar("desarrollarCurso", Map.of());
+        completar("elaborarInformeResultados", Map.of());
+
+        completar("enviarInformeYArchivarExpediente", Map.of());
+
+        // Enunciado 1.4: el proceso concluye una vez completada la liberación.
+        assertNotNull(tareaPendiente("liberarEquipamiento"));
+        assertNull(historial.createHistoricProcessInstanceQuery().processInstanceId(instancia).singleResult().getEndTime());
+
+        completar("liberarEquipamiento", Map.of());
+
+        assertTerminoPasandoPor("finCursoFinalizado", "FINALIZADO");
+    }
+
     /** Negociación aceptada: la instancia queda dentro de "Preparar curso", con las tres ramas activas. */
     private void llegarAPreparacion() {
         // El businessKey es el id del curso en la BD de la institución (docs/07-base-de-datos.md §3).
@@ -162,6 +315,18 @@ class CancelacionYCompensacionesTest {
         }
     }
 
+    private Task tareaPendiente(String tarea) {
+        return tareas.createTaskQuery().processInstanceId(instancia).taskDefinitionKey(tarea).singleResult();
+    }
+
+    /** Inicio o fin de la última ejecución de una actividad. */
+    private java.util.Date fin(String actividad, boolean inicio) {
+        HistoricActivityInstance ejecucion = historial.createHistoricActivityInstanceQuery()
+                .processInstanceId(instancia).activityId(actividad).list().get(0);
+        assertNotNull(inicio ? ejecucion.getStartTime() : ejecucion.getEndTime(), "La actividad " + actividad + " no terminó");
+        return inicio ? ejecucion.getStartTime() : ejecucion.getEndTime();
+    }
+
     private Set<String> actividadesEjecutadas() {
         return historial.createHistoricActivityInstanceQuery().processInstanceId(instancia).list().stream()
                 .map(HistoricActivityInstance::getActivityId)
@@ -170,6 +335,19 @@ class CancelacionYCompensacionesTest {
 
     private Set<String> liberacionesEjecutadas() {
         return actividadesEjecutadas().stream().filter(LIBERACIONES::contains).collect(Collectors.toSet());
+    }
+
+    /**
+     * Cuando la instancia termina al completarse una tarea de compensación, Flowable no informa cuál fue la última
+     * actividad: se verifica que haya pasado por el fin esperado y que el resultado sea el correcto.
+     */
+    private void assertTerminoPasandoPor(String fin, String resultado) {
+        HistoricProcessInstance terminada = historial.createHistoricProcessInstanceQuery()
+                .processInstanceId(instancia).singleResult();
+        assertNotNull(terminada.getEndTime(), "La instancia no terminó");
+        assertTrue(actividadesEjecutadas().contains(fin), "No pasó por " + fin);
+        assertEquals(resultado, historial.createHistoricVariableInstanceQuery()
+                .processInstanceId(instancia).variableName("resultado").singleResult().getValue());
     }
 
     private void assertTerminoCon(String fin, String resultado) {

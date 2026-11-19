@@ -36,6 +36,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | `listaDefinitiva` | texto (un participante por línea) | *Confeccionar lista definitiva* | *Desarrollar curso* |
 | `requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento` | booleano | *Evaluar recursos* | Ramas del gateway inclusivo |
 | `aulaAsignada` | texto | *Reservar aula* | *Liberar aula* |
+| `equipamientoContratado` | booleano | Task listener `complete` de *Contratar equipamiento* | XOR "¿Se contrató equipamiento?" de la cancelación |
 | `docenteAsignado` | id de usuario | *Definir docente* | Asignación de *Desarrollar curso* |
 | `informeResultados` | texto | *Elaborar informe de resultados* | *Enviar informe y archivar expediente*; BD |
 
@@ -51,6 +52,9 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | recibir solicitud de modificaciones a la propuesta | `modificacionesRecibidas` | `modificacionesPropuesta` | `observacionesEmpresa` |
 | recibir nómina de inscripciones | `nominaRecibida` | `nominaParticipantes` | `participantes` |
 | recibir cancelación | `cancelacionRecibida` | `cancelacionCurso` | — |
+
+El modelo tiene una única señal, `equipamientoLiberado`, declarada como `<signal>`. La envía *Liberar equipamiento* al
+completarse y solo la recibe la cancelación de la misma instancia (§4, "Preparación de curso").
 
 ## 4. Elemento por elemento
 
@@ -98,19 +102,23 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | Solicitar aula virtual | `solicitarAulaVirtual` | `candidateGroups = administracion` |
 | Borde de compensación de Solicitar aula virtual | `compensarAulaVirtual` | — |
 | Liberar aula virtual (compensación) | `liberarAulaVirtual` | Service task → `LiberarAulaVirtualDelegate` |
-| Contratar equipamiento | `contratarEquipamiento` | `candidateGroups = administracion` |
+| Contratar equipamiento | `contratarEquipamiento` | `candidateGroups = administracion`. Task listener `complete` (expresión): `equipamientoContratado = true` |
 | Borde de compensación de Contratar equipamiento | `compensarEquipamiento` | — |
-| Liberar equipamiento (compensación) | `liberarEquipamiento` | User task, `candidateGroups = administracion` |
+| Liberar equipamiento (compensación) | `liberarEquipamiento` | User task, `candidateGroups = administracion`. Task listener `complete` → `EquipamientoLiberadoListener` (envía la señal `equipamientoLiberado`) |
 | Inclusivo de cierre | `recursosListos` | — |
 | Preparación de curso completa | `preparacionCompleta` | — |
 | Cancelación (subproceso de evento) | `cancelacion` | Inicio `cancelacionRecibida`, `messageRef` → `cancelacionCurso` |
 | Preparación cancelada (fin del subproceso de evento) | `preparacionCancelada` | Execution listener `start` (expresión): `resultado = 'CANCELADO'` |
-| ¿Preparación cancelada? | `gatewayPreparacionCancelada` | **SI** → `${resultado == 'CANCELADO'}` → compensación "Liberar recursos" → *Notificar cierre* → fin. **NO** → flujo por defecto (ya marcado en el modelo) → *Enviar confirmación* |
-| Liberar recursos (cancelación) | `liberarRecursosCancelacion` | — |
+| ¿Preparación cancelada? | `gatewayPreparacionCancelada` | **SI** → `${resultado == 'CANCELADO'}` → compensación "Liberar recursos" → espera de la liberación del equipamiento → *Notificar cierre* → fin. **NO** → flujo por defecto (ya marcado en el modelo) → *Enviar confirmación* |
+| Liberar recursos (cancelación) | `liberarRecursosCancelacion` | Evento intermedio de compensación, sin `activityRef`: compensa todo lo gestionado en *Preparar curso* |
+| ¿Se contrató equipamiento? | `gatewayEquipamientoContratado` | **SI** → `${execution.getVariable('equipamientoContratado') == true}` → `liberacionEquipamientoRecibida`. **NO** → flujo por defecto → `unirCierre` |
+| recibir liberación del equipamiento | `liberacionEquipamientoRecibida` | Evento intermedio de captura de señal, `signalRef` → `equipamientoLiberado` |
+| XOR de unión | `unirCierre` | — |
 | Notificar cierre | `notificarCierre` | Service task → `NotificarEmpresaDelegate` |
 | Fin por cancelación | `finCancelacion` | El resultado ya es `CANCELADO` |
 
-Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-decisiones, limitación 5).
+Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-decisiones, limitación 5). Conviene
+editar este modelo directamente en el XML y no guardarlo desde el editor (limitaciones 5 y 6).
 
 ### Desarrollo de curso (§1.4)
 
@@ -122,7 +130,7 @@ Las tres asociaciones de compensación no se tocan en el editor de Flowable (05-
 | Desarrollar curso | `desarrollarCurso` | `assignee = ${docenteAsignado}` |
 | Elaborar informe de resultados | `elaborarInformeResultados` | `assignee = jefe_docente`. Formulario: `informeResultados` |
 | Enviar informe y archivar expediente | `enviarInformeYArchivarExpediente` | `assignee = jefe_admin` |
-| Liberar recursos (compensación) | `liberarRecursos` | Evento intermedio de compensación, sin configuración extra |
+| Liberar recursos (compensación) | `liberarRecursos` | Evento intermedio de compensación, sin configuración extra. Después va directo el fin: la instancia concluye al completarse *Liberar equipamiento*, si se contrató (no hace falta una espera explícita; ver 05-decisiones, limitación 2) |
 | Curso finalizado | `finCursoFinalizado` | Execution listener `start`: `resultado = 'FINALIZADO'` |
 
 ## 5. Timers
@@ -151,6 +159,7 @@ antes de `<definitions>`: Flowable 6.8 deja de reconocer la versión de DMN.
 | `viabilidad.ContarCursosEnEjecucionListener` | Execution listener `start` | *Evaluar viabilidad* | Cuenta las instancias de `organizarCurso` (todas las versiones) que siguen abiertas y tienen `accesoHabilitado = true`, y guarda `cursosEnEjecucion` (§3.1 y aclaración del profesor) |
 | `notificacion.NotificarEmpresaDelegate` | Delegate | *Comunicar imposibilidad*, *Enviar propuesta*, *Enviar recordatorio*, *Enviar confirmación*, *Notificar cierre* | Simula el envío a la empresa. Una sola clase; cada tarea la configura con el campo `asunto` |
 | `acceso.HabilitarAccesoEmpresaDelegate` | Delegate | *Habilitar acceso a la empresa* | Crea la cuenta de la empresa (usuario = razón social, clave `clave123`) o reutiliza la existente, vincula el curso (§4.1.2) y fija `accesoHabilitado = true` |
+| `compensacion.EquipamientoLiberadoListener` | Task listener `complete` | *Liberar equipamiento* | Envía la señal `equipamientoLiberado` a la ejecución de su propia instancia que la espera (la cancelación), para que *Notificar cierre* salga después de la liberación. Sin destinatario, no hace nada |
 | `recursos.ReservarAulaDelegate` | Delegate | *Reservar aula* | Simula el web service de aulas (§4.1.3) y guarda `aulaAsignada` |
 | `recursos.LiberarAulaDelegate` | Delegate | *Liberar aula* | Simula la liberación del aula física |
 | `recursos.LiberarAulaVirtualDelegate` | Delegate | *Liberar aula virtual* | Simula la liberación del aula virtual |
