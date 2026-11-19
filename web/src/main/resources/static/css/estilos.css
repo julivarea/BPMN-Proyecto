@@ -75,27 +75,46 @@ nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.18); color: #fff;
 }
 .sesion button:hover, a.sesion:hover { background: rgba(255, 255, 255, 0.1); }
 
-/* Formularios */
-/* Ocupan todo el ancho del contenido; los chicos (login, elegir un docente) usan .formulario-compacto. */
+/* Formularios: los usan la solicitud y las pantallas de tareas. */
 .formulario { display: grid; gap: 0.75rem; }
 .formulario-compacto { max-width: 22rem; }
 .formulario label { display: grid; gap: 0.3rem; font-weight: 600; }
-.formulario input, .formulario textarea { width: 100%; padding: 0.55rem 0.7rem; border: 1px solid #cfd5df; border-radius: 0.5rem; font: inherit; }
+.formulario input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.formulario textarea,
+.formulario select {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #cfd5df;
+    border-radius: 0.5rem;
+    background: #fff;
+    font: inherit;
+    font-weight: 400;
+}
+.formulario input:focus, .formulario textarea:focus, .formulario select:focus {
+    outline: 2px solid rgba(31, 59, 87, 0.35);
+    outline-offset: 1px;
+}
 .formulario textarea { min-height: 6rem; resize: vertical; }
+/* Títulos y notas dentro de un formulario: el espacio lo da la grilla. */
+.formulario h2 { margin: 1.25rem 0 0; }
+.formulario p { margin: 0; }
+.formulario .ayuda { margin: 0; color: #5b6478; font-size: 0.9rem; font-weight: 400; }
+/* Casillas: la etiqueta va en una línea, con la casilla a la izquierda. */
+.formulario label.opcion { display: flex; align-items: center; gap: 0.6rem; font-weight: 500; }
+.formulario input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--encabezado); }
 /* Los campos de cada grupo se reparten en columnas según el ancho; los de texto largo ocupan la fila entera. */
 .formulario fieldset {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
     gap: 0.75rem 1rem;
+    margin: 0;
     padding: 1rem;
     border: 1px solid #cfd5df;
     border-radius: 0.5rem;
 }
 .formulario fieldset legend { padding: 0 0.4rem; font-weight: 600; }
-.formulario fieldset label:has(textarea), .formulario fieldset .ancho { grid-column: 1 / -1; }
-
-/* Las áreas de texto de las pantallas de tareas traen cols fijas: se adaptan al ancho disponible. */
-main textarea { width: 100%; max-width: 100%; }
+.formulario fieldset label:has(textarea), .formulario fieldset .ancho, .formulario fieldset > p { grid-column: 1 / -1; }
+.formulario fieldset > p { margin: 0; }
 .formulario button {
     justify-self: start;
     padding: 0.55rem 1.2rem;
@@ -107,6 +126,31 @@ main textarea { width: 100%; max-width: 100%; }
     font-weight: 600;
     cursor: pointer;
 }
+.formulario button:hover { opacity: 0.9; }
+/* Botón principal y secundario (Cancelar) lado a lado al pie del formulario. */
+.acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+
+/* Datos de la solicitud o del curso que se muestran arriba de un formulario. */
+.detalles {
+    margin-bottom: 1.5rem;
+    padding: 0.25rem 1.25rem 0.75rem;
+    border: 1px solid #e3e7ef;
+    border-radius: 0.5rem;
+    background: #fff;
+}
+.detalles h2 {
+    margin: 1rem 0 0.5rem;
+    padding: 0;
+    border: none;
+    color: #5b6478;
+    font-size: 0.8rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+.detalles h2:not(:first-child) { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #e3e7ef; }
+/* Etiquetas de los datos ("Empresa:", "Curso:") más tenues que el valor. */
+.detalles strong { color: #5b6478; font-weight: 600; }
+.detalles p { margin: 0.35rem 0; }
 
 /* Botones */
 .boton, .tabla button {
@@ -122,6 +166,39 @@ main textarea { width: 100%; max-width: 100%; }
     cursor: pointer;
 }
 .boton:hover, .tabla button:hover { opacity: 0.9; }
+
+/* Botón de volver, arriba de cada pantalla: contorno con la forma de la navegación. */
+.volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    padding: 0.4rem 0.95rem;
+    border: 1px solid #cfd5df;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--encabezado);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+.volver:hover { border-color: var(--encabezado); background: #eef1f6; }
+
+/* Botón secundario (por ejemplo, Cancelar): mismo tamaño que el principal, pero de contorno. */
+.boton-secundario {
+    display: inline-block;
+    padding: 0.55rem 1.2rem;
+    border: 1px solid var(--encabezado);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--encabezado);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.boton-secundario:hover { background: #e8edf4; }
 
 /* Tablas */
 .tabla-contenedor { width: 100%; overflow-x: auto; margin-bottom: 1.5rem; }
@@ -145,7 +222,17 @@ main textarea { width: 100%; max-width: 100%; }
 .tabla-cursos td:nth-child(3) { white-space: normal; }
 .nota { color: #5b6478; font-size: 0.9rem; }
 
-h2 { margin-top: 2rem; font-size: 1.15rem; }
+/* Jerarquía de títulos: h1 de la página, h2 de cada sección y, dentro de una tarjeta (.detalles), títulos chicos en
+   mayúsculas para que no compitan con los datos. */
+h1 { margin: 0.5rem 0 1.25rem; font-size: 2rem; line-height: 1.2; }
+h2 {
+    margin: 2.25rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #dfe5ee;
+    color: var(--encabezado);
+    font-size: 1.35rem;
+    line-height: 1.3;
+}
 
 main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem; }
 

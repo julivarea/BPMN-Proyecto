@@ -6,7 +6,7 @@
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
 
-    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+    <a class="volver" th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a>
 
     <h1>Revisar propuesta (nueva versión v<span th:text="${propuesta.version + 1}">2</span>)</h1>
 
@@ -35,32 +35,24 @@
            style="white-space: pre-wrap;">Observaciones</p>
     </div>
 
-    <form th:action="@{'/tareas/' + ${tarea.id()} + '/revisar-propuesta'}" method="post">
+    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/revisar-propuesta'}" method="post">
         <input type="hidden" name="seccion" th:value="${seccion}">
 
         <h2>Nueva versión de la propuesta</h2>
-        <p>Corregí la propuesta según las observaciones. Al guardar se envía a la empresa, que responde desde su aplicación.</p>
-
-        <div style="margin-bottom: 15px;">
-            <label for="programa">Programa sintético del curso:</label><br>
-            <textarea id="programa" name="programa" rows="6" style="width: 100%;" required
-                      th:text="${propuesta.programa}"></textarea>
+        <p class="ayuda">Corregí la propuesta según las observaciones. Al guardar se envía a la empresa, que responde desde su aplicación.</p>
+        <label>Programa sintético del curso
+            <textarea id="programa" name="programa" rows="6" required th:text="${propuesta.programa}"></textarea>
+        </label>
+        <label>Presupuesto estimado ($)
+            <input type="number" step="0.01" min="0" id="presupuesto" name="presupuesto" required th:value="${propuesta.presupuesto}">
+        </label>
+        <label>Fechas y cronograma propuesto
+            <textarea id="fechasPosibles" name="fechasPosibles" rows="3" required th:text="${propuesta.fechasPosibles}"></textarea>
+        </label>
+        <div class="acciones">
+            <button type="submit">Guardar nueva versión y completar tarea</button>
+            <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
         </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="presupuesto">Presupuesto estimado ($):</label><br>
-            <input type="number" step="0.01" id="presupuesto" name="presupuesto" style="width: 100%;" required
-                   th:value="${propuesta.presupuesto}">
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="fechasPosibles">Fechas y cronograma propuesto:</label><br>
-            <textarea id="fechasPosibles" name="fechasPosibles" rows="3" style="width: 100%;" required
-                      th:text="${propuesta.fechasPosibles}"></textarea>
-        </div>
-
-        <button type="submit" class="boton">Guardar nueva versión y completar tarea</button>
-        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
     </form>
 </main>
 </body>

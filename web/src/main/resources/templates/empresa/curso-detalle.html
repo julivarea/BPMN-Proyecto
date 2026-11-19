@@ -8,7 +8,7 @@
         <main>
             <div th:replace="~{fragmentos :: mensajes}"></div>
 
-            <p><a th:href="@{/empresas}">← Volver a mis cursos</a></p>
+            <a class="volver" th:href="@{/empresas}">← Volver a mis cursos</a>
 
             <h1 th:text="${curso.curso().nombre()}">Curso de Java</h1>
             <p>

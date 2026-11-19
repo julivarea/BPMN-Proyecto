@@ -18,6 +18,7 @@ import ar.edu.unrc.gtpn.web.seguridad.SeguridadConfig;
 import ar.edu.unrc.gtpn.web.solicitudes.Curso;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,6 +59,21 @@ class ArchivarSolicitudControllerTest {
         mockMvc.perform(get("/tareas/t3/archivar-solicitud")
                         .with(user("jefe_admin").roles("ADMINISTRACION")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void elMotivoDeUnaPropuestaRechazadaSeExplicaEnLugarDeMostrarElCodigo() throws Exception {
+        Tarea tarea = new Tarea("t3", "Archivar solicitud", "archivarSolicitud", "proc1", "jefe_admin", OffsetDateTime.now(), "10");
+        Curso curso = new Curso(10L, 1L, "Empresa SA", "Java 21", "Desc", 15, "Mayo", "Juan", "j@e.com", "123");
+        when(flowable.tarea("t3")).thenReturn(tarea);
+        when(solicitudesRepository.buscarPorId(10L)).thenReturn(Optional.of(curso));
+        // El proceso guarda el resultado como RECHAZADO (docs/06 §2).
+        when(flowable.variables("proc1")).thenReturn(Map.of("resultado", "RECHAZADO"));
+
+        mockMvc.perform(get("/tareas/t3/archivar-solicitud")
+                        .with(user("jefe_admin").roles("ADMINISTRACION")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("rechazado la propuesta")));
     }
 
     @Test

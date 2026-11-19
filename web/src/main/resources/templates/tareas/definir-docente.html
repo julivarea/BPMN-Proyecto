@@ -5,7 +5,7 @@
 <header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
-    <p><a th:href="@{/docentes}">← Volver a la bandeja</a></p>
+    <a class="volver" th:href="@{/docentes}">← Volver a la bandeja</a>
     <h1>Definir docente</h1>
     <p>Elegí quién desarrollará el curso de la solicitud
         <strong th:text="${tarea.solicitud() == null ? '—' : tarea.solicitud()}">42</strong>.</p>

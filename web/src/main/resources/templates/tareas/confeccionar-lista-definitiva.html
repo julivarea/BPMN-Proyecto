@@ -6,7 +6,7 @@
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
 
-    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+    <a class="volver" th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a>
 
     <h1>Confeccionar lista definitiva</h1>
 
@@ -19,19 +19,20 @@
         <p><strong>Fechas preferidas:</strong> <span th:text="${curso.fechasPreferidas}">Fechas</span></p>
     </div>
 
-    <form th:action="@{'/tareas/' + ${tarea.id()} + '/confeccionar-lista-definitiva'}" method="post">
+    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/confeccionar-lista-definitiva'}" method="post">
         <input type="hidden" name="seccion" th:value="${seccion}">
 
         <h2>Lista definitiva de inscriptos</h2>
-        <p>La lista parte de la nómina que envió la empresa. Ajustala si hace falta: un participante por línea.</p>
-        <label for="listaDefinitiva"><strong>Participantes</strong></label><br>
-        <textarea id="listaDefinitiva" name="listaDefinitiva" rows="10" cols="50"
-                  placeholder="Nombre y apellido de cada participante, uno por línea"
-                  th:text="${listaDefinitiva}"></textarea>
-
-        <br><br>
-        <button type="submit" class="boton">Guardar lista definitiva</button>
-        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+        <p class="ayuda">La lista parte de la nómina que envió la empresa. Ajustala si hace falta: un participante por línea.</p>
+        <label>Participantes
+            <textarea id="listaDefinitiva" name="listaDefinitiva" rows="10"
+                      placeholder="Nombre y apellido de cada participante, uno por línea"
+                      th:text="${listaDefinitiva}"></textarea>
+        </label>
+        <div class="acciones">
+            <button type="submit">Guardar lista definitiva</button>
+            <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+        </div>
     </form>
 </main>
 </body>

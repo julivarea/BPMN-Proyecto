@@ -1,14 +1,38 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<!-- Página que muestra Spring Boot ante cualquier error no manejado (404, 500, etc.). -->
+<!-- Página que muestra Spring Boot ante cualquier error no manejado (404, 403, 500, etc.), en español. -->
 <head th:replace="~{fragmentos :: cabecera('Error')}"></head>
 <body>
 <header th:replace="~{fragmentos :: encabezado('')}"></header>
 <main>
     <h1>Ocurrió un error</h1>
-    <p class="error" th:text="${status} + ' · ' + ${error}">Error</p>
-    <p th:if="${status == 403}">Tu usuario no tiene acceso a esta sección.</p>
-    <p><a th:href="@{/}">Volver al inicio</a></p>
+    <th:block th:switch="${status}">
+        <th:block th:case="400">
+            <p class="error">400 · Solicitud incorrecta</p>
+            <p>No pudimos procesar lo que enviaste. Revisá los datos e intentá de nuevo.</p>
+        </th:block>
+        <th:block th:case="403">
+            <p class="error">403 · Acceso denegado</p>
+            <p>Tu usuario no tiene acceso a esta sección.</p>
+        </th:block>
+        <th:block th:case="404">
+            <p class="error">404 · Página no encontrada</p>
+            <p>La página que buscás no existe o cambió de dirección.</p>
+        </th:block>
+        <th:block th:case="405">
+            <p class="error">405 · Acción no permitida</p>
+            <p>Esa dirección no admite la acción que se intentó.</p>
+        </th:block>
+        <th:block th:case="500">
+            <p class="error">500 · Error del servidor</p>
+            <p>Algo salió mal de nuestro lado. Probá de nuevo en unos minutos.</p>
+        </th:block>
+        <th:block th:case="*">
+            <p class="error" th:text="${status} + ' · Error inesperado'">Error</p>
+            <p>No pudimos completar la operación. Probá de nuevo en unos minutos.</p>
+        </th:block>
+    </th:block>
+    <p><a class="boton" th:href="@{/}">Volver al inicio</a></p>
 </main>
 </body>
 </html>

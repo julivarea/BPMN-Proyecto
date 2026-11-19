@@ -6,7 +6,7 @@
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
 
-    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+    <a class="volver" th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a>
 
     <h1>Archivar solicitud</h1>
 
@@ -17,24 +17,25 @@
         <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
 
         <h2>Motivo del archivo</h2>
-        <p th:if="${resultado == 'RECHAZADA'}">
+        <p th:if="${resultado == 'RECHAZADO' || resultado == 'RECHAZADA'}">
             <strong>Rechazada:</strong> La empresa ha rechazado la propuesta presentada.
         </p>
         <p th:if="${resultado == 'SIN_RESPUESTA'}">
             <strong>Sin respuesta:</strong> Transcurrieron los plazos de respuesta y recordatorios sin novedades de la empresa.
         </p>
-        <p th:if="${resultado != 'RECHAZADA' && resultado != 'SIN_RESPUESTA'}">
+        <p th:if="${resultado != 'RECHAZADO' && resultado != 'RECHAZADA' && resultado != 'SIN_RESPUESTA'}">
             <strong>Motivo registrado:</strong> <span th:text="${resultado}">Motivo</span>
         </p>
     </div>
 
-    <form th:action="@{'/tareas/' + ${tarea.id()} + '/archivar-solicitud'}" method="post">
+    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/archivar-solicitud'}" method="post">
         <input type="hidden" name="seccion" th:value="${seccion}">
 
         <p>¿Confirma que desea archivar esta solicitud y dar por finalizado el trámite?</p>
-
-        <button type="submit" class="boton">Archivar solicitud</button>
-        <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+        <div class="acciones">
+            <button type="submit">Archivar solicitud</button>
+            <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
+        </div>
     </form>
 </main>
 </body>

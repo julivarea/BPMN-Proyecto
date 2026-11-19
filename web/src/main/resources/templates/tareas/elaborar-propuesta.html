@@ -6,12 +6,12 @@
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
 
-    <p><a th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a></p>
+    <a class="volver" th:href="@{'/' + ${seccion}}">← Volver a la bandeja</a>
 
     <h1>Registrar y elaborar propuesta (Versión <span th:text="${version}">1</span>)</h1>
 
-    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-        <h3>Datos de la Solicitud</h3>
+    <div class="detalles">
+        <h2>Datos de la solicitud</h2>
         <p><strong>Empresa:</strong> <span th:text="${curso.razonSocialEmpresa}">Empresa S.A.</span></p>
         <p><strong>Curso / Temática:</strong> <span th:text="${curso.nombre}">Nombre</span></p>
         <p><strong>Descripción:</strong> <span th:text="${curso.descripcion}">Descripción</span></p>
@@ -27,25 +27,22 @@
         >
     </p>
 
-    <form th:action="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'}" method="post">
-        <input type="hidden" name="seccion" th:value="${seccion}"/>
+    <form class="formulario" th:action="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'}" method="post">
+        <input type="hidden" name="seccion" th:value="${seccion}">
 
-        <div style="margin-bottom: 15px;">
-            <label for="programa">Programa sintético del curso:</label><br/>
-            <textarea id="programa" name="programa" rows="6" style="width: 100%;" required th:text="${curso.descripcion}"></textarea>
+        <label>Programa sintético del curso
+            <textarea id="programa" name="programa" rows="6" required th:text="${curso.descripcion}"></textarea>
+        </label>
+        <label>Presupuesto estimado ($)
+            <input type="number" step="0.01" min="0" id="presupuesto" name="presupuesto" required>
+        </label>
+        <label>Fechas y cronograma propuesto
+            <textarea id="fechasPosibles" name="fechasPosibles" rows="3" required th:text="${curso.fechasPreferidas}"></textarea>
+        </label>
+        <div class="acciones">
+            <button type="submit">Guardar propuesta y completar tarea</button>
+            <a th:href="@{'/' + ${seccion}}" class="boton-secundario">Cancelar</a>
         </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="presupuesto">Presupuesto estimado ($):</label><br/>
-            <input type="number" step="0.01" id="presupuesto" name="presupuesto" style="width: 100%;" required/>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="fechasPosibles">Fechas y cronograma propuesto:</label><br/>
-            <textarea id="fechasPosibles" name="fechasPosibles" rows="3" style="width: 100%;" required th:text="${curso.fechasPreferidas}"></textarea>
-        </div>
-
-        <button type="submit" class="boton">Guardar propuesta y completar tarea</button>
     </form>
 </main>
 </body>
