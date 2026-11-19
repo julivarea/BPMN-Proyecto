@@ -82,9 +82,11 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   porque es una actualización simple sobre una fila recién insertada.  
 
 - **Solicitud con sesión de empresa (§4.1, §4.1.2).** Si una empresa inició sesión, `/solicitar` precarga su CUIT y
-  razón social, los bloquea y registra la solicitud a nombre de su empresa: el servidor ignora el CUIT y la razón
-  social que lleguen del formulario. Sin sesión, el formulario sigue siendo público. Limitación: sin sesión, alguien
-  que conozca el CUIT y la razón social exactos de una empresa podría solicitar a su nombre.
+  razón social y los muestra bloqueados, para que solicite a su nombre. Sin sesión, el formulario sigue siendo público.
+
+- **Fecha de inicio no anterior a hoy (§3.5, §4.2.2).** La app de comunicaciones rechaza una fecha de inicio anterior
+  al día actual. La de hoy sí se acepta, aunque su hora ya haya pasado: el timer "fecha programada" dispara
+  enseguida, que es lo que usan las pruebas y la demo ("fechas cercanas", §3.5).  
   
 ## Pendientes
 

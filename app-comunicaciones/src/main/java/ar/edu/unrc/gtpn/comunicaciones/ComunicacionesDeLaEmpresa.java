@@ -95,13 +95,28 @@ final class ComunicacionesDeLaEmpresa {
 
     /**
      * Convierte la fecha acordada al formato ISO-8601 que espera el timer del proceso
-     * ({@code 2026-12-01T09:00:00}). Acepta {@code AAAA-MM-DD}, {@code DD/MM/AAAA} y las mismas con hora.
+     * ({@code 2026-12-01T09:00:00}). Acepta {@code AAAA-MM-DD}, {@code DD/MM/AAAA} y las mismas con hora. No admite
+     * fechas anteriores a hoy; hoy sí, porque las pruebas y la demo usan fechas cercanas (enunciado §3.5).
      */
     static String fechaISO(String texto) {
+        return fechaISO(texto, LocalDate.now());
+    }
+
+    /** Igual que {@link #fechaISO(String)}, con el día de hoy explícito para poder probarlo. */
+    static String fechaISO(String texto, LocalDate hoy) {
+        LocalDateTime fecha = interpretar(texto);
+        boolean yaPaso = fecha.toLocalDate().isBefore(hoy);
+        if (yaPaso) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser anterior a hoy.");
+        }
+        return fecha.format(ISO);
+    }
+
+    private static LocalDateTime interpretar(String texto) {
         String fecha = texto.trim();
         for (Function<String, LocalDateTime> formato : FORMATOS) {
             try {
-                return formato.apply(fecha).format(ISO);
+                return formato.apply(fecha);
             } catch (DateTimeParseException noEra) {
                 // se prueba el formato siguiente
             }

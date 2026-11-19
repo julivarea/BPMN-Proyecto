@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,10 +118,11 @@ class ComunicacionesDeLaEmpresaTest {
 
     @Test
     void laFechaAcordadaSeAceptaEnLosFormatosHabituales() {
-        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01"));
-        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026"));
-        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026 18:30"));
-        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01T18:30:00"));
+        LocalDate hoy = LocalDate.of(2026, 11, 1);
+        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01", hoy));
+        assertEquals("2026-12-01T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026", hoy));
+        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("01/12/2026 18:30", hoy));
+        assertEquals("2026-12-01T18:30:00", ComunicacionesDeLaEmpresa.fechaISO("2026-12-01T18:30:00", hoy));
     }
 
     @Test
@@ -137,6 +139,23 @@ class ComunicacionesDeLaEmpresaTest {
         assertTrue(Comunicacion.RECHAZO.pedido().isEmpty());
     }
 
+        @Test
+    void unaFechaDeInicioAnteriorAHoyNoSeAcepta() {
+        LocalDate hoy = LocalDate.of(2026, 11, 19);
+
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> ComunicacionesDeLaEmpresa.fechaISO("18/11/2026", hoy));
+
+        assertEquals("La fecha de inicio no puede ser anterior a hoy.", error.getMessage());
+    }
+
+    @Test
+    void laFechaDeHoySeAceptaAunqueSuHoraYaHayaPasado() {
+        LocalDate hoy = LocalDate.of(2026, 11, 19);
+
+        assertEquals("2026-11-19T09:00:00", ComunicacionesDeLaEmpresa.fechaISO("19/11/2026", hoy));
+    }
+    
     /** Doble del cliente REST: recuerda qué mensajes espera la instancia y qué se envió. */
     private static final class FlowableFalso extends FlowableRest {
 
