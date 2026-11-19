@@ -101,10 +101,14 @@ unos 3 minutos.
 **Preparación:** `preparar_escenario_6.py`: un curso en preparación con el aula reservada y el equipamiento contratado.
 
 1. App de comunicaciones: elegir el curso que indicó el script y **Cancelar curso**.
-2. Un administrativo (web): reclamar y completar *Liberar equipamiento*.
+2. Un administrativo (web): reclamar *Liberar equipamiento* y *Confirmar compensaciones*. Esta última no ofrece
+   *Completar* mientras falte liberar el equipamiento.
+3. Completar *Liberar equipamiento* y después *Confirmar compensaciones*.
 
-**Mirar:** la liberación del aula en el log (`docker compose logs flowable 2>&1 | grep -i aula`), la tarea *Liberar
-equipamiento* y el curso **cancelado** en el portal. Solo se compensan los recursos que se gestionaron.
+**Mirar:** la liberación del aula en el log (`docker compose logs flowable 2>&1 | grep -i aula`), las tareas *Liberar
+equipamiento* y *Confirmar compensaciones*, el curso como "Cancelándose" en el portal mientras faltan, y **cancelado**
+al terminar. El aviso de cierre (`grep -i "Cierre del curso"`) sale recién al confirmar. Solo se compensan los recursos
+que se gestionaron.
 
 ## 7. Falta de aulas
 

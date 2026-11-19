@@ -244,6 +244,8 @@ def cancelar(instancia, numero, con_recursos_gestionados):
     enviar_mensaje(instancia, "cancelacionCurso")
     if con_recursos_gestionados:
         completar(instancia, "liberarEquipamiento", reclamar_como=ADMINISTRATIVOS[numero % 2])
+    # La cancelación siempre termina con esta tarea; Flowable no deja completarla antes que las liberaciones.
+    completar(instancia, "confirmarCompensaciones", reclamar_como=ADMINISTRATIVOS[numero % 2])
     return esperar_fin(instancia)
 
 

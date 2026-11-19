@@ -37,7 +37,7 @@ Tarda uno o dos minutos. Genera diez instancias:
 | Sin respuesta (dos recordatorios) | `SIN_RESPUESTA` |
 | Dos solicitudes con cinco cursos en ejecución | `NO_VIABLE` |
 | Aceptación (con y sin modificaciones), preparación con distintos recursos, dictado y cierre | `FINALIZADO` |
-| Cancelación antes de gestionar recursos, y con aula y equipamiento ya gestionados | `CANCELADO` |
+| Cancelación antes de gestionar recursos, y con aula y equipamiento ya gestionados (el generador completa *Liberar equipamiento* y *Confirmar compensaciones*) | `CANCELADO` |
 
 Las tareas de grupo se reclaman antes de completarlas, alternando administrativos y docentes, para que las consultas
 del §4.3.3 tengan tareas de distintas personas.

@@ -14,7 +14,8 @@ def main():
     ejecuciones.gestionar_recursos(instancia, NUMERO, aula=True, aula_virtual=False, equipamiento=True)
     print(f"Listo: curso {curso} en preparación, con el aula reservada y el equipamiento contratado.")
     print("En la app de comunicaciones, elegí ese curso y enviá «Cancelar curso».")
-    print("Después: el aula se libera sola y aparece «Liberar equipamiento» para un administrativo.")
+    print("Después: el aula se libera sola y aparecen «Liberar equipamiento» y «Confirmar compensaciones» para un administrativo.")
+    print("Hay que completar primero «Liberar equipamiento»; recién entonces se puede confirmar y se notifica el cierre.")
 
 
 if __name__ == "__main__":

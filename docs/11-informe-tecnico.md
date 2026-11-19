@@ -175,9 +175,9 @@ En `organizarCurso.bpmn20.xml`:
 | `Liberar aula` | `LiberarAulaDelegate`, compensación |
 | `Liberar aula virtual` | `LiberarAulaVirtualDelegate`, compensación |
 
-`Liberar equipamiento` es una user task de compensación, no una service task. Al completarse, un task listener
-(`EquipamientoLiberadoListener`) envía la señal `equipamientoLiberado`, que la cancelación espera antes de ejecutar
-`Notificar cierre` (`docs/05-decisiones.md`, limitación 2).
+`Liberar equipamiento` es una user task de compensación, no una service task. La cancelación termina con la user task
+`Confirmar compensaciones`, que Flowable no deja completar mientras haya liberaciones pendientes, y recién después
+ejecuta `Notificar cierre` (`docs/05-decisiones.md`, limitación 2).
 *Habilitar acceso a la empresa* ya persiste la cuenta: `HabilitarAccesoEmpresaDelegate` consulta y crea
 `cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). La reserva y la
 liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, con implementación simulada
@@ -193,9 +193,7 @@ liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, co
 - **Task listener `create` en `Confeccionar lista definitiva`**:
   `AsignarAdministrativoConMenosTareasListener`; asigna la tarea al administrativo con menos
   tareas pendientes y desempata alfabéticamente por ID de usuario.
-- **Task listener `complete` en `Liberar equipamiento`**:
-  `EquipamientoLiberadoListener`; envía la señal `equipamientoLiberado` a la cancelación de su propia instancia.
-- Expresiones BPMN que fijan `resultado`, versión, recordatorios, cancelación y `equipamientoContratado`.
+- Expresiones BPMN que fijan `resultado`, versión, recordatorios y cancelación.
 - `resultado=RECHAZADO` al tomar el flujo de rechazo y `SIN_RESPUESTA` al superar dos
   recordatorios.
 
@@ -205,8 +203,8 @@ El modelo incluye negociación con eventos de mensaje y timer parametrizado, par
 inscripciones/materiales/recursos, gateway inclusivo para aula física/aula virtual/
 equipamiento, subproceso de cancelación, compensaciones y desarrollo docente. Las decisiones
 de `docs/05-decisiones.md` explican los gateways de unión, la compensación intermedia, la
-cancelación (la compensación se lanza afuera del subproceso de evento y el cierre espera la
-liberación del equipamiento) y el paso asíncrono necesario porque la app de materiales no
+cancelación (compensaciones encadenadas con `activityRef` dentro del subproceso de evento y la tarea
+`Confirmar compensaciones` que retiene el cierre hasta que se libere el equipamiento) y el paso asíncrono necesario porque la app de materiales no
 contiene las clases del módulo `proceso`.
 
 ## 4. Despliegue y ejecución
@@ -365,8 +363,8 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 - Rechazo; dos recordatorios y cierre por falta de respuesta.
 - Cinco cursos en ejecución y camino `NO_VIABLE`.
 - Cancelación durante preparación con solo las compensaciones de recursos efectivamente
-  gestionados; con equipamiento contratado, el cierre se notifica recién al completar *Liberar
-  equipamiento*.
+  gestionados; con equipamiento contratado, hay que completar *Liberar equipamiento* y después
+  *Confirmar compensaciones*, y recién entonces se notifica el cierre.
 - Asignación por carga, claim obligatorio para tareas de grupo y rechazo de completar tareas
   ajenas.
 - Registro web, `businessKey`/`process_instance_id`, habilitación y aislamiento por empresa.

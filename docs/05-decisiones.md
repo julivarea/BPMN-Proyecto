@@ -43,21 +43,26 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
    documentales. Los datos reales viven en variables del proceso y en la base de la institución. El editor de
    Flowable, además, no los conserva.
 
-8. **La cancelación compensa y cierra afuera del subproceso de evento.** El diagrama compensa dentro del subproceso
-   de evento *Cancelación*, lo termina con un fin de error que atrapa un borde de error en *Preparar curso* y recién
-   ahí notifica el cierre. En el modelo, el subproceso de evento solo marca `resultado = CANCELADO` y termina, y lo que
-   sigue lo decide el proceso principal:
+8. **La cancelación compensa dentro del subproceso de evento, con una compensación por recurso y una tarea final.**
+   El diagrama lanza una compensación general dentro del subproceso de evento *Cancelación* y lo termina con un fin de
+   error. En el modelo, el subproceso de evento tiene esta cadena:
 
-   1. XOR "¿Preparación cancelada?".
-   2. **Sí:** evento intermedio de compensación "Liberar recursos", que libera solo lo ya gestionado.
-   3. XOR "¿Se contrató equipamiento?": con equipamiento contratado, el flujo espera el evento de señal "recibir
-      liberación del equipamiento"; sin equipamiento, sigue directo.
-   4. XOR de unión, *Notificar cierre* y el fin "cancelación".
+   1. *recibir cancelación* (mensaje `cancelacionCurso`, interruptor), que corta *Preparar curso*;
+   2. tres eventos intermedios de compensación en cadena, uno por recurso, cada uno con su `activityRef`: *compensar
+      reserva de aula*, *compensar aula virtual* y *compensar equipamiento*. Cada uno compensa solo lo que ya se
+      completó: un recurso no gestionado no genera nada;
+   3. la tarea de usuario *Confirmar compensaciones* (grupo `administracion`);
+   4. el fin *Preparación cancelada*, que fija `resultado = CANCELADO`.
 
-   Se mantiene lo que pide el diagrama y el §1.3: se interrumpe la preparación, se compensan solo los recursos
-   efectivamente gestionados y el cierre se notifica una vez concluidas las compensaciones, incluida *Liberar
-   equipamiento*, que es una tarea de usuario. Lo que cambia es dónde se lanza la compensación y cómo se espera.
-   Motivos en las limitaciones 1 y 2.
+   Al terminar el subproceso, el proceso principal sigue por el XOR "¿Preparación cancelada?": **sí** va a *Notificar
+   cierre* y al fin "cancelación"; **no**, a *Enviar confirmación* (camino normal).
+
+   *Confirmar compensaciones* no es una actividad del negocio: es un punto de pausa. Flowable no deja completarla
+   mientras haya compensaciones sin terminar, así que retiene el subproceso interruptor hasta que se libere el
+   equipamiento y evita que *Notificar cierre* salga antes (§1.3). Es el patrón que recomienda la cátedra
+   (`docs/referencia/Seg_ejemplo_Con_Compensacion.bpmn20.xml`). Se mantiene lo que pide el diagrama: se interrumpe la
+   preparación, se compensan solo los recursos efectivamente gestionados y el cierre se notifica una vez concluidas
+   las compensaciones. Motivos en las limitaciones 1 y 2.
 
 ## Aclaraciones e interpretaciones
 
@@ -97,44 +102,49 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
 
 Comportamientos del motor (y de su editor) que se probaron en el entorno del proyecto y afectan al modelo.
 
-1. **Cancelación durante la preparación (§1.3).** El patrón del diagrama no funciona en Flowable 6.8. Ese patrón
-   es: subproceso de evento que compensa y termina con un fin de error, atrapado por un borde de error en
+1. **Cancelación durante la preparación (§1.3).** El patrón del diagrama no funciona tal cual en Flowable 6.8. Ese
+   patrón es: subproceso de evento que compensa y termina con un fin de error, atrapado por un borde de error en
    *Preparar curso*. Pasan dos cosas:
-   - la compensación lanzada desde adentro del subproceso de evento no compensa nada;
+   - la compensación lanzada desde adentro del subproceso de evento **sin `activityRef`** (como en el diagrama) no
+     compensa nada; con `activityRef` hacia cada actividad sí compensa, solo lo ya completado;
    - el fin de error no llega al borde de error y la instancia queda trabada.
 
-   **Solución (aplicada en el modelo):** el subproceso de evento solo marca `resultado = CANCELADO` y termina, con
-   lo que *Preparar curso* se corta. Después del subproceso va un XOR "¿Preparación cancelada?":
-   - **No:** *Enviar confirmación*, el camino normal.
-   - **Sí:** compensación "Liberar recursos", lanzada afuera del subproceso, donde sí funciona y libera solo los
-     recursos ya gestionados; después la espera de la liberación del equipamiento (limitación 2), *Notificar cierre*
-     y fin.
+   **Solución (aplicada en el modelo):** una compensación con `activityRef` por cada recurso, en cadena, dentro del
+   subproceso de evento; después la tarea *Confirmar compensaciones* (limitación 2) y el fin. Fuera del subproceso, el
+   XOR "¿Preparación cancelada?" separa la cancelación del camino normal. El modelo no tiene fin de error ni borde de
+   error.
 
-   El modelo no tiene fin de error ni borde de error.
+   Si se agrega un recurso con compensación, hay que agregar su evento de compensación a la cadena.
 
 2. **El flujo no espera a las tareas de usuario de una compensación.** *Liberar equipamiento* es una tarea de usuario.
    Al lanzar la compensación Flowable la crea, pero el flujo que la lanzó sigue de largo: lo que viene después se
    ejecuta enseguida. Esto afecta distinto a los dos cierres:
    - **Cierre normal.** Después de *Liberar recursos* solo hay un evento de fin. Alcanza con eso: la instancia no
      termina mientras la tarea siga activa, así que concluye recién al completarla, como pide el §1.4.
-   - **Cancelación.** Después de *Liberar recursos* hay una actividad, *Notificar cierre*, que no puede salir antes
-     de que terminen las compensaciones (§1.3). Sin una espera explícita, la empresa recibiría el aviso con la
-     liberación del equipamiento todavía pendiente.
+   - **Cancelación.** Si el subproceso de evento terminara apenas lanzadas las compensaciones, *Notificar cierre*
+     saldría con la liberación del equipamiento todavía pendiente (§1.3).
 
-   **Solución (aplicada en el modelo), solo en la cancelación:**
-   - la variable `equipamientoContratado` se fija en `true` con un task listener `complete` de *Contratar
-     equipamiento*;
-   - después de *Liberar recursos*, el XOR "¿Se contrató equipamiento?" manda a un evento intermedio de captura de
-     señal (`equipamientoLiberado`) si es **sí**, y directo a la unión si es **no**;
-   - un task listener `complete` de *Liberar equipamiento* (`EquipamientoLiberadoListener`) envía esa señal;
-   - la señal se entrega solo a la ejecución de la propia instancia que la espera, no a todas las que estén
-     esperando: liberar el equipamiento de un curso no desbloquea la cancelación de otro. En el cierre normal no hay
-     quien la espere y el listener no hace nada.
+   **Solución (aplicada en el modelo):** la tarea *Confirmar compensaciones* al final del subproceso de evento.
+   Flowable no deja completarla mientras haya compensaciones sin terminar: falla con una restricción de integridad de
+   su propia base (`ACT_FK_EXE_PARENT`). Por eso:
+   - la web no ofrece *Completar* en esa tarea mientras *Liberar equipamiento* siga pendiente, y avisa qué falta (igual
+     que con *Preparar materiales*, que se completa desde su app). Si alguien arma la URL a mano, también lo rechaza
+     con un mensaje (`BandejaDeTareas`);
+   - se completa en este orden: *Liberar equipamiento* (si se contrató) y después *Confirmar compensaciones*. Recién
+     entonces se notifica el cierre y la instancia termina.
 
-   La espera la resuelve el modelo y no requiere que nadie complete tareas de relleno. Mientras la liberación esté
-   pendiente la instancia sigue abierta: el portal de la empresa muestra el curso como "Cancelándose: liberando
-   recursos" (o "Finalizando: liberando recursos" en el cierre normal) y `curso.estado` pasa a su valor final cuando la
-   instancia termina.
+   Mientras tanto la instancia sigue abierta, y el portal de la empresa muestra el curso como "Cancelándose:
+   liberando recursos" (o "Finalizando: liberando recursos" en el cierre normal). `curso.estado` pasa a su valor final
+   cuando la instancia termina.
+
+   **Limitaciones de esta solución:**
+   - *Confirmar compensaciones* aparece en **toda** cancelación, aunque no haya nada que liberar a mano: alguien del
+     grupo `administracion` tiene que completarla.
+   - Cuenta como una tarea completada más en *Tareas completadas por persona* (§4.3.3): quien la completa suma una
+     tarea que no es de negocio. No afecta a *Resultados de las solicitudes* (§4.3.1), a la *Duración de las ramas*
+     (§4.3.2, las canceladas se excluyen) ni a la minería de la negociación (§4.4).
+   - Si se agrega otra liberación que sea tarea de usuario, hay que sumarla a `BandejaDeTareas.LIBERACIONES_DE_USUARIO`
+     para que la web la tenga en cuenta (Flowable la bloquea igual).
 
 3. **No se pueden usar eventos intermedios de envío de mensaje.** Flowable 6.8 rechaza el despliegue si el modelo
    tiene un evento intermedio que *lanza* un mensaje. **Solución:** los envíos a la empresa (*Enviar propuesta*,
@@ -151,6 +161,9 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
    cada export, en el XML convertir esas tres `<sequenceFlow id="asociacion_…">` en
    `<association … associationDirection="None">` y moverlas al final del subproceso *Preparar curso*, después de
    todas sus flechas (si quedan antes, Flowable rechaza el despliegue). Revisar el `git diff` antes de commitear.
+   La cátedra aclaró que, con pools, el Modeler puede *dibujar* mal las asociaciones sin que el proceso falle. En
+   nuestras pruebas, en cambio, el XML exportado traía flechas de secuencia y la compensación fallaba al ejecutar,
+   por eso se mantiene esta verificación (y los tests de cancelación y compensación la cubren).
 
 6. **La importación al editor de Flowable puede romper conexiones.** Al importar un XML pasa lo siguiente:
    - puede dejar flechas sin destino, eventos de borde sin enganchar a su tarea o data objects sin nombre (Flowable

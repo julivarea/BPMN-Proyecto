@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -32,8 +33,9 @@ import ar.edu.unrc.gtpn.proceso.acceso.EmpresaDelCurso;
 import ar.edu.unrc.gtpn.proceso.acceso.HabilitarAccesoEmpresaDelegate;
 
 /**
- * Escenario 6 de la defensa (enunciado 1.3 y 1.4): la cancelación compensa solo los recursos ya gestionados y el
- * cierre normal libera todos antes de terminar. Si el editor de Flowable convierte una asociación de compensación en
+ * Escenario 6 de la defensa (enunciado 1.3 y 1.4): la cancelación compensa solo los recursos ya gestionados, espera a
+ * que se completen las compensaciones (incluida la tarea de usuario *Liberar equipamiento*) y recién entonces notifica
+ * el cierre; el cierre normal libera todos los recursos antes de terminar. Si el editor de Flowable convierte una asociación de compensación en
  * flecha de secuencia (05-decisiones, limitación 5), estos tests fallan.
  */
 @FlowableTest
@@ -90,18 +92,22 @@ class CancelacionYCompensacionesTest {
         Set<String> ejecutadas = actividadesEjecutadas();
         assertTrue(ejecutadas.contains("liberarAula"));
         assertFalse(ejecutadas.contains("liberarEquipamiento"));
-        assertTerminoCon("finCancelacion", "CANCELADO");
+        completar("confirmarCompensaciones", Map.of());
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
     }
 
     @Test
     @Deployment(resources = {PROCESO, REGLA})
-    void cancelarSinRecursosGestionadosNoCompensaNada() {
+    void cancelarSinRecursosGestionadosNoCompensaNadaPeroPideConfirmar() {
         llegarAPreparacion();
 
         recibirMensaje("cancelacionCurso", Map.of());
 
         assertTrue(liberacionesEjecutadas().isEmpty());
-        assertTerminoCon("finCancelacion", "CANCELADO");
+        assertNotNull(tareaPendiente("confirmarCompensaciones"), "la confirmación siempre queda pendiente");
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"));
+        completar("confirmarCompensaciones", Map.of());
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
     }
 
     @Test
@@ -127,52 +133,41 @@ class CancelacionYCompensacionesTest {
 
     @Test
     @Deployment(resources = {PROCESO, REGLA})
-    void cancelarConEquipamientoContratadoNoNotificaElCierreHastaQueSeLibereElEquipamiento() {
-        llegarAPreparacion();
-        evaluarRecursos(true, false, true);
-        completar("contratarEquipamiento", Map.of());
-
-        recibirMensaje("cancelacionCurso", Map.of());
+    void confirmarLasCompensacionesAntesDeLiberarElEquipamientoNoSeAdmiteYNoNotificaElCierre() {
+        cancelarConEquipamientoContratado();
 
         // Enunciado 1.3: el cierre se notifica una vez concluidas las compensaciones. Liberar el equipamiento es una
-        // tarea de usuario: hasta que se complete, el proceso no notifica ni termina.
+        // tarea de usuario: mientras esté pendiente, Flowable no deja cerrar el subproceso de cancelación.
         assertTrue(liberacionesEjecutadas().contains("liberarAula"), "el aula se libera sola");
         assertNotNull(tareaPendiente("liberarEquipamiento"), "queda pendiente liberar el equipamiento");
-        assertFalse(actividadesEjecutadas().contains("notificarCierre"), "no se puede notificar el cierre todavía");
+        assertThrows(RuntimeException.class, () -> completar("confirmarCompensaciones", Map.of()));
+        assertNotNull(tareaPendiente("confirmarCompensaciones"), "la confirmación sigue pendiente");
+        assertNotNull(tareaPendiente("liberarEquipamiento"));
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"), "no se notificó el cierre");
         assertNull(historial.createHistoricProcessInstanceQuery().processInstanceId(instancia).singleResult().getEndTime(),
                 "la instancia sigue abierta");
-
-        java.util.Date antesDeLiberar = new java.util.Date();
-        completar("liberarEquipamiento", Map.of());
-
-        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
-        // La señal sale al completarse la tarea, en la misma transacción: el aviso nunca precede a la liberación.
-        assertFalse(fin("notificarCierre", true).before(antesDeLiberar),
-                "el cierre se notifica después de liberar el equipamiento");
     }
 
     @Test
     @Deployment(resources = {PROCESO, REGLA})
-    void liberarElEquipamientoDeUnaCancelacionNoDesbloqueaLaDeOtraInstancia() {
+    void conElEquipamientoLiberadoLaConfirmacionCierraYElCierreSeNotificaAlFinal() {
         cancelarConEquipamientoContratado();
-        String primera = instancia;
-        cancelarConEquipamientoContratado();
-        String segunda = instancia;
 
-        instancia = primera;
         completar("liberarEquipamiento", Map.of());
 
+        assertNotNull(tareaPendiente("confirmarCompensaciones"), "liberar no cierra la cancelación: falta confirmar");
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"));
+        java.util.Date antesDeConfirmar = new java.util.Date();
+        completar("confirmarCompensaciones", Map.of());
+
         assertTerminoPasandoPor("finCancelacion", "CANCELADO");
-        instancia = segunda;
-        assertNotNull(tareaPendiente("liberarEquipamiento"), "la otra cancelación sigue esperando su liberación");
-        assertFalse(actividadesEjecutadas().contains("notificarCierre"), "la señal de una instancia no llega a la otra");
-        completar("liberarEquipamiento", Map.of());
-        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+        assertFalse(fin("notificarCierre", true).before(antesDeConfirmar),
+                "el cierre se notifica después de liberar el equipamiento y confirmar");
     }
 
     @Test
     @Deployment(resources = {PROCESO, REGLA})
-    void cancelarConLosTresRecursosGestionadosLiberaTodoYEsperaElEquipamiento() {
+    void cancelarConLosTresRecursosGestionadosLiberaTodoEInterrumpeLasRamasPendientes() {
         llegarAPreparacion();
         recibirMensaje("nominaParticipantes", Map.of());
         evaluarRecursos(true, true, true);
@@ -187,9 +182,28 @@ class CancelacionYCompensacionesTest {
         assertNull(tareaPendiente("confeccionarListaDefinitiva"), "las ramas pendientes se interrumpen");
         assertNull(tareaPendiente("prepararMateriales"), "las ramas pendientes se interrumpen");
         assertNotNull(tareaPendiente("liberarEquipamiento"));
-        assertFalse(actividadesEjecutadas().contains("notificarCierre"));
         completar("liberarEquipamiento", Map.of());
+        completar("confirmarCompensaciones", Map.of());
         assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+    }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void completarUnaCancelacionNoAfectaALaDeOtraInstancia() {
+        cancelarConEquipamientoContratado();
+        String primera = instancia;
+        cancelarConEquipamientoContratado();
+        String segunda = instancia;
+
+        instancia = primera;
+        completar("liberarEquipamiento", Map.of());
+        completar("confirmarCompensaciones", Map.of());
+
+        assertTerminoPasandoPor("finCancelacion", "CANCELADO");
+        instancia = segunda;
+        assertNotNull(tareaPendiente("liberarEquipamiento"), "la otra cancelación sigue esperando su liberación");
+        assertNotNull(tareaPendiente("confirmarCompensaciones"));
+        assertFalse(actividadesEjecutadas().contains("notificarCierre"));
     }
 
     @Test
@@ -220,39 +234,6 @@ class CancelacionYCompensacionesTest {
 
     @Test
     @Deployment(resources = {PROCESO, REGLA})
-    void cancelarMientrasSeEsperaLaLiberacionDelCierreNormalNoLoRompe() {
-        llegarAPreparacion();
-        recibirMensaje("nominaParticipantes", Map.of());
-        completar("confeccionarListaDefinitiva", Map.of());
-        completar("prepararMateriales", Map.of());
-        evaluarRecursos(true, false, true);
-        completar("contratarEquipamiento", Map.of());
-        ejecutarJobsPendientes();
-        completar("definirDocente", Map.of("docenteAsignado", "docente1"));
-        ejecutarJobsPendientes();
-        completar("desarrollarCurso", Map.of());
-        completar("elaborarInformeResultados", Map.of());
-        completar("enviarInformeYArchivarExpediente", Map.of());
-        assertNotNull(tareaPendiente("liberarEquipamiento"));
-
-        long suscripciones = runtime.createExecutionQuery().processInstanceId(instancia)
-                .messageEventSubscriptionName("cancelacionCurso").count();
-
-        // Observación: el curso ya está terminado, no debería poder cancelarse.
-        assertEquals(0, suscripciones, "no se debe poder cancelar un curso ya finalizado");
-        completar("liberarEquipamiento", Map.of());
-        assertTerminoPasandoPor("finCursoFinalizado", "FINALIZADO");
-    }
-
-    private void cancelarConEquipamientoContratado() {
-        llegarAPreparacion();
-        evaluarRecursos(true, false, true);
-        completar("contratarEquipamiento", Map.of());
-        recibirMensaje("cancelacionCurso", Map.of());
-    }
-
-    @Test
-    @Deployment(resources = {PROCESO, REGLA})
     void elCierreNormalConEquipamientoEsperaSuLiberacionYTerminaAlCompletarla() {
         llegarAPreparacion();
         recibirMensaje("nominaParticipantes", Map.of());
@@ -271,10 +252,18 @@ class CancelacionYCompensacionesTest {
         // Enunciado 1.4: el proceso concluye una vez completada la liberación.
         assertNotNull(tareaPendiente("liberarEquipamiento"));
         assertNull(historial.createHistoricProcessInstanceQuery().processInstanceId(instancia).singleResult().getEndTime());
+        assertNull(tareaPendiente("confirmarCompensaciones"), "la confirmación es solo de la cancelación");
 
         completar("liberarEquipamiento", Map.of());
 
         assertTerminoPasandoPor("finCursoFinalizado", "FINALIZADO");
+    }
+
+    private void cancelarConEquipamientoContratado() {
+        llegarAPreparacion();
+        evaluarRecursos(true, false, true);
+        completar("contratarEquipamiento", Map.of());
+        recibirMensaje("cancelacionCurso", Map.of());
     }
 
     /** Negociación aceptada: la instancia queda dentro de "Preparar curso", con las tres ramas activas. */

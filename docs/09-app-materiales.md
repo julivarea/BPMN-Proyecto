@@ -177,6 +177,10 @@ descendente y, a igual cantidad, por usuario.
 La ventana tiene la pestaña **Tareas por Persona (§4.3.3)** con las columnas *Usuario* y *Tareas Completadas*, un botón
 *Actualizar* y el aviso "No hay tareas completadas para mostrar." cuando no hay datos.
 
+**Limitación:** *Confirmar compensaciones*, la tarea con la que termina toda cancelación, es una tarea más de las
+completadas: la persona que la completa suma una tarea que no es de negocio, y la consulta no la distingue (ver
+[05-decisiones.md](05-decisiones.md), limitación 2).
+
 `ConsultasHistoricasTest` cuenta tareas de `jefe_admin` (2), `administrativo2` (1) y `docente1` (1), descartando una
 tarea sin asignar y otra pendiente, y comprueba que una tarea asignada a `docente1` y borrada al cancelar la
 preparación no se cuente.
