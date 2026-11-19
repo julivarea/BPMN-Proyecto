@@ -6,6 +6,8 @@ la API REST de Flowable.
 import sys
 from pathlib import Path
 
+LIMITE_DE_CURSOS = 5  # regla de viabilidad
+
 RAIZ_DEL_REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RAIZ_DEL_REPO / "mineria"))
 
@@ -20,3 +22,10 @@ def cursos_en_ejecucion():
     })
     respuesta.raise_for_status()
     return respuesta.json()["total"]
+
+def exigir_lugar_para(cursos):
+    """Corta el script si los cursos nuevos superarían el límite: saldrían no viables y el script se trabaría."""
+    actuales = cursos_en_ejecucion()
+    if actuales + cursos > LIMITE_DE_CURSOS:
+        sys.exit(f"Hay {actuales} cursos en ejecución y el límite es {LIMITE_DE_CURSOS}: una solicitud nueva saldría "
+                 f"no viable. Terminá o cancelá alguno, o limpiá el entorno, y volvé a correr el script.")

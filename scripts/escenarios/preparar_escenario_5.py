@@ -4,8 +4,8 @@ Deja cinco cursos aceptados y en preparación, para registrar la sexta solicitud
 termina como no viable.
 """
 from comun import cursos_en_ejecucion, ejecuciones
+from comun import LIMITE_DE_CURSOS as LIMITE, cursos_en_ejecucion, ejecuciones
 
-LIMITE = 5
 PRIMER_NUMERO = 501  # empresas de prueba propias de este escenario, separadas de las de la minería
 
 
