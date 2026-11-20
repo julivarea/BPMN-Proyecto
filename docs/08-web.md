@@ -62,6 +62,7 @@ web/
     │   │   └── tareas/                    bandeja de tareas (§4)
     │   │       ├── ArchivarSolicitudController.java  pantalla /tareas/{id}/archivar-solicitud: motivo y confirmación
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
+    │   │       ├── PantallasDeTareas.java     lo común de las pantallas: sección de retorno, tarea verificada y curso
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
     │   │       ├── ConfeccionarListaDefinitivaController.java  pantalla /tareas/{id}/confeccionar-lista-definitiva: la nómina editable
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
@@ -112,6 +113,7 @@ web/
         └── tareas/
             ├── ArchivarSolicitudControllerTest.java   la pantalla de archivo: formulario y confirmación
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
+            ├── PantallasDeTareasTest.java             sección de retorno, verificación de la tarea y curso de la solicitud
             ├── BandejaControllerTest.java             la bandeja desde el navegador
             ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
@@ -183,8 +185,11 @@ bandeja). Todas siguen la misma convención:
    `evaluarRecursos`), y le pasa la sección de origen en el parámetro `seccion`, como a los demás botones.
 3. **Botón para volver:** arriba a la izquierda, "← Volver a la bandeja", que lleva a la sección de origen
    (`/administracion` o `/docentes`).
-4. **Antes de mostrar el formulario** se verifica que la tarea sea del usuario logueado. Si no, se vuelve a la bandeja
-   con el error.
+4. **Antes de mostrar el formulario y antes de completar** se verifica, con
+   `PantallasDeTareas.tareaDelUsuario(id, clave, queEs, usuario)`, que la tarea exista, sea la de la pantalla (por su
+   clave) y esté asignada al usuario logueado. Si no, se vuelve a la bandeja con el error. Esa misma clase resuelve la
+   sección de retorno (`seccion(pedida, porDefecto)`: solo `administracion` o `docentes`) y el curso detrás de la
+   tarea (`cursoDe(tarea)`), así que ninguna pantalla repite esa lógica.
 5. **Al enviar**, completa con `bandeja.completar(usuario, tarea, variables)`, nunca con el cliente directo, y vuelve a
    la sección de origen con el mensaje, como en el ejemplo anterior.
 

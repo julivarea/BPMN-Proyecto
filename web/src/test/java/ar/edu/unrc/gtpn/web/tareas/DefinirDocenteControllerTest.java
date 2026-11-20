@@ -29,11 +29,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
+import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 import ar.edu.unrc.gtpn.web.seguridad.AutenticacionContraFlowable;
 import ar.edu.unrc.gtpn.web.seguridad.SeguridadConfig;
 
 @WebMvcTest(DefinirDocenteController.class)
-@Import({SeguridadConfig.class, AutenticacionContraFlowable.class})
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, PantallasDeTareas.class})
 class DefinirDocenteControllerTest {
 
     @Autowired
@@ -44,6 +45,9 @@ class DefinirDocenteControllerTest {
 
     @MockitoBean
     private BandejaDeTareas bandeja;
+
+    @MockitoBean
+    private SolicitudesRepository solicitudes;
 
     @Test
     void muestraLosMiembrosDelGrupoDocentes() throws Exception {

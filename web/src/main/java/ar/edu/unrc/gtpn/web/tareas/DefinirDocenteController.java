@@ -20,15 +20,18 @@ import ar.edu.unrc.gtpn.web.flowable.Tarea;
 public class DefinirDocenteController {
 
     static final String CLAVE = "definirDocente";
+    private static final String QUE_ES = "definir docente";
     private static final String JEFE_DOCENTE = "jefe_docente";
     private static final String GRUPO_DOCENTES = "docentes";
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
+    private final PantallasDeTareas pantallas;
 
-    public DefinirDocenteController(BandejaDeTareas bandeja, ClienteFlowable flowable) {
+    public DefinirDocenteController(BandejaDeTareas bandeja, ClienteFlowable flowable, PantallasDeTareas pantallas) {
         this.bandeja = bandeja;
         this.flowable = flowable;
+        this.pantallas = pantallas;
     }
 
     @GetMapping("/tareas/{id}/definir-docente")
@@ -66,14 +69,7 @@ public class DefinirDocenteController {
         if (!JEFE_DOCENTE.equals(usuario.getName())) {
             throw new AccionNoPermitida("Solo el jefe docente puede definir el docente del curso.");
         }
-        Tarea tarea = flowable.tarea(id);
-        if (tarea == null || !CLAVE.equals(tarea.clave())) {
-            throw new AccionNoPermitida("La tarea seleccionada no corresponde a definir docente.");
-        }
-        if (!usuario.getName().equals(tarea.asignado())) {
-            throw new AccionNoPermitida("Solo el usuario asignado puede realizar esta tarea.");
-        }
-        return tarea;
+        return pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
     }
 
     private List<String> docentesDisponibles() {

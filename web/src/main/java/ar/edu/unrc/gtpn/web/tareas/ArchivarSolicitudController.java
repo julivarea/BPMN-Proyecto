@@ -2,7 +2,6 @@ package ar.edu.unrc.gtpn.web.tareas;
 
 import java.security.Principal;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,56 +13,37 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
-import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
+import ar.edu.unrc.gtpn.web.solicitudes.Curso;
 
 @Controller
 public class ArchivarSolicitudController {
 
-    private static final Set<String> SECCIONES_VALIDAS = Set.of("administracion", "docentes");
+    /** Clave de la tarea en el modelo BPMN (docs/06 §2). */
+    static final String CLAVE = "archivarSolicitud";
+
+    private static final String QUE_ES = "archivar solicitud";
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
-    private final SolicitudesRepository solicitudesRepository;
+    private final PantallasDeTareas pantallas;
 
     public ArchivarSolicitudController(
             BandejaDeTareas bandeja,
             ClienteFlowable flowable,
-            SolicitudesRepository solicitudesRepository) {
+            PantallasDeTareas pantallas) {
         this.bandeja = bandeja;
         this.flowable = flowable;
-        this.solicitudesRepository = solicitudesRepository;
-    }
-
-    private String sanitizarSeccion(String seccion) {
-        return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
+        this.pantallas = pantallas;
     }
 
     @GetMapping("/tareas/{id}/archivar-solicitud")
     public String mostrarFormulario(@PathVariable String id,
                                    @RequestParam(defaultValue = "administracion") String seccion,
                                    Principal usuario, Model model, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            Tarea tarea = flowable.tarea(id);
-
-            if (!"archivarSolicitud".equals(tarea.clave())) {
-                redirect.addFlashAttribute("error", "La tarea seleccionada no corresponde a archivar solicitud.");
-                return "redirect:/" + sec;
-            }
-
-            if (!usuario.getName().equals(tarea.asignado())) {
-                redirect.addFlashAttribute("error", "Solo el usuario asignado puede realizar esta tarea.");
-                return "redirect:/" + sec;
-            }
-
-            if (tarea.solicitud() == null) {
-                redirect.addFlashAttribute("error", "No se pudo recuperar la solicitud vinculada a la tarea.");
-                return "redirect:/" + sec;
-            }
-
-            Long cursoId = Long.parseLong(tarea.solicitud());
-            var curso = solicitudesRepository.buscarPorId(cursoId)
-                    .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado: " + cursoId));
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
+            Curso curso = pantallas.cursoDe(tarea);
 
             Map<String, Object> variables = flowable.variables(tarea.instanciaId());
             String resultado = (String) variables.getOrDefault("resultado", "RECHAZADA");
@@ -73,10 +53,12 @@ public class ArchivarSolicitudController {
             model.addAttribute("resultado", resultado);
             model.addAttribute("seccion", sec);
             return "tareas/archivar-solicitud";
+        } catch (AccionNoPermitida e) {
+            redirect.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "Error al abrir la tarea: " + e.getMessage());
-            return "redirect:/" + sec;
         }
+        return "redirect:/" + sec;
     }
 
     @PostMapping("/tareas/{id}/archivar-solicitud")
@@ -84,14 +66,9 @@ public class ArchivarSolicitudController {
                            @RequestParam(defaultValue = "administracion") String seccion,
                            Principal usuario,
                            RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            Tarea tarea = flowable.tarea(id);
-
-            if (!"archivarSolicitud".equals(tarea.clave())) {
-                throw new AccionNoPermitida("La tarea seleccionada no es de archivar solicitud.");
-            }
-
+            pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
             bandeja.completar(usuario.getName(), id, Map.of());
             redirect.addFlashAttribute("mensaje", "La solicitud fue archivada correctamente.");
         } catch (AccionNoPermitida e) {

@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** La pantalla de elaboración del informe de resultados (issue #27, soporte opcional), con dobles. */
 @WebMvcTest(ElaborarInformeController.class)
-@Import({ SeguridadConfig.class, AutenticacionContraFlowable.class })
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, PantallasDeTareas.class})
 class ElaborarInformeControllerTest {
 
     @Autowired

@@ -34,10 +34,12 @@ import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesDeCapacitacion;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 import ar.edu.unrc.gtpn.web.tareas.BandejaDeTareas;
+import ar.edu.unrc.gtpn.web.tareas.PantallasDeTareas;
 
 /** Reglas de acceso de las secciones del sitio, sin Flowable ni base: son dobles. */
 @WebMvcTest
-@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, AutenticacionEmpresa.class, BandejaDeTareas.class})
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, AutenticacionEmpresa.class, BandejaDeTareas.class,
+        PantallasDeTareas.class})
 class SeguridadTest {
 
     @Autowired

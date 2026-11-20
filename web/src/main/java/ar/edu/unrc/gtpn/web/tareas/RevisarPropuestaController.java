@@ -3,7 +3,6 @@ package ar.edu.unrc.gtpn.web.tareas;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,60 +16,42 @@ import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
 import ar.edu.unrc.gtpn.web.propuestas.Propuesta;
 import ar.edu.unrc.gtpn.web.propuestas.PropuestasRepository;
-import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
+import ar.edu.unrc.gtpn.web.solicitudes.Curso;
 
 @Controller
 public class RevisarPropuestaController {
 
-    private static final Set<String> SECCIONES_VALIDAS = Set.of("administracion", "docentes");
+    /** Clave de la tarea en el modelo BPMN (docs/06 §2). */
+    static final String CLAVE = "revisarPropuesta";
+
+    private static final String QUE_ES = "revisar propuesta";
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
-    private final SolicitudesRepository solicitudesRepository;
+    private final PantallasDeTareas pantallas;
     private final PropuestasRepository propuestasRepository;
 
     public RevisarPropuestaController(
             BandejaDeTareas bandeja,
             ClienteFlowable flowable,
-            SolicitudesRepository solicitudesRepository,
+            PantallasDeTareas pantallas,
             PropuestasRepository propuestasRepository) {
         this.bandeja = bandeja;
         this.flowable = flowable;
-        this.solicitudesRepository = solicitudesRepository;
+        this.pantallas = pantallas;
         this.propuestasRepository = propuestasRepository;
-    }
-
-    private String sanitizarSeccion(String seccion) {
-        return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
     }
 
     @GetMapping("/tareas/{id}/revisar-propuesta")
     public String mostrarFormulario(@PathVariable String id,
                                    @RequestParam(defaultValue = "administracion") String seccion,
                                    Principal usuario, Model model, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            Tarea tarea = flowable.tarea(id);
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
+            Curso curso = pantallas.cursoDe(tarea);
 
-            if (!"revisarPropuesta".equals(tarea.clave())) {
-                redirect.addFlashAttribute("error", "La tarea seleccionada no corresponde a revisar propuesta.");
-                return "redirect:/" + sec;
-            }
-
-            if (!usuario.getName().equals(tarea.asignado())) {
-                redirect.addFlashAttribute("error", "Solo el usuario asignado puede realizar esta tarea.");
-                return "redirect:/" + sec;
-            }
-
-            if (tarea.solicitud() == null) {
-                redirect.addFlashAttribute("error", "No se pudo recuperar la solicitud vinculada a la tarea.");
-                return "redirect:/" + sec;
-            }
-
-            Long cursoId = Long.parseLong(tarea.solicitud());
-            var curso = solicitudesRepository.buscarPorId(cursoId)
-                    .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado: " + cursoId));
-
+            long cursoId = pantallas.cursoIdDe(tarea);
             int ultimaVersion = propuestasRepository.ultimaVersionDe(cursoId);
             Propuesta propuesta = propuestasRepository.buscarPorCursoYVersion(cursoId, ultimaVersion)
                     .orElseThrow(() -> new IllegalArgumentException("Propuesta no encontrada para el curso: " + cursoId));
@@ -81,10 +62,12 @@ public class RevisarPropuestaController {
             model.addAttribute("observaciones", observacionesDeLaEmpresa(tarea));
             model.addAttribute("seccion", sec);
             return "tareas/revisar-propuesta";
+        } catch (AccionNoPermitida e) {
+            redirect.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "Error al abrir la tarea: " + e.getMessage());
-            return "redirect:/" + sec;
         }
+        return "redirect:/" + sec;
     }
 
     /**
@@ -99,18 +82,11 @@ public class RevisarPropuestaController {
                                   @RequestParam String fechasPosibles,
                                   Principal usuario,
                                   RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            Tarea tarea = flowable.tarea(id);
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
 
-            if (!"revisarPropuesta".equals(tarea.clave())) {
-                throw new AccionNoPermitida("La tarea seleccionada no es de revisar propuesta.");
-            }
-            if (tarea.solicitud() == null) {
-                throw new AccionNoPermitida("No se pudo obtener la clave del curso.");
-            }
-
-            Long cursoId = Long.parseLong(tarea.solicitud());
+            long cursoId = pantallas.cursoIdDe(tarea);
             int nuevaVersion = propuestasRepository.ultimaVersionDe(cursoId) + 1;
             String observaciones = observacionesDeLaEmpresa(tarea);
 

@@ -2,7 +2,6 @@ package ar.edu.unrc.gtpn.web.tareas;
 
 import java.security.Principal;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,8 +13,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
-import ar.edu.unrc.gtpn.web.solicitudes.Curso;
-import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 
 /**
  * Pantalla de *Enviar informe y archivar expediente* (issue #27): el jefe administrativo consulta el informe que
@@ -28,33 +25,33 @@ public class EnviarInformeController {
     /** Clave de la tarea en el modelo BPMN (docs/06 §2). */
     static final String CLAVE = "enviarInformeYArchivarExpediente";
 
+    private static final String QUE_ES = "enviar el informe y archivar el expediente";
     private static final String SIN_INFORME = "Sin informe registrado";
-    private static final Set<String> SECCIONES_VALIDAS = Set.of("administracion", "docentes");
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
-    private final SolicitudesRepository solicitudesRepository;
+    private final PantallasDeTareas pantallas;
 
     public EnviarInformeController(
             BandejaDeTareas bandeja,
             ClienteFlowable flowable,
-            SolicitudesRepository solicitudesRepository) {
+            PantallasDeTareas pantallas) {
         this.bandeja = bandeja;
         this.flowable = flowable;
-        this.solicitudesRepository = solicitudesRepository;
+        this.pantallas = pantallas;
     }
 
     @GetMapping("/tareas/{id}/enviar-informe")
     public String mostrarFormulario(@PathVariable String id,
                                     @RequestParam(defaultValue = "administracion") String seccion,
                                     Principal usuario, Model model, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            Tarea tarea = tareaDelUsuario(id, usuario);
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
             Map<String, Object> variables = flowable.variables(tarea.instanciaId());
 
             model.addAttribute("tarea", tarea);
-            model.addAttribute("curso", cursoDe(tarea));
+            model.addAttribute("curso", pantallas.cursoDe(tarea));
             model.addAttribute("informeResultados", informeEnTexto(variables.get("informeResultados")));
             model.addAttribute("seccion", sec);
             return "tareas/enviar-informe";
@@ -70,9 +67,9 @@ public class EnviarInformeController {
     public String archivarExpediente(@PathVariable String id,
                                      @RequestParam(defaultValue = "administracion") String seccion,
                                      Principal usuario, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            tareaDelUsuario(id, usuario);
+            pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
             bandeja.completar(usuario.getName(), id, Map.of());
             redirect.addFlashAttribute("mensaje", "Expediente archivado y curso finalizado exitosamente");
         } catch (AccionNoPermitida error) {
@@ -83,39 +80,11 @@ public class EnviarInformeController {
         return "redirect:/" + sec;
     }
 
-    /** La tarea pendiente, después de verificar que sea la de esta pantalla y del usuario logueado. */
-    private Tarea tareaDelUsuario(String id, Principal usuario) {
-        Tarea tarea = flowable.tarea(id);
-
-        if (tarea == null || !CLAVE.equals(tarea.clave())) {
-            throw new AccionNoPermitida("La tarea seleccionada no corresponde a enviar el informe y archivar el expediente.");
-        }
-
-        if (!usuario.getName().equals(tarea.asignado())) {
-            throw new AccionNoPermitida("Solo el usuario asignado puede realizar esta tarea.");
-        }
-
-        return tarea;
-    }
-
-    private Curso cursoDe(Tarea tarea) {
-        if (tarea.solicitud() == null) {
-            throw new AccionNoPermitida("No se pudo recuperar la solicitud vinculada a la tarea.");
-        }
-        Long cursoId = Long.parseLong(tarea.solicitud());
-        return solicitudesRepository.buscarPorId(cursoId)
-                .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado: " + cursoId));
-    }
-
     /** El informe que cargó docencia, o un texto aclaratorio si el proceso todavía no lo tiene. */
     static String informeEnTexto(Object informe) {
         if (informe == null || informe.toString().isBlank()) {
             return SIN_INFORME;
         }
         return informe.toString();
-    }
-
-    private String sanitizarSeccion(String seccion) {
-        return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
     }
 }

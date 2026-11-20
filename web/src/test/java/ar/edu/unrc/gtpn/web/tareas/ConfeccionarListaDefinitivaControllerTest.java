@@ -30,11 +30,12 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ConfeccionarListaDefinitivaController.class)
-@Import({ SeguridadConfig.class, AutenticacionContraFlowable.class })
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, PantallasDeTareas.class})
 class ConfeccionarListaDefinitivaControllerTest {
 
     @Autowired
@@ -102,5 +103,37 @@ class ConfeccionarListaDefinitivaControllerTest {
 
         verify(bandeja).completar(eq("jefe_admin"), eq("t2"),
                 eq(Map.of("listaDefinitiva", "Ana Pérez\nBeto Gómez\nCarla Ruiz")));
+    }
+
+    @Test
+    void noCompletaUnaTareaDeOtraPantallaAunqueSeaDelUsuario() throws Exception {
+        Tarea otra = new Tarea("t9", "Archivar solicitud", "archivarSolicitud", "proc1", "jefe_admin",
+                OffsetDateTime.now(), "10");
+        when(flowable.tarea("t9")).thenReturn(otra);
+
+        mockMvc.perform(post("/tareas/{id}/confeccionar-lista-definitiva", "t9")
+                .with(user("jefe_admin").roles("ADMINISTRACION"))
+                .with(csrf())
+                .param("listaDefinitiva", "Ana Pérez"))
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("error", "La tarea seleccionada no corresponde a confeccionar la lista definitiva."));
+
+        verify(bandeja, never()).completar(any(), any(), any());
+    }
+
+    @Test
+    void noCompletaUnaTareaAsignadaAOtroUsuario() throws Exception {
+        Tarea ajena = new Tarea("t8", "Confeccionar lista definitiva", "confeccionarListaDefinitiva", "proc1", "otro_admin",
+                OffsetDateTime.now(), "10");
+        when(flowable.tarea("t8")).thenReturn(ajena);
+
+        mockMvc.perform(post("/tareas/{id}/confeccionar-lista-definitiva", "t8")
+                .with(user("jefe_admin").roles("ADMINISTRACION"))
+                .with(csrf())
+                .param("listaDefinitiva", "Ana Pérez"))
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("error", "Solo el usuario asignado puede realizar esta tarea."));
+
+        verify(bandeja, never()).completar(any(), any(), any());
     }
 }

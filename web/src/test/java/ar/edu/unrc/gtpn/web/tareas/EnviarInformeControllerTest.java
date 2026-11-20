@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** La pantalla de envío del informe y archivo del expediente (issue #27), con dobles de Flowable y la base. */
 @WebMvcTest(EnviarInformeController.class)
-@Import({ SeguridadConfig.class, AutenticacionContraFlowable.class })
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, PantallasDeTareas.class})
 class EnviarInformeControllerTest {
 
     private static final String INFORME = "Los participantes completaron el curso con una evaluación satisfactoria.";

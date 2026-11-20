@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ArchivarSolicitudController.class)
-@Import({SeguridadConfig.class, AutenticacionContraFlowable.class})
+@Import({SeguridadConfig.class, AutenticacionContraFlowable.class, PantallasDeTareas.class})
 class ArchivarSolicitudControllerTest {
 
     @Autowired

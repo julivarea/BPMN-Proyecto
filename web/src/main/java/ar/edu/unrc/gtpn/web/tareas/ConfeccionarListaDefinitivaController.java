@@ -3,7 +3,6 @@ package ar.edu.unrc.gtpn.web.tareas;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
@@ -16,8 +15,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.Tarea;
-import ar.edu.unrc.gtpn.web.solicitudes.Curso;
-import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 
 /**
  * Pantalla de *Confeccionar lista definitiva* (issue #22): parte de la nómina que envió la empresa
@@ -31,32 +28,29 @@ public class ConfeccionarListaDefinitivaController {
     /** Clave de la tarea en el modelo BPMN (docs/06 §2). */
     static final String CLAVE = "confeccionarListaDefinitiva";
 
-    private static final Set<String> SECCIONES_VALIDAS = Set.of("administracion", "docentes");
+    private static final String QUE_ES = "confeccionar la lista definitiva";
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
-    private final SolicitudesRepository solicitudesRepository;
+    private final PantallasDeTareas pantallas;
 
     public ConfeccionarListaDefinitivaController(
             BandejaDeTareas bandeja,
             ClienteFlowable flowable,
-            SolicitudesRepository solicitudesRepository) {
+            PantallasDeTareas pantallas) {
         this.bandeja = bandeja;
         this.flowable = flowable;
-        this.solicitudesRepository = solicitudesRepository;
-    }
-
-    private String sanitizarSeccion(String seccion) {
-        return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
+        this.pantallas = pantallas;
     }
 
     @GetMapping("/tareas/{id}/confeccionar-lista-definitiva")
     public String mostrarFormulario(@PathVariable String id,
                                    @RequestParam(defaultValue = "administracion") String seccion,
                                    Principal usuario, Model model, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         try {
-            agregarDatosDeLaTarea(id, usuario, sec, model);
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
+            agregarDatosDeLaTarea(tarea, sec, model);
             return "tareas/confeccionar-lista-definitiva";
         } catch (AccionNoPermitida error) {
             redirect.addFlashAttribute("error", error.getMessage());
@@ -71,11 +65,12 @@ public class ConfeccionarListaDefinitivaController {
                                          @RequestParam(defaultValue = "administracion") String seccion,
                                          @RequestParam(required = false, defaultValue = "") String listaDefinitiva,
                                          Principal usuario, Model model, RedirectAttributes redirect) {
-        String sec = sanitizarSeccion(seccion);
+        String sec = pantallas.seccion(seccion, PantallasDeTareas.ADMINISTRACION);
         String lista = listaDefinitiva.trim();
         try {
+            Tarea tarea = pantallas.tareaDelUsuario(id, CLAVE, QUE_ES, usuario);
             if (lista.isEmpty()) {
-                agregarDatosDeLaTarea(id, usuario, sec, model);
+                agregarDatosDeLaTarea(tarea, sec, model);
                 model.addAttribute("listaDefinitiva", listaDefinitiva);
                 model.addAttribute("error", "Debe ingresar al menos un participante en la lista definitiva.");
                 return "tareas/confeccionar-lista-definitiva";
@@ -92,33 +87,14 @@ public class ConfeccionarListaDefinitivaController {
         return "redirect:/" + sec;
     }
 
-    /** Carga la tarea, el curso y la nómina recibida en el modelo, después de verificar que sea de este usuario. */
-    private void agregarDatosDeLaTarea(String id, Principal usuario, String sec, Model model) {
-        Tarea tarea = flowable.tarea(id);
-
-        if (!CLAVE.equals(tarea.clave())) {
-            throw new AccionNoPermitida("La tarea seleccionada no corresponde a confeccionar la lista definitiva.");
-        }
-
-        if (!usuario.getName().equals(tarea.asignado())) {
-            throw new AccionNoPermitida("Solo el usuario asignado puede realizar esta tarea.");
-        }
-
+    /** Carga la tarea, el curso y la nómina recibida en el modelo. */
+    private void agregarDatosDeLaTarea(Tarea tarea, String sec, Model model) {
         Map<String, Object> variables = flowable.variables(tarea.instanciaId());
 
         model.addAttribute("tarea", tarea);
-        model.addAttribute("curso", cursoDe(tarea));
+        model.addAttribute("curso", pantallas.cursoDe(tarea));
         model.addAttribute("seccion", sec);
         model.addAttribute("listaDefinitiva", nominaEnTexto(variables.get("participantes")));
-    }
-
-    private Curso cursoDe(Tarea tarea) {
-        if (tarea.solicitud() == null) {
-            throw new AccionNoPermitida("No se pudo recuperar la solicitud vinculada a la tarea.");
-        }
-        Long cursoId = Long.parseLong(tarea.solicitud());
-        return solicitudesRepository.buscarPorId(cursoId)
-                .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado: " + cursoId));
     }
 
     /**
