@@ -30,6 +30,10 @@
                     <strong>Fecha de inicio:</strong>
                     <span th:text="${#temporals.format(curso.curso().fechaInicio(), 'dd/MM/yyyy')}">01/01/2026</span>
                 </p>
+                <p th:if="${curso.tieneAula()}">
+                    <strong>Aula asignada:</strong>
+                    <span th:text="${curso.aula()}">Aula 101</span>
+                </p>
                 <p>
                     <strong>Participantes estimados:</strong>
                     <span th:text="${curso.curso().participantesEstimados()}">0</span>

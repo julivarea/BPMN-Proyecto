@@ -35,7 +35,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | `participantes` | JSON (lista) | Mensaje de nómina | *Confeccionar lista definitiva* |
 | `listaDefinitiva` | texto (un participante por línea) | *Confeccionar lista definitiva* | *Desarrollar curso* |
 | `requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento` | booleano | *Evaluar recursos* | Ramas del gateway inclusivo |
-| `aulaAsignada` | texto | *Reservar aula* | *Liberar aula* |
+| `aulaAsignada` | texto | *Reservar aula* | *Liberar aula* y el portal de la empresa (docs/08) |
 | `docenteAsignado` | id de usuario | *Definir docente* | Asignación de *Desarrollar curso* |
 | `informeResultados` | texto | *Elaborar informe de resultados* | *Enviar informe y archivar expediente*; BD |
 

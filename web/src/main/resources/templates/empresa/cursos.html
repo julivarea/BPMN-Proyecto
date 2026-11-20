@@ -19,6 +19,7 @@
                             <th>Curso</th>
                             <th>Solicitado</th>
                             <th>Programa o descripción</th>
+                            <th>Aula</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
@@ -30,6 +31,7 @@
                             <td th:text="${fila.curso().programa() != null ? fila.curso().programa() : fila.curso().descripcion()}">
                                 Programa o descripción
                             </td>
+                            <td th:text="${fila.tieneAula() ? fila.aula() : '—'}">Aula 101</td>
                             <td th:text="${fila.estado().etiqueta()}">En preparación</td>
                             <td class="accion">
                                 <a class="boton" th:href="@{'/empresas/cursos/' + ${fila.curso().id()}}">Ver detalle</a>

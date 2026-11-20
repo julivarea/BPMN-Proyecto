@@ -132,6 +132,19 @@ public class PortalEmpresaController {
         List<Actividad> visibles = conActividades && estado == EstadoDelCurso.EN_PREPARACION
                 ? EstadoDelCurso.actividadesDePreparacion(activas)
                 : List.of();
-        return new CursoConEstado(curso, estado, visibles);
+        return new CursoConEstado(curso, estado, visibles, estado.conservaElAula() ? aulaDe(curso) : null);
+    }
+
+    /**
+     * Aula física asignada al curso: la que guardó *Reservar aula* en la variable {@code aulaAsignada} de la instancia.
+     * Es {@code null} si todavía no se reservó o si Flowable no responde (el portal sigue funcionando sin ella).
+     */
+    private String aulaDe(CursoDeLaEmpresa curso) {
+        try {
+            Object aula = flowable.variables(curso.instanciaId()).get("aulaAsignada");
+            return aula == null || aula.toString().isBlank() ? null : aula.toString();
+        } catch (RestClientException error) {
+            return null;
+        }
     }
 }

@@ -265,6 +265,12 @@ pasa a `FINALIZADO` o `CANCELADO` (el que dejó el proceso en `curso.estado`).
 En el detalle de un curso en preparación se listan las tareas y esperas de las ramas paralelas, sin compuertas ni el
 subproceso contenedor. Si Flowable no responde, el portal muestra el estado persistido en vez de romper el listado.
 
+**Aula asignada.** *Mis cursos* tiene una columna **Aula** y el detalle del curso una línea "Aula asignada", con el aula
+física que reservó el proceso (variable `aulaAsignada` de la instancia). Se muestra mientras el curso está en marcha: en
+preparación, confirmado, en desarrollo y en elaboración del informe. No se muestra si todavía no se reservó, ni durante el
+cierre o la cancelación (el aula ya se liberó, aunque la variable siga guardada), ni en un curso terminado, que figura con
+un guion en el listado. Si Flowable no responde, el portal sigue funcionando sin el aula.
+
 ### Credenciales
 
 El cliente usa una **cuenta técnica**, configurada en `application.yml`:

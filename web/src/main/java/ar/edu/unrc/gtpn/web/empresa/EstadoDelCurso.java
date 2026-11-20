@@ -89,6 +89,14 @@ public enum EstadoDelCurso {
     }
 
     /**
+     * Si en este estado el curso conserva su aula. Se reserva durante la preparación y se libera al cerrar el curso o al
+     * cancelarlo, así que en el cierre y la cancelación ya no corresponde mostrarla.
+     */
+    boolean conservaElAula() {
+        return this == EN_PREPARACION || this == CONFIRMADO || this == EN_DESARROLLO || this == EN_ELABORACION_DEL_INFORME;
+    }
+
+    /**
      * Estado de una instancia activa, según sus actividades en curso. La cancelación gana sobre todo lo demás; si no
      * hay ninguna actividad conocida, la instancia está en la negociación previa a la aceptación.
      */

@@ -190,6 +190,90 @@ class PortalEmpresaControllerTest {
     }
 
     @Test
+    void elListadoMuestraElAulaAsignadaMientrasElCursoEstaEnMarcha() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.listar(EMPRESA_A)).thenReturn(List.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("prepararMateriales", "Preparar materiales", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of("aulaAsignada", "Aula 101"));
+
+        mockMvc.perform(get("/empresas").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("<th>Aula</th>")))
+                .andExpect(content().string(Matchers.containsString("Aula 101")));
+    }
+
+    @Test
+    void elListadoNoMuestraElAulaCuandoElCursoYaEstaCerrandoYLaLibero() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.listar(EMPRESA_A)).thenReturn(List.of(curso(10, "EN_CURSO", "instancia-10")));
+        // Al cerrar se libera el aula, pero la variable de la instancia sigue guardada.
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("liberarEquipamiento", "Liberar equipamiento", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of("aulaAsignada", "Aula 101"));
+
+        mockMvc.perform(get("/empresas").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Aula 101"))));
+    }
+
+    @Test
+    void elListadoNoMuestraElAulaDeUnCursoTerminado() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.listar(EMPRESA_A)).thenReturn(List.of(curso(10, "FINALIZADO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10")).thenReturn(List.of());
+
+        mockMvc.perform(get("/empresas").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Aula 1"))));
+        verify(flowable, never()).variables("instancia-10");
+    }
+
+    @Test
+    void elDetalleMuestraElAulaAsignada() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("desarrollarCurso", "Desarrollar curso", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of("aulaAsignada", "Aula 102"));
+        when(propuestas.buscarPorCurso(10L)).thenReturn(List.of());
+
+        mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Aula asignada")))
+                .andExpect(content().string(Matchers.containsString("Aula 102")));
+    }
+
+    @Test
+    void sinAulaReservadaElDetalleNoMuestraLaLineaDelAula() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("evaluarRecursos", "Evaluar recursos", "userTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of());
+        when(propuestas.buscarPorCurso(10L)).thenReturn(List.of());
+
+        mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Aula asignada"))));
+    }
+
+    @Test
+    void siFlowableNoPuedeInformarElAulaElListadoSigueFuncionandoSinElla() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.listar(EMPRESA_A)).thenReturn(List.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("prepararMateriales", "Preparar materiales", "userTask")));
+        when(flowable.variables("instancia-10"))
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("sin conexión"));
+
+        mockMvc.perform(get("/empresas").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Curso 10")))
+                .andExpect(content().string(Matchers.containsString("En preparación")));
+    }
+
+    @Test
     void conLaInstanciaTerminadaValeElEstadoPersistido() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "FINALIZADO", "instancia-10")));
