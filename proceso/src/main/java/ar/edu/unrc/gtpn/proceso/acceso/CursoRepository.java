@@ -4,9 +4,9 @@ package ar.edu.unrc.gtpn.proceso.acceso;
 public interface CursoRepository {
 
     /**
-     * Actualiza el resultado del curso identificado por su business key.
+     * Actualiza el resultado del curso.
      *
-     * @param businessKey normalmente el {@code curso.id}
+     * @param cursoId el {@code curso.id}, que es la business key de la instancia
      */
-    void registrarResultado(String businessKey, DatosResultadoCurso datos);
+    void registrarResultado(long cursoId, DatosResultadoCurso datos);
 }

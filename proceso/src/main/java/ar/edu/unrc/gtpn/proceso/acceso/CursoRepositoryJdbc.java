@@ -1,7 +1,6 @@
 package ar.edu.unrc.gtpn.proceso.acceso;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -12,34 +11,25 @@ public final class CursoRepositoryJdbc implements CursoRepository {
             + " presupuesto = COALESCE(?, presupuesto), fecha_inicio = COALESCE(?, fecha_inicio),"
             + " informe_resultados = COALESCE(?, informe_resultados) WHERE id = ?";
 
-    private final String url;
-    private final String usuario;
-    private final String clave;
+    private final ConexionInstitucion conexion;
 
     public CursoRepositoryJdbc(String url, String usuario, String clave) {
-        this.url = url;
-        this.usuario = usuario;
-        this.clave = clave;
+        this(new ConexionInstitucion(url, usuario, clave));
+    }
+
+    private CursoRepositoryJdbc(ConexionInstitucion conexion) {
+        this.conexion = conexion;
     }
 
     /** Configuración institucional usada por el servidor Flowable. */
     public static CursoRepositoryJdbc desdeEntorno() {
-        return new CursoRepositoryJdbc(
-                variable("INSTITUCION_DB_URL", "jdbc:postgresql://localhost:5432/institucion"),
-                variable("INSTITUCION_DB_USER", "flowable"),
-                variable("INSTITUCION_DB_PASSWORD", "flowable"));
+        return new CursoRepositoryJdbc(ConexionInstitucion.desdeEntorno());
     }
 
     @Override
-    public void registrarResultado(String businessKey, DatosResultadoCurso datos) {
-        final long cursoId;
-        try {
-            cursoId = Long.parseLong(businessKey);
-        } catch (NumberFormatException error) {
-            throw new IllegalArgumentException("La businessKey no identifica un curso: " + businessKey, error);
-        }
-        try (Connection conexion = DriverManager.getConnection(url, usuario, clave);
-                PreparedStatement actualizacion = conexion.prepareStatement(ACTUALIZACION)) {
+    public void registrarResultado(long cursoId, DatosResultadoCurso datos) {
+        try (Connection abierta = conexion.abrir();
+                PreparedStatement actualizacion = abierta.prepareStatement(ACTUALIZACION)) {
             actualizacion.setString(1, datos.estado());
             actualizacion.setString(2, datos.programa());
             if (datos.presupuesto() == null) {
@@ -57,24 +47,6 @@ public final class CursoRepositoryJdbc implements CursoRepository {
             actualizacion.executeUpdate();
         } catch (SQLException error) {
             throw new ErrorDeInstitucion("No se pudo registrar el resultado del curso " + cursoId, error);
-        }
-    }
-
-    private static String variable(String nombre, String porDefecto) {
-        String valor = System.getProperty(nombre);
-        if (valor == null || valor.isBlank()) {
-            valor = System.getenv(nombre);
-        }
-        return valor == null || valor.isBlank() ? porDefecto : valor;
-    }
-
-    public static final class ErrorDeInstitucion extends RuntimeException {
-        ErrorDeInstitucion(String mensaje, SQLException causa) {
-            super(mensaje, causa);
-        }
-
-        ErrorDeInstitucion(String mensaje) {
-            super(mensaje);
         }
     }
 }

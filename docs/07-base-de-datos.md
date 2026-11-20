@@ -98,8 +98,13 @@ Decisiones del diseño:
 | `curso.programa`, `curso.presupuesto`, `curso.fecha_inicio`, `curso.informe_resultados`, `curso.estado` | Motor: `RegistrarResultadoDelCursoListener` | Al terminar la instancia, a partir de las variables del proceso |
 
 El listener de cierre usa `CursoRepositoryJdbc` sobre `INSTITUCION_DB_*` y actualiza el curso por la `businessKey`
-(el `curso.id`). Los datos opcionales se conservan con `COALESCE`, de modo que un camino que no llegó a elaborar una
-propuesta no borra información ya registrada.
+(el `curso.id`, que el listener convierte a número una sola vez). Los datos opcionales se conservan con `COALESCE`, de
+modo que un camino que no llegó a elaborar una propuesta no borra información ya registrada.
+
+Las dos clases que escriben desde el motor (`CursoRepositoryJdbc` y `CuentasDeEmpresaJdbc`) toman la conexión de
+`ConexionInstitucion`: `INSTITUCION_DB_URL`, `INSTITUCION_DB_USER` e `INSTITUCION_DB_PASSWORD`, primero de las
+propiedades del sistema (así los tests apuntan a H2, ver `proceso/pom.xml`) y si no del entorno del servidor. Si la base
+falla, las dos lanzan `ErrorDeInstitucion`.
 
 Las apps de escritorio no escriben en esta base. La app de materiales solo usa la base del motor (§4.2.1).
 

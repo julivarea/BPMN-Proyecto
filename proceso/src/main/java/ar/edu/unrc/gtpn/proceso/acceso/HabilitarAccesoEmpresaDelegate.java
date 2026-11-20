@@ -40,7 +40,7 @@ public class HabilitarAccesoEmpresaDelegate implements JavaDelegate {
 
     /** Flowable instancia los delegates con el constructor sin argumentos. */
     public HabilitarAccesoEmpresaDelegate() {
-        this(repositorioParaTests != null ? repositorioParaTests : CuentasDeEmpresaJdbc.desdeVariablesDeEntorno(),
+        this(repositorioParaTests != null ? repositorioParaTests : CuentasDeEmpresaJdbc.desdeEntorno(),
                 new BCryptPasswordEncoder(), () -> CLAVE_DE_LAS_EMPRESAS);
     }
 

@@ -42,14 +42,15 @@ public class RegistrarResultadoDelCursoListener implements ExecutionListener {
             log.warn("No se registra el resultado {} porque la instancia no tiene businessKey.", resultado);
             return;
         }
+        long cursoId;
         try {
-            Long.parseLong(businessKey);
+            cursoId = Long.parseLong(businessKey);
         } catch (NumberFormatException error) {
             log.warn("No se registra el resultado {} porque la businessKey no identifica un curso: {}",
                     resultado, businessKey);
             return;
         }
-        cursos.registrarResultado(businessKey, new DatosResultadoCurso(
+        cursos.registrarResultado(cursoId, new DatosResultadoCurso(
                 resultado,
                 (String) execution.getVariable("programa"),
                 presupuesto(execution.getVariable("presupuesto")),
@@ -63,9 +64,6 @@ public class RegistrarResultadoDelCursoListener implements ExecutionListener {
         }
         if (valor instanceof BigDecimal) {
             return (BigDecimal) valor;
-        }
-        if (valor instanceof Number) {
-            return new BigDecimal(valor.toString());
         }
         return new BigDecimal(valor.toString());
     }
