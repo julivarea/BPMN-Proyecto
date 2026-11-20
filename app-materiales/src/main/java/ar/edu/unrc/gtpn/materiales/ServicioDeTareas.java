@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.FlowableTaskAlreadyClaimedException;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 
 /** Lo que la app hace con el motor: identificar al usuario y consultar sus tareas "Preparar materiales". */
@@ -11,6 +12,9 @@ final class ServicioDeTareas {
 
     /** ID de la tarea en el modelo BPMN (docs/06-guia-implementacion-modelo.md). */
     static final String PREPARAR_MATERIALES = "prepararMateriales";
+
+    /** Lo que se muestra como solicitud cuando la instancia de la tarea ya no está activa. */
+    static final String SOLICITUD_TERMINADA = "(terminada)";
 
     private final ProcessEngine motor;
 
@@ -55,12 +59,16 @@ final class ServicioDeTareas {
         motor.getTaskService().complete(tareaId);
     }
 
-    /** Solicitud (businessKey) a la que pertenece la tarea, para mostrarla en la lista. */
+    /**
+     * Solicitud (businessKey) a la que pertenece la tarea, para mostrarla en la lista. Si la instancia terminó o se
+     * canceló entre que se listó la tarea y esta consulta, ya no figura entre las activas: se muestra
+     * {@link #SOLICITUD_TERMINADA} y la tarea desaparece en la próxima actualización.
+     */
     String solicitudDe(Task tarea) {
-        return motor.getRuntimeService().createProcessInstanceQuery()
+        ProcessInstance instancia = motor.getRuntimeService().createProcessInstanceQuery()
                 .processInstanceId(tarea.getProcessInstanceId())
-                .singleResult()
-                .getBusinessKey();
+                .singleResult();
+        return instancia == null ? SOLICITUD_TERMINADA : instancia.getBusinessKey();
     }
 
     static final class TareaNoDisponible extends IllegalStateException {

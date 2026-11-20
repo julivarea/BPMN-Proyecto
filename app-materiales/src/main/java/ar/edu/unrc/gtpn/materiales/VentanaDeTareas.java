@@ -147,83 +147,40 @@ final class VentanaDeTareas extends JFrame {
     }
 
     private JPanel panelDeResultados() {
-        JLabel titulo = new JLabel("Resultados de Solicitudes");
-        titulo.putClientProperty("FlatLaf.styleClass", "h2");
-        JLabel subtitulo = new JLabel("Solicitudes terminadas agrupadas por resultado (§4.3.1)");
-        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
-        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
-        encabezado.add(titulo, BorderLayout.NORTH);
-        encabezado.add(subtitulo, BorderLayout.SOUTH);
-
-        tablaResultados.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        sinResultados.putClientProperty("FlatLaf.styleClass", "light");
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(new JScrollPane(tablaResultados), BorderLayout.CENTER);
-        centro.add(sinResultados, BorderLayout.SOUTH);
-
-        JButton actualizar = new JButton("Actualizar");
-        actualizar.putClientProperty("JButton.buttonType", "roundRect");
-        actualizar.addActionListener(evento -> cargarResultados());
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
-        acciones.add(actualizar);
-
-        JPanel contenido = new JPanel(new BorderLayout(0, 12));
-        int margen = UIScale.scale(20);
-        contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
-        contenido.add(encabezado, BorderLayout.NORTH);
-        contenido.add(centro, BorderLayout.CENTER);
-        contenido.add(acciones, BorderLayout.SOUTH);
-        return contenido;
+        return panelDeConsulta("Resultados de Solicitudes", "Solicitudes terminadas agrupadas por resultado (§4.3.1)",
+                tablaResultados, sinResultados, this::cargarResultados);
     }
 
     private JPanel panelDeDuraciones() {
-        JLabel titulo = new JLabel("Duración de Ramas");
-        titulo.putClientProperty("FlatLaf.styleClass", "h2");
-        JLabel subtitulo = new JLabel("Promedio de las ramas de la preparación (§4.3.2)");
-        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
-        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
-        encabezado.add(titulo, BorderLayout.NORTH);
-        encabezado.add(subtitulo, BorderLayout.SOUTH);
-
-        tablaDuraciones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        sinDuraciones.putClientProperty("FlatLaf.styleClass", "light");
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(new JScrollPane(tablaDuraciones), BorderLayout.CENTER);
-        centro.add(sinDuraciones, BorderLayout.SOUTH);
-
-        JButton actualizar = new JButton("Actualizar");
-        actualizar.putClientProperty("JButton.buttonType", "roundRect");
-        actualizar.addActionListener(evento -> cargarDuraciones());
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
-        acciones.add(actualizar);
-
-        JPanel contenido = new JPanel(new BorderLayout(0, 12));
-        int margen = UIScale.scale(20);
-        contenido.setBorder(BorderFactory.createEmptyBorder(margen, margen, margen, margen));
-        contenido.add(encabezado, BorderLayout.NORTH);
-        contenido.add(centro, BorderLayout.CENTER);
-        contenido.add(acciones, BorderLayout.SOUTH);
-        return contenido;
+        return panelDeConsulta("Duración de Ramas", "Promedio de las ramas de la preparación (§4.3.2)",
+                tablaDuraciones, sinDuraciones, this::cargarDuraciones);
     }
 
     private JPanel panelDePersonas() {
-        JLabel titulo = new JLabel("Tareas por Persona");
-        titulo.putClientProperty("FlatLaf.styleClass", "h2");
-        JLabel subtitulo = new JLabel("Tareas completadas por cada usuario (§4.3.3)");
-        subtitulo.putClientProperty("FlatLaf.styleClass", "light");
-        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
-        encabezado.add(titulo, BorderLayout.NORTH);
-        encabezado.add(subtitulo, BorderLayout.SOUTH);
+        return panelDeConsulta("Tareas por Persona", "Tareas completadas por cada usuario (§4.3.3)",
+                tablaPersonas, sinPersonas, this::cargarPersonas);
+    }
 
-        tablaPersonas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        sinPersonas.putClientProperty("FlatLaf.styleClass", "light");
+    /** Pestaña de una consulta histórica: título, tabla, mensaje de "sin datos" y botón para volver a consultar. */
+    private static JPanel panelDeConsulta(String titulo, String subtitulo, JTable tabla, JLabel etiquetaVacio,
+            Runnable alActualizar) {
+        JLabel etiquetaTitulo = new JLabel(titulo);
+        etiquetaTitulo.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel etiquetaSubtitulo = new JLabel(subtitulo);
+        etiquetaSubtitulo.putClientProperty("FlatLaf.styleClass", "light");
+        JPanel encabezado = new JPanel(new BorderLayout(0, 4));
+        encabezado.add(etiquetaTitulo, BorderLayout.NORTH);
+        encabezado.add(etiquetaSubtitulo, BorderLayout.SOUTH);
+
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        etiquetaVacio.putClientProperty("FlatLaf.styleClass", "light");
         JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(new JScrollPane(tablaPersonas), BorderLayout.CENTER);
-        centro.add(sinPersonas, BorderLayout.SOUTH);
+        centro.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        centro.add(etiquetaVacio, BorderLayout.SOUTH);
 
         JButton actualizar = new JButton("Actualizar");
         actualizar.putClientProperty("JButton.buttonType", "roundRect");
-        actualizar.addActionListener(evento -> cargarPersonas());
+        actualizar.addActionListener(evento -> alActualizar.run());
         JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIScale.scale(8), 0));
         acciones.add(actualizar);
 

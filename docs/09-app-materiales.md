@@ -108,7 +108,9 @@ Todo se muestra un 25 % más grande. Para otro tamaño se agrega, por ejemplo, `
   `scripts/setup-identidades.sh`.
 - **Tareas:** `taskDefinitionKey("prepararMateriales").taskCandidateOrAssigned(usuario)`, que devuelve las asignadas
   al usuario y las disponibles para sus grupos. La ventana muestra la solicitud (la `businessKey` de la instancia), la
-  tarea, si está asignada al usuario o disponible para su grupo, y cuándo se creó. *Actualizar* vuelve a consultar.
+  tarea, si está asignada al usuario o disponible para su grupo, y cuándo se creó. *Actualizar* vuelve a consultar. Si
+  una instancia termina o se cancela justo entre que se lista su tarea y se consulta su solicitud, la fila muestra
+  `(terminada)` en lugar de fallar, y desaparece al actualizar.
 
 ## 7. Reclamar y completar (#24)
 

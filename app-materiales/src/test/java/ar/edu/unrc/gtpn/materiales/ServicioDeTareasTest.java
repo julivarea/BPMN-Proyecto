@@ -94,6 +94,23 @@ class ServicioDeTareasTest {
         assertNotNull(tareas.createTaskQuery().taskId(tarea.getId()).singleResult());
     }
 
+    @Test
+    @Deployment(resources = "procesos/tarea-materiales.bpmn20.xml")
+    void laSolicitudDeUnaTareaEsLaBusinessKeyDeSuInstancia() {
+        Task tarea = iniciarTarea();
+
+        assertEquals("curso-1", servicio.solicitudDe(tarea));
+    }
+
+    @Test
+    @Deployment(resources = "procesos/tarea-materiales.bpmn20.xml")
+    void siLaInstanciaTerminoMientrasSeConsultabaLaSolicitudSeMuestraComoTerminada() {
+        Task tarea = iniciarTarea();
+        runtime.deleteProcessInstance(tarea.getProcessInstanceId(), "cancelada durante la consulta");
+
+        assertEquals(ServicioDeTareas.SOLICITUD_TERMINADA, servicio.solicitudDe(tarea));
+    }
+
     private Task iniciarTarea() {
         return tareas.createTaskQuery().processInstanceId(
                 runtime.startProcessInstanceByKey("prepararMaterialesTest", "curso-1").getId()).singleResult();
