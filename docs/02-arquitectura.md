@@ -149,3 +149,13 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 | 5050 | pgAdmin (opcional, perfil `herramientas`) |
 
 Se cambian en `.env` (ver `.env.example`).
+
+### Apps de escritorio con Windows y WSL
+
+Si el proyecto se usa en Windows con Docker en WSL, las apps de escritorio (materiales y comunicaciones) se ven mejor
+lanzadas **desde Windows** (PowerShell, por ejemplo `.\mvnw.cmd -pl app-comunicaciones compile exec:java`) que desde WSL.
+Lanzadas desde WSL, Java usa las ventanas de Linux (WSLg): la barra de título es la de Linux, las fuentes cambian y los
+diálogos a veces se abren en la esquina de la pantalla. Desde Windows usa las ventanas nativas y los diálogos se abren
+centrados. El funcionamiento es el mismo: las dos apps llegan a Flowable (8080) y a PostgreSQL (5432) por `localhost` desde
+cualquiera de los dos lados. Quien use Linux nativo o macOS las verá con el aspecto de su sistema.
+

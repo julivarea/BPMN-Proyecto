@@ -369,7 +369,7 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   ajenas.
 - Registro web, `businessKey`/`process_instance_id`, habilitación y aislamiento por empresa.
 - Materiales por API Java y comunicaciones por API REST.
-- Timer de respuesta reducido (`PROCESO_PLAZO_RESPUESTA=PT2M`) y fecha de curso cercana.
+- Timer de respuesta reducido (`PLAZO_RESPUESTA=PT2M`) y fecha de curso cercana.
 - Persistencia de cada resultado final y exactitud de las tres consultas históricas.
 
 ### Riesgos técnicos a controlar

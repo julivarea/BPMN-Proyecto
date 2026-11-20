@@ -74,6 +74,9 @@ Con el entorno levantado:
 ./mvnw -pl app-comunicaciones compile exec:java # app de escritorio de comunicaciones de la empresa
 ```
 
+Para una demo se acorta el plazo de respuesta de la propuesta (por defecto 5 días) con `PLAZO_RESPUESTA=PT1M` al lanzar
+la web; vale para las solicitudes nuevas (detalle en [docs/04](docs/04-entorno-desarrollo.md)).
+
 ### Día a día
 
 | Qué | Comando |

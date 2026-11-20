@@ -42,6 +42,8 @@ public final class ComunicacionesApp {
         UIManager.put("Table.rowHeight", 30);
         UIManager.put("Table.showHorizontalLines", true);
         UIManager.put("Table.intercellSpacing", new Dimension(0, 1));
+        UIManager.put("OptionPane.yesButtonText", "Sí");
+        UIManager.put("OptionPane.noButtonText", "No");
         UIManager.put("OptionPane.okButtonText", "Aceptar");
         UIManager.put("OptionPane.cancelButtonText", "Cancelar");
     }

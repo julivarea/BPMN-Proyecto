@@ -27,6 +27,21 @@ Aplicaciones (con el entorno levantado):
 ./mvnw -pl app-comunicaciones compile exec:java # app de escritorio de comunicaciones de la empresa
 ```
 
+Para una demo se acorta el plazo de respuesta de la propuesta (por defecto 5 días) con la variable `PLAZO_RESPUESTA`, en
+formato ISO-8601, al lanzar la web:
+
+```bash
+PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run                       # bash / WSL
+```
+
+```powershell
+$env:PLAZO_RESPUESTA = 'PT1M'; .\mvnw.cmd -pl web spring-boot:run          # PowerShell
+```
+
+Vale para las solicitudes que se creen después; las que ya existen conservan su plazo. Con `PT1M`, una solicitud sin
+respuesta se cierra en unos 3 minutos (dos recordatorios y el tercer vencimiento). Ver
+[05-decisiones.md](05-decisiones.md).
+
 ## Usuarios de prueba
 
 Los crea `scripts/setup-identidades.sh`.
