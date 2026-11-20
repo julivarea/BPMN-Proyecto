@@ -2,7 +2,6 @@ package ar.edu.unrc.gtpn.web.tareas;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -23,7 +22,6 @@ public class DefinirDocenteController {
     static final String CLAVE = "definirDocente";
     private static final String JEFE_DOCENTE = "jefe_docente";
     private static final String GRUPO_DOCENTES = "docentes";
-    private static final Set<String> SECCION_PERMITIDA = Set.of("docentes");
 
     private final BandejaDeTareas bandeja;
     private final ClienteFlowable flowable;
@@ -49,7 +47,7 @@ public class DefinirDocenteController {
 
     @PostMapping("/tareas/{id}/definir-docente")
     public String guardar(@PathVariable String id,
-            @RequestParam String docenteAsignado, Principal usuario, Model modelo, RedirectAttributes redirect) {
+            @RequestParam String docenteAsignado, Principal usuario, RedirectAttributes redirect) {
         try {
             tareaDelJefe(id, usuario);
             List<String> docentes = docentesDisponibles();

@@ -26,6 +26,7 @@ import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 @Controller
 public class ElaborarPropuestaController {
 
+    static final String CLAVE = "registrarYElaborarPropuesta";
     private static final Set<String> SECCIONES_VALIDAS = Set.of("administracion", "docentes");
 
     private final BandejaDeTareas bandeja;
@@ -51,10 +52,6 @@ public class ElaborarPropuestaController {
         return SECCIONES_VALIDAS.contains(seccion) ? seccion : "administracion";
     }
 
-    private boolean esTareaDePropuesta(String clave) {
-        return "registrarYElaborarPropuesta".equals(clave) || "elaborarPropuesta".equals(clave);
-    }
-
     @GetMapping("/tareas/{id}/elaborar-propuesta")
     public String mostrarFormulario(@PathVariable String id,
                                    @RequestParam(defaultValue = "administracion") String seccion,
@@ -63,7 +60,7 @@ public class ElaborarPropuestaController {
         try {
             Tarea tarea = flowable.tarea(id);
 
-            if (!esTareaDePropuesta(tarea.clave())) {
+            if (!CLAVE.equals(tarea.clave())) {
                 redirect.addFlashAttribute("error", "La tarea seleccionada no corresponde a elaborar propuesta.");
                 return "redirect:/" + sec;
             }
@@ -107,7 +104,7 @@ public class ElaborarPropuestaController {
         try {
             Tarea tarea = flowable.tarea(id);
 
-            if (!esTareaDePropuesta(tarea.clave())) {
+            if (!CLAVE.equals(tarea.clave())) {
                 throw new AccionNoPermitida("La tarea seleccionada no es de elaborar propuesta.");
             }
 

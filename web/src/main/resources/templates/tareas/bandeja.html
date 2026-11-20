@@ -43,7 +43,7 @@
                         <td class="accion" th:with="bloqueo=${bandeja.motivoDeBloqueo(tarea)}">
                             <!-- Pantalla para elaborar propuesta (#13) -->
                             <a
-                                th:if="${tarea.clave() == 'registrarYElaborarPropuesta' || tarea.clave() == 'elaborarPropuesta'}"
+                                th:if="${tarea.clave() == 'registrarYElaborarPropuesta'}"
                                 th:href="@{'/tareas/' + ${tarea.id()} + '/elaborar-propuesta'(seccion=${seccion})}"
                                 class="boton"
                                 >Elaborar propuesta</a
@@ -107,7 +107,7 @@
 
                             <!-- Completar genérico para tareas sin pantalla propia -->
                             <form
-                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'elaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && tarea.clave() != 'elaborarInformeResultados' && tarea.clave() != 'enviarInformeYArchivarExpediente' && bandeja.seCompletaEnLaWeb(tarea) && bloqueo == null}"
+                                th:if="${tarea.clave() != 'registrarYElaborarPropuesta' && tarea.clave() != 'revisarPropuesta' && tarea.clave() != 'archivarSolicitud' && tarea.clave() != 'evaluarRecursos' && tarea.clave() != 'confeccionarListaDefinitiva' && tarea.clave() != 'definirDocente' && tarea.clave() != 'elaborarInformeResultados' && tarea.clave() != 'enviarInformeYArchivarExpediente' && bandeja.seCompletaEnLaWeb(tarea) && bloqueo == null}"
                                 th:action="@{/tareas/{id}/completar(id=${tarea.id()})}"
                                 method="post"
                             >
