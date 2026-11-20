@@ -51,4 +51,29 @@ class ContarCursosEnEjecucionListenerTest {
                 .singleResult()
                 .getValue());
     }
+
+    @Test
+    @Deployment(resources = {PROCESO, REGLA})
+    void laInstanciaQueEvaluaSuViabilidadNoSeCuentaASiMisma() {
+        for (int i = 0; i < 4; i++) {
+            String instancia = runtime.startProcessInstanceByMessage(
+                    "solicitudCapacitacion", "curso-" + i, Map.of("plazoRespuesta", "P5D")).getId();
+            runtime.setVariable(instancia, "accesoHabilitado", true);
+        }
+
+        // Esta instancia ya cumple el filtro al evaluarse: contarla la llevaría a cinco y la haría no viable.
+        String instanciaQueEvalua = runtime.startProcessInstanceByMessage("solicitudCapacitacion", "curso-nuevo",
+                Map.of("plazoRespuesta", "P5D", "accesoHabilitado", true)).getId();
+
+        assertEquals(Long.valueOf(4), historial.createHistoricVariableInstanceQuery()
+                .processInstanceId(instanciaQueEvalua)
+                .variableName("cursosEnEjecucion")
+                .singleResult()
+                .getValue());
+        assertEquals("EN_CURSO", historial.createHistoricVariableInstanceQuery()
+                .processInstanceId(instanciaQueEvalua)
+                .variableName("resultado")
+                .singleResult()
+                .getValue());
+    }
 }
