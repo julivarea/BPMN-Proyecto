@@ -117,6 +117,7 @@
       <extensionElements>
         <flowable:executionListener event="start" expression="${execution.setVariable('resultado', 'EN_CURSO')}"></flowable:executionListener>
         <flowable:executionListener event="start" expression="${execution.setVariable('versionPropuesta', 0)}"></flowable:executionListener>
+        <flowable:executionListener event="start" expression="${execution.setVariable('plazoRespuesta', empty execution.getVariable('plazoRespuesta') ? 'P5D' : execution.getVariable('plazoRespuesta'))}"></flowable:executionListener>
       </extensionElements>
       <messageEventDefinition messageRef="solicitudCapacitacion"></messageEventDefinition>
     </startEvent>

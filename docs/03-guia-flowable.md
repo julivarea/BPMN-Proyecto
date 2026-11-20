@@ -45,12 +45,13 @@ Mientras no estén la web y las apps, el proceso se recorre desde <http://localh
 `test`. Se usan dos apps: **Task** (iniciar y completar tareas) y **Admin** (ver y manejar las instancias).
 
 1. **Iniciar una solicitud.** Task → *Processes* → *Start a process* → **Institución** → *Start*. Así la instancia
-   arranca sin `plazoRespuesta` (en el uso real lo manda la web): agregarla en el paso 2 **antes** de completar la
-   primera tarea, o falla al llegar al timer (§7).
+   arranca sin `plazoRespuesta` (en el uso real lo manda la web): el modelo le pone `P5D` por defecto. Para probar un
+   plazo corto (por ejemplo, para ver los recordatorios), agregarla en el paso 2 **antes** de completar la primera
+   tarea; después de entrar al timer, un cambio ya no lo afecta hasta el próximo recordatorio.
 2. **Process instances.** Admin → *Process Engine* → *Process instances* → elegir la instancia:
    - *Show process diagram*: el diagrama con las actividades en curso resaltadas;
    - *Variables*: las variables de la instancia. Con *Add variable* se agregan o se corrigen (por ejemplo,
-     `plazoRespuesta`, tipo `string`, valor `P5D`);
+     `plazoRespuesta`, tipo `string`, valor `PT2M`);
    - *Tasks*: las tareas abiertas y a quién están asignadas;
    - también permite borrar la instancia.
 3. **Completar tareas.** Task, entrando con el usuario asignado (por ejemplo `jefe_admin` / `clave123`) → la tarea →
@@ -180,7 +181,7 @@ Reglas:
 | `cvc-complex-type…` al desplegar | Orden inválido en el XML: las `association` van al final del subproceso | Reordenar (o guardar desde el Modeler) |
 | `Cannot find the declaration of element 'definitions'` (DMN) | Comentario antes de `<definitions>` | Mover el comentario adentro |
 | 403 en la REST con un usuario del personal | Falta el privilegio `access-rest-api` | `bash scripts/setup-identidades.sh` |
-| `Unknown property used in expression: ${plazoRespuesta}` al completar una tarea | La instancia se inició sin `plazoRespuesta` (por ejemplo, desde la Task app) | Agregarla en Admin → la instancia → *Add variable* (§2, "Probar desde la UI de Flowable") |
+| `Unknown property used in expression: ${plazoRespuesta}` al completar una tarea | Una instancia de una versión anterior del modelo (antes de #53) se inició sin `plazoRespuesta` | Desplegar la versión actual (`scripts/desplegar-proceso.sh`) o agregarla en Admin → la instancia → *Add variable* |
 | La consulta del listener no ve la instancia actual | Se insertó en la misma transacción y todavía no se escribió | Filtrar por ID igual (ya se hace) |
 
 Logs del servidor: `docker compose logs -f flowable`. Reiniciar todo desde cero (**borra instancias, usuarios y la

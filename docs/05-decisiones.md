@@ -80,7 +80,9 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   (`30-12345678-9` y `30123456789` son la misma empresa).
 - **Plazo de respuesta configurable (§3.5).** La web inicia cada instancia con la variable `plazoRespuesta`, tomada
   de `solicitudes.plazo-respuesta` (por defecto `P5D`). Para la demo se reduce sin tocar código:
-  `PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run`.
+  `PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run`. Si una instancia se inicia sin la variable (por ejemplo, desde
+  la Task app de Flowable), el evento de inicio del modelo la completa con `P5D`, así no falla al llegar al timer. El
+  valor por defecto queda en dos lugares (la web y el modelo) con el mismo `P5D` del enunciado.
 - **Registro de la solicitud y su instancia (§4.1.1).** Guardar el curso, iniciar la instancia y guardar su id en el
   curso van en una sola transacción: si Flowable falla, no queda el curso sin instancia. La transacción no puede
   deshacer lo hecho en Flowable, así que si fallara el último `UPDATE` quedaría una instancia sin curso. Se acepta

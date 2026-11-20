@@ -23,7 +23,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 | Variable | Tipo | La escribe | La usa |
 |----------|------|------------|--------|
 | `resultado` | texto: `EN_CURSO`, `NO_VIABLE`, `RECHAZADO`, `SIN_RESPUESTA`, `CANCELADO`, `FINALIZADO` | Inicio (`EN_CURSO`) y cada camino de cierre | Listener de fin del proceso (§3.4); XOR de cancelación |
-| `plazoRespuesta` | duración ISO-8601: `P5D` (demo: `PT2M`) | Web, al iniciar la instancia | Timer "5 días" |
+| `plazoRespuesta` | duración ISO-8601: `P5D` (demo: `PT2M`) | Web, al iniciar la instancia; si no viene, Inicio (`P5D`) | Timer "5 días" |
 | `cursosEnEjecucion` | número | Listener de *Evaluar viabilidad* | Regla DMN |
 | `esViable` | booleano | Regla DMN | XOR "¿es viable?" |
 | `accesoHabilitado` | booleano | *Habilitar acceso a la empresa* | Conteo de cursos en ejecución |
@@ -59,7 +59,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | Elemento | ID | Configuración |
 |----------|----|---------------|
 | Proceso | `organizarCurso` | Execution listener `end` → `RegistrarResultadoDelCursoListener` |
-| recibir solicitud de curso | `solicitudRecibida` | `messageRef` → `solicitudCapacitacion`. Execution listener `start` (expresión): `resultado = 'EN_CURSO'`, `versionPropuesta = 0` |
+| recibir solicitud de curso | `solicitudRecibida` | `messageRef` → `solicitudCapacitacion`. Execution listener `start` (expresión): `resultado = 'EN_CURSO'`, `versionPropuesta = 0`, y `plazoRespuesta = 'P5D'` si la instancia se inició sin esa variable |
 | Evaluar viabilidad | `evaluarViabilidad` | **Decision task**: service task `flowable:type="dmn"`, campo `decisionTableReferenceKey = viabilidad`. Execution listener `start` → `ContarCursosEnEjecucionListener` |
 | ¿es viable? | `gatewayEsViable` | **SI** → `${esViable}`. **NO** → flujo por defecto |
 | Comunicar imposibilidad de realizar el curso | `comunicarImposibilidad` | Service task → `NotificarEmpresaDelegate` (campo `asunto`) |
@@ -137,7 +137,7 @@ con `activityRef` a la cadena de la cancelación.
 
 | Timer | Configuración | Nota |
 |-------|---------------|------|
-| 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `solicitudes.plazo-respuesta`: `P5D` en serio; en la demo, `PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Sin esta variable la instancia falla al llegar al timer: si se inicia desde la Task app, agregarla antes (03-guia-flowable §2) |
+| 5 días | `timeDuration = ${plazoRespuesta}` | Lo envía la web al iniciar la instancia, tomado de su propiedad `solicitudes.plazo-respuesta`: `P5D` en serio; en la demo, `PLAZO_RESPUESTA=PT2M` (§3.5 permite reducir plazos). Si la instancia se inicia sin esa variable (por ejemplo, desde la Task app), el evento de inicio le pone `P5D`; si viene, se respeta |
 | fecha programada | `timeDate = ${fechaInicioCurso}` | Fecha ISO-8601 fijada al aceptar. Con desfase (`-03:00`) el timer vence en el instante correcto; sin desfase, Flowable la lee en la zona de su servidor (UTC) y vencería horas antes. Si ya pasó, se dispara enseguida (útil para la demo) |
 
 ## 6. Regla de negocio

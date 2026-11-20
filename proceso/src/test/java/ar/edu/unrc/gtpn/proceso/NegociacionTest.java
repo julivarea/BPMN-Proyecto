@@ -10,6 +10,8 @@ import org.flowable.task.api.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -177,6 +179,53 @@ public class NegociacionTest {
                 .singleResult();
 
         assertEquals("SIN_RESPUESTA", historicInst.getProcessVariables().get("resultado"));
+    }
+
+    @Test
+    @Deployment(resources = {"procesos/organizarCurso.bpmn20.xml", "procesos/viabilidad.dmn"})
+    void sinPlazoDeRespuestaIndicadoElTimerEsperaCincoDias(RuntimeService runtimeService, TaskService taskService,
+            ManagementService managementService) {
+        // Como al iniciar una instancia a mano desde la Task app: sin la variable que manda la web.
+        var instancia = runtimeService.startProcessInstanceByMessage("solicitudCapacitacion", Map.of());
+
+        completarPropuesta(taskService, instancia.getId());
+
+        assertEquals("P5D", runtimeService.getVariable(instancia.getId(), "plazoRespuesta"));
+        assertVenceEn(Duration.ofDays(5), managementService, instancia.getId());
+    }
+
+    @Test
+    @Deployment(resources = {"procesos/organizarCurso.bpmn20.xml", "procesos/viabilidad.dmn"})
+    void conPlazoDeRespuestaIndicadoElTimerRespetaElValorEnviado(RuntimeService runtimeService,
+            TaskService taskService, ManagementService managementService) {
+        var instancia = runtimeService.startProcessInstanceByMessage("solicitudCapacitacion",
+                Map.of("plazoRespuesta", "PT2M"));
+
+        completarPropuesta(taskService, instancia.getId());
+
+        assertEquals("PT2M", runtimeService.getVariable(instancia.getId(), "plazoRespuesta"));
+        assertVenceEn(Duration.ofMinutes(2), managementService, instancia.getId());
+    }
+
+    private void completarPropuesta(TaskService taskService, String processInstanceId) {
+        Task tarea = taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .taskDefinitionKey("registrarYElaborarPropuesta")
+                .singleResult();
+        taskService.complete(tarea.getId(), Map.of(
+                "programa", "Excel avanzado", "presupuesto", 90000L, "fechasPosibles", "Julio"));
+    }
+
+    private void assertVenceEn(Duration esperada, ManagementService managementService, String processInstanceId) {
+        var timerJob = managementService.createTimerJobQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult();
+        assertNotNull(timerJob, "Debe existir un timer esperando respuesta");
+
+        Duration restante = Duration.between(Instant.now(), timerJob.getDuedate().toInstant());
+        Duration margen = Duration.ofSeconds(30);
+        assertTrue(restante.compareTo(esperada.plus(margen)) <= 0 && restante.compareTo(esperada.minus(margen)) >= 0,
+                "El timer debía vencer en " + esperada + " y vence en " + restante);
     }
 
     private void ejecutarTimerVencido(ManagementService managementService, String processInstanceId) {
