@@ -134,12 +134,15 @@ IDs de las ramas): [03-guia-flowable.md](03-guia-flowable.md) §8 y
 (`processDefinitionKey("organizarCurso").finished().includeProcessVariables().list()`), agrupa por la variable
 `resultado` y devuelve `ResultadoSolicitud(resultado, cantidad, porcentaje)`, con
 `porcentaje = cantidad * 100 / total`. Las filas van de mayor a menor cantidad y, a igual cantidad, por nombre del
-resultado. Una instancia terminada sin `resultado` cuenta como `SIN_RESULTADO`.
+resultado. Los cinco resultados del enunciado (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `NO_VIABLE` y `SIN_RESPUESTA`)
+figuran siempre, con cantidad `0` y `0,0 %` si no tuvieron casos. Una instancia terminada sin `resultado` cuenta como
+`SIN_RESULTADO`, que solo figura si hay alguna.
 
 La ventana tiene la pestaña **Resultados de Solicitudes (§4.3.1)** con las columnas *Resultado*, *Cantidad* y
-*Porcentaje (%)*, un botón *Actualizar* y el mensaje "No hay instancias terminadas para mostrar." cuando no hay datos.
-`ConsultasHistoricasTest` arma con `@FlowableTest` y H2 cuatro instancias terminadas (2 `FINALIZADO`, 1 `RECHAZADO` y
-1 `SIN_RESPUESTA`) y verifica que los conteos y los porcentajes sean exactos.
+*Porcentaje (%)*, un botón *Actualizar* y el mensaje "No hay instancias terminadas para mostrar." cuando todas las filas
+están en cero. `ConsultasHistoricasTest` arma con `@FlowableTest` y H2 cuatro instancias terminadas (2 `FINALIZADO`,
+1 `RECHAZADO` y 1 `SIN_RESPUESTA`) y verifica que los conteos y los porcentajes sean exactos, que `CANCELADO` y
+`NO_VIABLE` aparezcan en cero y que, sin instancias terminadas, queden las cinco filas en cero.
 
 ### Duración de las ramas de la preparación (#31)
 

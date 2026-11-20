@@ -48,25 +48,39 @@ class ConsultasHistoricasTest {
         assertEquals(List.of(
                 new ConsultasHistoricas.ResultadoSolicitud("FINALIZADO", 2, 50.0),
                 new ConsultasHistoricas.ResultadoSolicitud("RECHAZADO", 1, 25.0),
-                new ConsultasHistoricas.ResultadoSolicitud("SIN_RESPUESTA", 1, 25.0)), resultados);
+                new ConsultasHistoricas.ResultadoSolicitud("SIN_RESPUESTA", 1, 25.0),
+                new ConsultasHistoricas.ResultadoSolicitud("CANCELADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("NO_VIABLE", 0, 0.0)), resultados);
     }
 
     @Test
     @Deployment(resources = "procesos/organizar-curso-test.bpmn20.xml")
-    void sinInstanciasTerminadasDevuelveUnaListaVacia(RuntimeService runtime) {
+    void sinInstanciasTerminadasMuestraLosCincoResultadosEnCero(RuntimeService runtime) {
         // Una instancia en curso no entra en la consulta: solo cuentan las terminadas.
         runtime.startProcessInstanceByKey(ConsultasHistoricas.PROCESO, Map.of("resultado", "FINALIZADO"));
 
-        assertEquals(List.of(), consultas.resultadosDeLasSolicitudes());
+        assertEquals(List.of(
+                new ConsultasHistoricas.ResultadoSolicitud("CANCELADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("FINALIZADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("NO_VIABLE", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("RECHAZADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("SIN_RESPUESTA", 0, 0.0)),
+                consultas.resultadosDeLasSolicitudes());
     }
 
     @Test
     @Deployment(resources = "procesos/organizar-curso-test.bpmn20.xml")
-    void unaInstanciaSinResultadoNoRompeLaConsulta(RuntimeService runtime, TaskService tareas) {
+    void unaInstanciaSinResultadoApareceComoSinResultadoJuntoAlosCincoDelEnunciado(
+            RuntimeService runtime, TaskService tareas) {
         terminarConResultado(runtime, tareas, null);
 
-        assertEquals(List.of(new ConsultasHistoricas.ResultadoSolicitud(
-                        ConsultasHistoricas.SIN_RESULTADO, 1, 100.0)),
+        assertEquals(List.of(
+                new ConsultasHistoricas.ResultadoSolicitud(ConsultasHistoricas.SIN_RESULTADO, 1, 100.0),
+                new ConsultasHistoricas.ResultadoSolicitud("CANCELADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("FINALIZADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("NO_VIABLE", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("RECHAZADO", 0, 0.0),
+                new ConsultasHistoricas.ResultadoSolicitud("SIN_RESPUESTA", 0, 0.0)),
                 consultas.resultadosDeLasSolicitudes());
     }
 

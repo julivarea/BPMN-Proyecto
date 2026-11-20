@@ -27,6 +27,10 @@ public final class ConsultasHistoricas {
     /** Proceso cuyas ejecuciones se consultan (docs/06). */
     static final String PROCESO = "organizarCurso";
 
+    /** Los cinco resultados que pide la tabla del 4.3.1: aparecen siempre, aunque ninguna instancia haya terminado así. */
+    static final List<String> RESULTADOS_DEL_ENUNCIADO =
+            List.of("FINALIZADO", "CANCELADO", "RECHAZADO", "NO_VIABLE", "SIN_RESPUESTA");
+
     /** Resultado que se usa cuando una instancia terminó sin la variable (por ejemplo, datos viejos). */
     static final String SIN_RESULTADO = "SIN_RESULTADO";
 
@@ -51,7 +55,9 @@ public final class ConsultasHistoricas {
 
     /**
      * Cantidad y porcentaje de instancias terminadas por resultado (4.3.1). El porcentaje se calcula sobre el total de
-     * instancias terminadas. La lista va de mayor a menor cantidad y, a igual cantidad, por nombre del resultado.
+     * instancias terminadas. Siempre figuran los cinco resultados del enunciado, con cero si no tuvieron casos; un
+     * resultado fuera de ese conjunto (por ejemplo, {@code SIN_RESULTADO}) solo figura si hay instancias. La lista va de
+     * mayor a menor cantidad y, a igual cantidad, por nombre del resultado.
      */
     public List<ResultadoSolicitud> resultadosDeLasSolicitudes() {
         List<HistoricProcessInstance> terminadas = historial.createHistoricProcessInstanceQuery()
@@ -61,9 +67,11 @@ public final class ConsultasHistoricas {
                 .list();
         long total = terminadas.size();
 
-        Map<String, Long> cantidades = terminadas.stream()
+        Map<String, Long> cantidades = new LinkedHashMap<>();
+        RESULTADOS_DEL_ENUNCIADO.forEach(resultado -> cantidades.put(resultado, 0L));
+        terminadas.stream()
                 .map(ConsultasHistoricas::resultadoDe)
-                .collect(Collectors.groupingBy(resultado -> resultado, Collectors.counting()));
+                .forEach(resultado -> cantidades.merge(resultado, 1L, Long::sum));
 
         return cantidades.entrySet().stream()
                 .map(cantidad -> new ResultadoSolicitud(

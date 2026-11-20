@@ -280,7 +280,8 @@ final class VentanaDeTareas extends JFrame {
             });
         }
         sinResultados.setText("No hay instancias terminadas para mostrar.");
-        sinResultados.setVisible(resultados.isEmpty());
+        boolean ningunaInstanciaTerminada = resultados.stream().allMatch(resultado -> resultado.cantidad() == 0);
+        sinResultados.setVisible(ningunaInstanciaTerminada);
     }
 
     private void cargarDuraciones() {
