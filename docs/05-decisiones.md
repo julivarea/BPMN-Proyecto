@@ -88,6 +88,13 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   deshacer lo hecho en Flowable, así que si fallara el último `UPDATE` quedaría una instancia sin curso. Se acepta
   porque es una actualización simple sobre una fila recién insertada.  
 
+- **Propuesta y tarea de Flowable en una sola operación (§4.1.3).** Al completar *Registrar y elaborar propuesta* o
+  *Revisar propuesta*, la web inserta la versión en `propuesta` y recién después completa la tarea, dentro de una
+  transacción de la base de la institución (`RegistroDePropuestas`): si Flowable no puede completarla, la versión se
+  descarta, y si el guardado falla, la tarea no se completa. Flowable no puede participar de esa transacción, así que
+  solo queda sin cubrir que falle el commit después de completar la tarea, un caso muy poco probable (el mismo criterio
+  que en el registro de la solicitud).
+
 - **Solicitud con sesión de empresa (§4.1, §4.1.2).** Si una empresa inició sesión, `/solicitar` precarga su CUIT y
   razón social y los muestra bloqueados, para que solicite a su nombre. El bloqueo no es solo visual: el servidor
   toma la empresa de la sesión y no valida ni usa el CUIT y la razón social del envío, así que armarlo a mano con los
@@ -105,6 +112,15 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
     y el portal aceptan la fecha con o sin desfase y guardan o muestran la hora local que escribió la empresa.
   - *Desarrollar curso* queda habilitado cuando se cumplen las tres condiciones: terminó *Preparar curso*, se definió el
     docente y llegó la fecha. No alcanza con que llegue la fecha.
+
+- **Tareas que el enunciado deja para la UI de Flowable, también disponibles en la web (§4.1.3).** El enunciado
+  permite hacer *Solicitar aula virtual*, *Contratar equipamiento* y *Liberar equipamiento* desde la UI de Flowable, sin
+  exigir pantallas adicionales en el sitio, y *Elaborar informe de resultados* desde Flowable o, opcionalmente, desde el
+  sitio. En la web se pueden completar igual: *Elaborar informe de resultados* tiene su pantalla
+  (`ElaborarInformeController`) y las otras tres se completan con el *Completar* de la bandeja, que alcanza porque no
+  cargan datos. Se hizo así para reutilizar lo que ya estaba construido (la bandeja, con sus reglas de reclamo y
+  asignación, y las pantallas de tarea) en lugar de dejar esas tareas fuera del sitio. No reemplaza a la UI de
+  Flowable: las mismas tareas se siguen pudiendo completar desde ahí, como permite el enunciado.
 
 - **Detalle de errores en las pantallas de tarea (§4.1.3, §4.1.4).** En los controladores de tareas de la web, los
   errores inesperados incluyen `e.getMessage()` en el aviso que ve el usuario (por ejemplo, `"Curso no encontrado: 99"`

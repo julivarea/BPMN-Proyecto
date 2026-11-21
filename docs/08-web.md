@@ -46,18 +46,25 @@ web/
     │   │   │   ├── Propuesta.java             una versión de la propuesta: programa, presupuesto y fechas
     │   │   │   ├── PropuestasRepository.java  última versión de un curso y búsqueda por curso y versión
     │   │   │   └── GeneradorPdfPropuesta.java el PDF de una propuesta (OpenPDF)
-    │   │   ├── seguridad/                 login del personal y reglas de acceso (§5)
-    │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña contra Flowable; grupos → roles
-    │   │   │   └── SeguridadConfig.java               qué rol requiere cada ruta, página de login y salida
+    │   │   ├── seguridad/                 login del personal y de las empresas, y reglas de acceso (§5)
+    │   │   │   ├── AutenticacionContraFlowable.java   valida usuario y contraseña del personal contra Flowable; grupos → roles
+    │   │   │   ├── AutenticacionEmpresa.java          valida a las empresas contra cuenta_empresa (BCrypt); rol EMPRESA
+    │   │   │   ├── CuentaEmpresa.java                 una cuenta de empresa: empresa, usuario y hash de la clave
+    │   │   │   ├── CuentaEmpresaRepository.java       consulta de cuentas por usuario (interfaz)
+    │   │   │   ├── CuentaEmpresaRepositoryJdbc.java   la consulta, con JdbcClient
+    │   │   │   ├── ReglasDeAcceso.java                qué rol requiere cada ruta: la única definición
+    │   │   │   ├── IngresoExitoso.java                adónde va cada usuario después de ingresar
+    │   │   │   └── SeguridadConfig.java               aplica las reglas, página de login, salida y sesión vencida
     │   │   ├── solicitudes/               formulario público de solicitud de capacitación (§3, §6)
     │   │   │   ├── SolicitudController.java       página /solicitar: valida, registra y redirige a la confirmación (o vuelve con un aviso si no es viable)
     │   │   │   ├── SolicitudFormulario.java       datos del formulario y sus reglas de validación
     │   │   │   ├── SolicitudesDeCapacitacion.java registra empresa y curso, inicia la instancia e informa si es viable
     │   │   │   ├── SolicitudesRepository.java     SQL de empresa y curso, y la descripción de cada solicitud
     │   │   │   ├── SolicitudesProperties.java     plazo de respuesta (propiedad solicitudes.plazo-respuesta)
-    │   │   │   ├── Empresa.java                   empresa ya registrada: id y razón social
+    │   │   │   ├── Empresa.java                   empresa ya registrada: id, CUIT y razón social
     │   │   │   ├── Curso.java                     curso ya registrado: los datos de la solicitud (§6)
     │   │   │   ├── CuitDeOtraEmpresa.java         el CUIT ya existe con otra razón social (05-decisiones)
+    │   │   │   ├── SolicitudRegistrada.java       el resultado del registro: curso e instancia, y si es viable
     │   │   │   └── SolicitudNoRegistrada.java     Flowable no inició la instancia: no se guarda nada
     │   │   └── tareas/                    bandeja de tareas (§4)
     │   │       ├── ArchivarSolicitudController.java  pantalla /tareas/{id}/archivar-solicitud: motivo y confirmación
@@ -107,6 +114,7 @@ web/
         │   └── ClienteFlowableContraDockerTest.java   el cliente contra el Flowable real (solo con FLOWABLE_DOCKER=si)
         ├── seguridad/
         │   ├── AutenticacionContraFlowableTest.java   grupos → roles y credenciales incorrectas
+        │   ├── AutenticacionEmpresaTest.java          cuenta de empresa válida, inexistente y con clave incorrecta
         │   └── SeguridadTest.java                     reglas de acceso de las secciones y login
         ├── solicitudes/
         │   ├── SolicitudesDeCapacitacionTest.java     registro, CUIT, razón social distinta, Flowable caído y descripciones
@@ -118,6 +126,7 @@ web/
             ├── RegistroDePropuestasTest.java          guardar y completar en una transacción: commit, rollback y orden
             ├── BandejaControllerTest.java             la bandeja desde el navegador
             ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
+            ├── DefinirDocenteControllerTest.java      el jefe docente elige al docente del curso
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
             ├── EvaluarRecursosControllerTest.java     la pantalla de recursos: formulario, al menos un recurso y confirmación
             ├── RevisarPropuestaControllerTest.java    la pantalla de revisión: observaciones de la empresa y nueva versión
@@ -195,9 +204,10 @@ bandeja). Todas siguen la misma convención:
 5. **Al enviar**, completa con `bandeja.completar(usuario, tarea, variables)`, nunca con el cliente directo, y vuelve a
    la sección de origen con el mensaje, como en el ejemplo anterior.
 
-Las tareas que no cargan datos (*Archivar solicitud*, *Desarrollar curso*) no necesitan pantalla: alcanza el
-*Completar* de la bandeja. *Solicitar aula virtual*, *Contratar equipamiento* y *Liberar equipamiento* pueden hacerse
-desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
+*Desarrollar curso*, que no carga datos, no necesita pantalla: alcanza el *Completar* de la bandeja (*Archivar
+solicitud* sí tiene la suya, de confirmación, porque muestra el motivo del archivo). *Solicitar aula virtual*,
+*Contratar equipamiento* y *Liberar equipamiento* no tienen pantalla en el sitio: se completan con el *Completar* de la
+bandeja, o desde la UI de Flowable (§4.1.3; ver la decisión en [05-decisiones.md](05-decisiones.md)).
 
 **Errores.** Cualquier error no manejado (404, 500…) muestra `error.html` con el diseño del sitio. En las pantallas de
 tarea, además de los mensajes de negocio de `AccionNoPermitida`, los fallos inesperados incluyen `e.getMessage()` en el
@@ -238,7 +248,9 @@ falta algo nuevo de Flowable, se agrega un método acá (§7), no una llamada HT
 | `iniciarPorMensaje(mensaje, businessKey, variables)` | `POST /runtime/process-instances` | Formulario de solicitud: inicia la instancia y devuelve su ID y si ya terminó (`ended`: el proceso no viable termina al iniciarse) |
 | `tareasAsignadas(usuario)` | `GET /runtime/tasks?assignee=…` | Tareas del usuario |
 | `tareasDisponibles(usuario)` | `GET /runtime/tasks?candidateUser=…` | Tareas de sus grupos que puede reclamar |
+| `miembrosDelGrupo(grupo)` | `GET /identity/users?memberOfGroup=…` | Los docentes que puede elegir el jefe docente |
 | `tarea(tareaId)` | `GET /runtime/tasks/{id}` | Leer una tarea para verificar a quién está asignada |
+| `tareasDeLaInstancia(instanciaId)` | `GET /runtime/tasks?processInstanceId=…` | Las tareas abiertas de una instancia: para saber si *Confirmar compensaciones* todavía espera una liberación |
 | `reclamar(tareaId, usuario)` | `POST /runtime/tasks/{id}` (`claim`) | Asignarse una tarea de grupo |
 | `completar(tareaId, variables)` | `POST /runtime/tasks/{id}` (`complete`) | Completar una tarea con sus datos |
 | `variables(instanciaId)` | `GET /runtime/process-instances/{id}/variables` | Leer los datos de una instancia |
@@ -332,10 +344,13 @@ informe y los datos del curso al jefe administrativo; al confirmar completa la t
 ya está en el proceso, y el flujo libera los recursos y termina con `resultado = 'FINALIZADO'`. Si una tarea con datos
 se completa sin ellos, Flowable lo rechaza y la bandeja lo informa con un mensaje.
 
-## 5. Login del personal
+## 5. Login del personal y de las empresas
 
 El personal entra con su **usuario y contraseña de Flowable** (§3.3): la base de la institución no guarda cuentas del
-personal ([02-arquitectura.md](02-arquitectura.md) §4).
+personal ([02-arquitectura.md](02-arquitectura.md) §4). Las empresas entran por el mismo `/login` con la cuenta que les
+crea el proceso (*Habilitar acceso a la empresa*): `seguridad/AutenticacionEmpresa` la busca en `cuenta_empresa`, compara la
+clave con su hash BCrypt y les da el rol `EMPRESA`. Si el usuario no es una cuenta de empresa, sigue el login contra
+Flowable.
 
 **Cómo funciona.** El formulario de `/login` lo procesa Spring Security, que le pasa el usuario y la contraseña a
 `seguridad/AutenticacionContraFlowable`. Esa clase le pide a Flowable los grupos del usuario **con sus propias
@@ -347,7 +362,7 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 | 401 (contraseña incorrecta) o 403 (sin acceso a la API) | Vuelve a `/login?error` |
 | Sin respuesta (Flowable caído) | Vuelve a `/login?error` |
 
-**Reglas de acceso** (`seguridad/SeguridadConfig`):
+**Reglas de acceso** (`seguridad/ReglasDeAcceso`, que `SeguridadConfig` aplica):
 
 | Ruta | Requiere |
 |------|----------|
@@ -361,7 +376,8 @@ credenciales** (`gruposDelUsuario`), así la misma llamada valida la contraseña
 
 - Sin sesión iniciada, una sección protegida redirige a `/login`, y después del login vuelve a la página pedida.
 - Con sesión pero sin el rol, muestra la página de error con un 403 ("Tu usuario no tiene acceso a esta sección").
-- Una sección o ruta nueva que requiera rol se agrega con una línea en `SeguridadConfig`.
+- Una sección o ruta nueva que requiera rol se agrega con una línea en `ReglasDeAcceso`: la misma regla la usa
+  `IngresoExitoso` para no llevar a nadie, después de ingresar, a una página que no puede ver.
 
 **En las páginas.** El encabezado muestra el usuario y el botón *Salir* cuando hay sesión, o *Ingresar* cuando no
 (atributos `sec:` de Thymeleaf). *Salir* es un formulario `POST /logout`, pero `/logout` se acepta con GET o POST y sin
@@ -395,15 +411,19 @@ un formulario sin `th:action` es rechazado con un 403.
 |------|------------|---------------|
 | `ClienteFlowableTest` | Que cada método del cliente arme bien la llamada y lea bien la respuesta, contra un servidor HTTP simulado (`MockRestServiceServer`) | `./mvnw -pl web verify` (también en CI) |
 | `AutenticacionContraFlowableTest` | Que el login convierta los grupos en roles y rechace las credenciales incorrectas, con un doble del cliente | `./mvnw -pl web verify` |
+| `AutenticacionEmpresaTest` | Que una cuenta de empresa válida obtenga el rol `EMPRESA`, que una inexistente deje seguir al login del personal y que una clave incorrecta se rechace | `./mvnw -pl web verify` |
 | `SeguridadTest` | Las reglas de acceso: sin sesión pide login, un docente no entra a administración, el login con credenciales válidas e inválidas, sin Flowable (`@WebMvcTest` con un doble del cliente) | `./mvnw -pl web verify` |
 | `PortalEmpresaControllerTest` | El portal de empresas: una empresa recibe 404 al abrir el curso de otra (escenario 10), el detalle en preparación muestra las actividades de las ramas paralelas y el estado se deriva de Flowable o del persistido (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, *Confirmar compensaciones* queda bloqueada mientras haya liberaciones pendientes, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si el registro se rechaza se muestra el motivo, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `PantallasDeTareasTest` | Lo común de las pantallas de tarea: la sección de retorno solo admite las del sitio, la tarea tiene que existir, ser la de la pantalla y estar asignada al usuario, y el curso sale de la solicitud de la tarea | `./mvnw -pl web verify` |
 | `RegistroDePropuestasTest` | Que guardar la versión y completar la tarea sea una sola operación: se guarda primero y se completa después, con commit; si Flowable no completa la tarea, la versión se descarta (rollback); si el guardado falla, la tarea no se completa | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ConfeccionarListaDefinitivaControllerTest` | La pantalla de la lista definitiva desde el navegador: el asignado ve el formulario con la nómina que envió la empresa, una lista vacía vuelve con el error y no completa la tarea, y una lista con participantes completa pasando `listaDefinitiva` (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ElaborarInformeControllerTest` | La pantalla del informe de resultados: el jefe docente ve el formulario, un informe vacío vuelve con el error, uno con texto completa pasando `informeResultados` y otro usuario no puede completarla (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `EnviarInformeControllerTest` | La pantalla de envío y archivo: el jefe administrativo ve el informe y los datos del curso, confirmar completa la tarea sin variables y otro usuario no puede completarla (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `DefinirDocenteControllerTest` | La pantalla del jefe docente: consulta los miembros del grupo, permite elegir un docente válido y completa `definirDocente` con `docenteAsignado` (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ArchivarSolicitudControllerTest` | La pantalla de archivo desde el navegador: el asignado ve la solicitud con el motivo (rechazo o sin respuesta) y confirmar archiva y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `SolicitudesDeCapacitacionTest` | El registro: CUIT guardado solo con dígitos, empresa reutilizada aunque cambien mayúsculas y espacios, CUIT con otra razón social rechazado, instancia iniciada con el curso como `businessKey`, Flowable sin responder y descripciones de la bandeja, con dobles del repositorio y del cliente | `./mvnw -pl web verify` |
@@ -414,17 +434,12 @@ Al agregar un método al cliente, se agrega su test en `ClienteFlowableTest`: qu
 devuelve con una respuesta de ejemplo. El formato de cada llamada está en [03-guia-flowable.md](03-guia-flowable.md)
 §3.
 
-## 8. Lo que falta
+## 8. Estado
 
-Las funcionalidades se construyen sobre esta base, en los issues de cada milestone. **Cerrados: #13, #14, #15, #21,
-#22, #26, #27, #28 y #29**, registrar y elaborar la propuesta (`ElaborarPropuestaController`), revisarla con su PDF
-(`RevisarPropuestaController`), archivar la solicitud (`ArchivarSolicitudController`), evaluar los recursos del curso
-(`EvaluarRecursosController`), confeccionar la lista definitiva (`ConfeccionarListaDefinitivaController`), definir el
-docente (`DefinirDocenteController`), elaborar y enviar el informe (`ElaborarInformeController`,
-`EnviarInformeController`), el login de empresas (`AutenticacionEmpresa`) y el portal con sus cursos
-(`PortalEmpresaController`), todos en §3 y §7.
+El sitio cubre lo que pide el §4.1 del enunciado: la solicitud pública, el login del personal y de las empresas, el
+portal de las empresas con sus cursos, el estado y el aula, y las pantallas de las tareas con datos: registrar y
+elaborar la propuesta, revisarla con su PDF, archivar la solicitud, evaluar los recursos, confeccionar la lista
+definitiva, definir el docente y elaborar y enviar el informe (todas en §3 y §7). Las consultas históricas del §4.3 están en
+la app de materiales ([09-app-materiales.md](09-app-materiales.md)).
 
-| Issue | Qué agrega |
-|-------|------------|
-| #30–#32 | Consultas históricas: resultados, duración de las ramas y tareas por persona |
-| #40–#42 | Pantallas opcionales de aula virtual, equipamiento y liberación |
+Pendiente: lo que dependa de cómo se resuelva la falta de aulas (escenario 7, [05-decisiones.md](05-decisiones.md)).

@@ -24,7 +24,7 @@ organización de cursos de capacitación para empresas, con un sitio web y dos a
 ├── app-materiales/      App de escritorio: preparación de materiales (API Java de Flowable)
 ├── app-comunicaciones/  App de escritorio: simulación de comunicaciones de la empresa (API REST de Flowable)
 ├── db/                  Base de datos de la institución
-├── scripts/             Configuración de usuarios y grupos, y despliegue del proceso
+├── scripts/             Usuarios y grupos, despliegue del proceso y preparación de los escenarios de la defensa
 ├── mineria/             Minería de procesos de la etapa de negociación (Python + PM4Py)
 └── docs/                Documentación, enunciado y diagrama de referencia
 ```

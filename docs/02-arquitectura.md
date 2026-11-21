@@ -57,8 +57,8 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
 | Esquema de la institución | **Flyway** (`web/src/main/resources/db/migration`) | Cada integrante actualiza su BD solo con hacer pull y levantar la web, y todos quedan con el mismo esquema. |
 | Cliente REST (web) | `RestClient` de Spring | Viene con Spring Boot. |
 | Seguridad (web) | Spring Security con dos formas de entrar: personal contra Flowable y empresas contra la BD (BCrypt) | Cumple A-08 y W-03 con un mecanismo probado. |
-| PDF | OpenPDF (se agrega al implementar W-07) | Simple, con licencia LGPL/MPL. |
-| Apps de escritorio | **Swing** (JDK) | Viene con el JDK y alcanza para listas, formularios y botones. Opcional: FlatLaf para un aspecto moderno (una sola dependencia). |
+| PDF | OpenPDF | Simple, con licencia LGPL/MPL. |
+| Apps de escritorio | **Swing** (JDK) + **FlatLaf** | Swing viene con el JDK y alcanza para listas, formularios y botones; FlatLaf le da un aspecto moderno con una sola dependencia. |
 | HTTP (app comunicaciones) | `java.net.http.HttpClient` + Jackson | El cliente HTTP del JDK alcanza; Jackson para JSON. |
 | BD | **PostgreSQL 15** en Docker | La recomienda el anexo B de la práctica 4. La comparten el servidor y la app de materiales, y los datos persisten en un volumen. |
 | Tests del proceso | JUnit 5 + `@FlowableTest` + H2 en memoria | Corren sin Docker y en CI (práctica 5). |
@@ -75,8 +75,10 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
   BD, los scripts de usuarios y despliegue, y el código. Con eso cualquiera reconstruye un entorno idéntico en minutos.
 - **Cada integrante usa su propio motor y su propia BD:** así los timers y jobs de cada uno se ejecutan solo en su
   máquina, con su versión del código. Para la defensa se usa **una sola máquina**.
-- **Datos de prueba:** se generan usando el sistema (formulario web + app de comunicaciones). Si hacen falta fijos,
-  se agrega una migración `V…__datos_prueba.sql`.
+- **Datos de prueba:** se generan usando el sistema (formulario web + app de comunicaciones). Para dejar listo cada
+  escenario de la defensa están los scripts de `scripts/escenarios/` (docs/12), y `mineria/generar_ejecuciones.py`
+  recorre el proceso para tener historial que analizar. Si hacen falta datos fijos, se agrega una migración
+  `V…__datos_prueba.sql`.
 
 ## 4. Criterios transversales
 
@@ -98,7 +100,7 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
   La virtual usa `ServicioAulasVirtuales`. Cambiar la simulación por un web service real no toca el modelo ni los
   delegates.
 
-## 5. Organización del código (propuesta)
+## 5. Organización del código
 
 Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan de `ar/edu/unrc/gtpn/` en cada módulo.
 
@@ -110,33 +112,33 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 │       │   ├── java/…/proceso/
 │       │   │   ├── viabilidad/       ContarCursosEnEjecucionListener
 │       │   │   ├── notificacion/     NotificarEmpresaDelegate
-│       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate, CuentasDeEmpresa(Jdbc)
+│       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate, CuentasDeEmpresa(Jdbc), CursoRepository(Jdbc), ConexionInstitucion
 │       │   │   ├── recursos/         Reservar/LiberarAula…Delegate, ServicioAulas(Simulado), ServicioAulasVirtuales
 │       │   │   ├── asignacion/       AsignarAdministrativoConMenosTareasListener
 │       │   │   └── estado/           RegistrarResultadoDelCursoListener
 │       │   └── resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
-│       └── test/java/…/proceso/      un test por escenario del proceso
+│       └── test/java/…/proceso/      tests del proceso (negociación, cancelación y compensaciones) y de cada clase
 ├── web/
 │   └── src/main/
 │       ├── java/…/web/
-│       │   ├── solicitud/            formulario público (controller, servicio, repositorio)
+│       │   ├── solicitudes/          formulario público (controller, servicio, repositorio)
 │       │   ├── empresa/              portal de empresas
-│       │   ├── administracion/       tareas del personal administrativo
-│       │   ├── docentes/             tareas del equipo docente
-│       │   ├── propuesta/            versiones y PDF
+│       │   ├── tareas/               bandeja de Administración y Docentes y una pantalla por cada tarea que carga datos
+│       │   ├── propuestas/           versiones de la propuesta y su PDF
 │       │   ├── flowable/             cliente REST de Flowable (único lugar que conoce URLs y JSON de Flowable)
-│       │   └── seguridad/            configuración de Spring Security
+│       │   └── seguridad/            Spring Security: ingreso del personal y de las empresas
 │       └── resources/
 │           ├── templates/<funcionalidad>/   páginas Thymeleaf
 │           └── db/migration/                migraciones Flyway de la BD de la institución
 ├── app-materiales/
 │   └── src/main/java/…/materiales/
-│       ├── MaterialesApp, MotorFlowable, servicio de tareas, ventanas
+│       ├── MaterialesApp, MotorFlowable, ServicioDeTareas, VentanaDeTareas
 │       └── historial/                consultas del §4.3 (ConsultasHistoricas)
 ├── app-comunicaciones/
 │   └── src/main/java/…/comunicaciones/
-│       └── ComunicacionesApp, FlowableRest, enum Comunicacion (mensaje + datos), ventanas
-└── mineria/                          exportar_history.py y analizar.py adaptados, CSV, capturas y conclusión (§4.4)
+│       └── ComunicacionesApp, FlowableRest, ComunicacionesDeLaEmpresa, enum Comunicacion (mensaje + datos), VentanaDeSolicitudes
+├── mineria/                          exportar_history.py y analizar.py adaptados, CSV, capturas y conclusión (§4.4)
+└── scripts/                          usuarios y despliegue (setup-identidades.sh, desplegar-proceso.sh) y escenarios/ de la defensa
 ```
 
 ## 6. Puertos
@@ -148,7 +150,8 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 | 8081 | Sitio web |
 | 5050 | pgAdmin (opcional, perfil `herramientas`) |
 
-Se cambian en `.env` (ver `.env.example`).
+Los de PostgreSQL y Flowable se cambian en `.env` (ver `.env.example`); el de la web, con `SERVER_PORT`. Docker
+publica los puertos solo en `127.0.0.1`.
 
 ### Apps de escritorio con Windows y WSL
 

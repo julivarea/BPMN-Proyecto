@@ -35,8 +35,8 @@ cero se dejan listos con los scripts de `scripts/escenarios/` (cómo correrlos: 
   `docker compose logs flowable 2>&1 | grep -i acceso | tail -3`.
 - **La app de comunicaciones solo muestra las solicitudes abiertas** y, en cada una, solo las comunicaciones que el
   proceso espera en ese momento. El estado final de un curso se ve en el portal de la empresa.
-- **Fecha de inicio:** al aceptar, usar la de hoy (no se admiten fechas anteriores): el timer "fecha programada"
-  dispara enseguida y *Desarrollar curso* aparece sin esperar.
+- **Fecha de inicio:** al aceptar, usar la de hoy y sin hora (no se admiten fechas anteriores): el curso empieza dentro
+  de 1 minuto, el timer "fecha programada" dispara enseguida y *Desarrollar curso* aparece sin esperar.
 - **Entre ensayos:** `mineria/.venv/bin/python scripts/escenarios/limpiar.py`.
 
 ## 1. Aceptación y finalización normal, con liberación de recursos
@@ -108,7 +108,8 @@ unos 3 minutos.
 **Mirar:** la liberación del aula en el log (`docker compose logs flowable 2>&1 | grep -i aula`), las tareas *Liberar
 equipamiento* y *Confirmar compensaciones*, el curso como "Cancelándose" en el portal mientras faltan, y **cancelado**
 al terminar. El aviso de cierre (`grep -i "Cierre del curso"`) sale recién al confirmar. Solo se compensan los recursos
-que se gestionaron.
+que se gestionaron. El aula asignada se ve en *Mis cursos* de la empresa mientras el curso está en preparación y deja
+de verse al cancelar.
 
 ## 7. Falta de aulas
 
@@ -133,7 +134,7 @@ que se gestionaron.
 1. En `/solicitar`, sin sesión, completar y enviar el formulario.
 
 **Mirar:** la confirmación; la tarea *Registrar y elaborar propuesta* en la bandeja de `jefe_admin`, con la empresa y
-el curso en la columna Solicitud. Con sesión de empresa, el CUIT y la razón social aparecen precargados.
+el curso en la columna Solicitud. Con sesión de empresa, el CUIT y la razón social aparecen precargados y bloqueados.
 
 ## 10. Acceso de la empresa y consulta de sus cursos
 
@@ -141,8 +142,8 @@ el curso en la columna Solicitud. Con sesión de empresa, el CUIT y la razón so
 
 1. Buscar las credenciales en el log (ver "Antes de empezar") y entrar a `/empresas`.
 
-**Mirar:** solo aparecen los cursos de esa empresa (la URL del curso de otra da 404); el estado de cada uno y,
-durante la preparación, las actividades en curso de las tres ramas a la vez.
+**Mirar:** solo aparecen los cursos de esa empresa (la URL del curso de otra da 404); el estado de cada uno, el aula
+asignada y, durante la preparación, las actividades en curso de las tres ramas a la vez.
 
 ## 11. Materiales por API Java y comunicaciones por API REST
 

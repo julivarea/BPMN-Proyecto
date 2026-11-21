@@ -116,6 +116,8 @@ motor.getTaskService().claim(tarea.getId(), usuario);
 motor.getTaskService().complete(tarea.getId());
 ```
 
+- La configuración completa de la app (IDs en formato UUID como el servidor, trabajar en UTC y tomar la conexión de las
+  variables `FLOWABLE_DB_*`) está en [09-app-materiales.md](09-app-materiales.md) §3.
 - El motor embebido **no ejecuta jobs** (`setAsyncExecutorActivate(false)`): los timers son del servidor.
 - Lo que el proceso ejecute después de completar una tarea corre **en la app**. Si llega a una clase nuestra que la
   app no tiene, falla: conviene marcar como `async` el paso siguiente para que lo ejecute el servidor.
@@ -141,13 +143,14 @@ Reglas:
            this(CursoRepositoryJdbc.desdeEntorno());
        }
 
-       RegistrarResultadoDelCursoListener(CursoRepository cursos) {  // el que usan los tests
+       public RegistrarResultadoDelCursoListener(CursoRepository cursos) {  // el que usan los tests
            this.cursos = cursos;
        }
 
        @Override
        public void notify(DelegateExecution execution) {
-           cursos.actualizarEstado(execution.getProcessInstanceId(), (String) execution.getVariable("resultado"));
+           long cursoId = Long.parseLong(execution.getProcessInstanceBusinessKey());
+           cursos.registrarResultado(cursoId, new DatosResultadoCurso(resultado, programa, presupuesto, fecha, informe));
        }
    }
    ```

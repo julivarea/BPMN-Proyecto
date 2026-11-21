@@ -46,7 +46,7 @@ Como la app escribe en la misma base que el servidor, su motor se configura para
 | `StrongUuidGenerator` | Genera los IDs con el mismo formato (UUID) que el servidor |
 | Zona horaria UTC (`MotorFlowable.usarUtc()`) | El historial guarda fechas sin zona. El servidor corre en UTC: si la app escribiera en la hora local (UTC-3), las fechas que ella completa quedarían 3 horas antes y las duraciones de las ramas (§4.3.2) saldrían negativas. Las fechas se muestran igual en la hora local de la máquina |
 
-`MotorFlowableTest` verifica estas tres cosas: si alguien las cambia, `./mvnw verify` falla. No se conecta a ninguna
+`MotorFlowableTest` verifica estas cuatro cosas: si alguien las cambia, `./mvnw verify` falla. No se conecta a ninguna
 base, así que corre también en CI.
 
 **Lo que se ejecuta después de completar una tarea corre en la app.** Cuando el administrativo completa "Preparar

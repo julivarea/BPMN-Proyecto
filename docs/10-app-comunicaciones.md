@@ -55,10 +55,10 @@ grande; se cambia agregando, por ejemplo, `-Dflatlaf.uiScale=1.5` al comando).
 ```
 app-comunicaciones/src/main/java/ar/edu/unrc/gtpn/comunicaciones/
 ├── ComunicacionesApp.java          arranque y aspecto
-├── Comunicacion.java               las comunicaciones de la negociación: mensaje BPMN y dato que lleva cada una (§6)
+├── Comunicacion.java               las cinco comunicaciones de la empresa: mensaje BPMN y dato que lleva cada una (§6)
 ├── ComunicacionesDeLaEmpresa.java  cuáles están habilitadas y el envío del mensaje (§6)
 ├── FlowableRest.java               cliente REST de Flowable (§5)
-├── Solicitud.java                  una solicitud en curso: instancia, businessKey y fecha de inicio
+├── Solicitud.java                  una solicitud en curso: instancia, businessKey, fecha de inicio, curso y versión de la propuesta
 └── VentanaDeSolicitudes.java       lista de solicitudes y botones de comunicación
 ```
 
@@ -93,13 +93,14 @@ usa el cliente para habilitarlas y enviarlas:
   timer (`2026-12-01T09:00:00-03:00`); se acepta `AAAA-MM-DD`, `DD/MM/AAAA` y los mismos con hora (`HH:mm`). Sin hora:
   un día futuro empieza a las 09:00 y **hoy empieza dentro de 1 minuto**, para que el curso quede habilitado apenas
   termina la preparación (pruebas y demos). Una fecha anterior a hoy se rechaza; hoy con una hora ya pasada se acepta.
-  Las modificaciones envían las observaciones tal cual; el rechazo no lleva datos.
+  Las modificaciones envían las observaciones tal cual; la nómina acepta un participante por línea o separados por coma
+  y la envía como lista JSON; el rechazo y la cancelación no llevan datos.
 - **Camino que se destraba:** aceptación → preparación del curso con la fecha programada; rechazo → *Archivar
   solicitud*; modificaciones → *Revisar propuesta*. Los tres caminos están cubiertos en
   `proceso/src/test/java/ar/edu/unrc/gtpn/proceso/NegociacionTest.java` (rechazo y modificaciones) y en
   `CancelacionYCompensacionesTest` (aceptación con `fechaInicioCurso`).
 
-La nómina y la cancelación (#23) se agregan con el mismo mecanismo: una constante más en `Comunicacion`.
+Una comunicación nueva se agrega con el mismo mecanismo: una constante más en `Comunicacion`.
 
 Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowable
 ([03-guia-flowable.md](03-guia-flowable.md) §2, "Probar desde la UI de Flowable").
@@ -114,5 +115,6 @@ Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowa
 
 ## 8. Estado
 
-**Cerrados: #16 y #23**, las comunicaciones de la negociación (aceptación, rechazo y modificaciones) y de la
-preparación (nómina y cancelación), habilitadas solo cuando la instancia espera su mensaje (§6).
+**Cerrados: #16 y #23**, las cinco comunicaciones de la empresa: las de la negociación (aceptación, rechazo y
+modificaciones) y las de la preparación (nómina y cancelación), habilitadas solo cuando la instancia espera su mensaje
+(§6).

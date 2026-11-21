@@ -24,6 +24,7 @@ el enunciado y se ejecute en Flowable 6.8. Las limitaciones del motor que condic
 |----------|------|------------|--------|
 | `resultado` | texto: `EN_CURSO`, `NO_VIABLE`, `RECHAZADO`, `SIN_RESPUESTA`, `CANCELADO`, `FINALIZADO` | Inicio (`EN_CURSO`) y cada camino de cierre | Listener de fin del proceso (§3.4); XOR de cancelación |
 | `plazoRespuesta` | duración ISO-8601: `P5D` (demo: `PT2M`) | Web, al iniciar la instancia; si no viene, Inicio (`P5D`) | Timer "5 días" |
+| `nombreCurso` | texto | Web, al iniciar la instancia | App de comunicaciones (lista de solicitudes) |
 | `cursosEnEjecucion` | número | Listener de *Evaluar viabilidad* | Regla DMN |
 | `esViable` | booleano | Regla DMN | XOR "¿es viable?" |
 | `accesoHabilitado` | booleano | *Habilitar acceso a la empresa* | Conteo de cursos en ejecución |
@@ -45,7 +46,7 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 
 | Evento del diagrama | ID | `messageName` | Variables que trae |
 |---------------------|----|---------------|--------------------|
-| recibir solicitud de curso | `solicitudRecibida` | `solicitudCapacitacion` | `plazoRespuesta` (+ `businessKey`) |
+| recibir solicitud de curso | `solicitudRecibida` | `solicitudCapacitacion` | `plazoRespuesta`, `nombreCurso` (+ `businessKey`) |
 | recibir aceptación de propuesta | `aceptacionRecibida` | `aceptacionPropuesta` | `fechaInicioCurso` |
 | recibir rechazo de propuesta | `rechazoRecibido` | `rechazoPropuesta` | — |
 | recibir solicitud de modificaciones a la propuesta | `modificacionesRecibidas` | `modificacionesPropuesta` | `observacionesEmpresa` |
@@ -178,9 +179,9 @@ Las asignaciones de resultado, contadores y versiones son expresiones de una lí
 
 Las tareas que cargan datos declaran campos de formulario (*form properties*) con el mismo nombre que la variable.
 Documentan qué datos completa cada tarea, pero la Task app de Flowable 6.8 **no los muestra**: solo muestra los
-formularios hechos con el editor de formularios de Flowable. Hasta que esté la web, esas tareas se completan con
-*Complete* en la Task app, agregando antes los datos como variables de la instancia desde la app Admin (ver
-[03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de Flowable").
+formularios hechos con el editor de formularios de Flowable. Por eso la web tiene una pantalla propia para cada una
+(docs/08 §3). Desde la Task app se pueden completar con *Complete*, agregando antes los datos como variables de la
+instancia desde la app Admin (ver [03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de Flowable").
 
 | Tarea | Campos |
 |-------|--------|
@@ -190,8 +191,9 @@ formularios hechos con el editor de formularios de Flowable. Hasta que esté la 
 | Definir docente | `docenteAsignado` (lista: `jefe_docente`, `docente1`, `docente2`) |
 | Elaborar informe de resultados | `informeResultados` (texto) |
 
-Los mensajes de la empresa no se pueden enviar desde la Task app: hasta tener la app de comunicaciones, se envían
-desde la app Admin (ver [03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de Flowable").
+Los mensajes de la empresa no se pueden enviar desde la Task app: los envía la app de comunicaciones y también se
+pueden disparar desde la app Admin (ver [03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de
+Flowable").
 
 ## 9. Pendiente
 

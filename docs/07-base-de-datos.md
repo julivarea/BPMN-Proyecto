@@ -1,6 +1,6 @@
 # 07 · Base de datos de la institución
 
-Propuesta de esquema para la BD propia de la institución (§3.2). Es una base aparte de la del motor: se llama
+Esquema de la BD propia de la institución (§3.2). Es una base aparte de la del motor: se llama
 `institucion`, vive en el mismo PostgreSQL del `docker-compose.yml` (la crea `db/init/01-crear-bd-institucion.sql`) y
 sus tablas las crea la web con Flyway (`web/src/main/resources/db/migration`).
 
@@ -125,7 +125,7 @@ Las apps de escritorio no escriben en esta base. La app de materiales solo usa l
 - En los dos casos la variable `accesoHabilitado` queda en `true`, que es lo que cuenta *Cursos en ejecución*.
 
 
-## 4. Script de creación (propuesta)
+## 4. Script de creación
 
 ```sql
 CREATE TABLE empresa (
@@ -179,6 +179,8 @@ van en `V2__…`, `V3__…`.
 
 ## 5. Datos de prueba
 
-No hacen falta datos fijos: las empresas y los cursos se crean usando el sistema (formulario web + app de
-comunicaciones), igual que en la defensa. Si para algún escenario conviene partir de datos cargados (por ejemplo, 5
-cursos en ejecución para el escenario de viabilidad), se agrega una migración aparte de datos de prueba.
+No hay datos fijos: las empresas y los cursos se crean usando el sistema (formulario web + app de comunicaciones),
+igual que en la defensa. Para partir de un estado conocido, `scripts/escenarios/` crea las solicitudes por el formulario
+de la web y las avanza por la API REST (por ejemplo, 5 cursos en ejecución para el escenario de viabilidad; ver
+[12-escenarios-defensa.md](12-escenarios-defensa.md)), y `mineria/generar_ejecuciones.py` genera instancias con distintos
+recorridos para el análisis. Si hicieran falta datos fijos, se agregaría una migración aparte de datos de prueba.

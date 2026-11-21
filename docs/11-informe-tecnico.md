@@ -9,7 +9,7 @@ específica de [requerimientos](01-requerimientos.md), [arquitectura](02-arquite
 aplicaciones. La fuente de verdad del alcance sigue siendo el
 [enunciado](enunciado/ProyectoCursos_V3.pdf).
 
-**Fecha del análisis:** 2026-11-09
+**Actualizado:** 2026-11-20
 
 ## Alcance y criterio de lectura
 
@@ -18,9 +18,9 @@ enunciado PDF, el modelo BPMN, la tabla DMN, los scripts SQL/Bash, las clases Ja
 tests versionados. El repositorio contiene artefactos compilados bajo `target/`, pero este
 informe se basa en las fuentes versionadas.
 
-Hay una diferencia relevante entre la documentación de diseño y la implementación actual:
-la documentación describe el objetivo completo, mientras que varias clases y aplicaciones
-todavía son esqueletos. Las secciones de pendientes lo indican expresamente.
+Todo lo que pide el enunciado está implementado, salvo el escenario 7 de la defensa (falta de
+aulas, #36), que depende de lo que defina el profesor. La lista de la sección 5 resume el estado y
+lo que queda.
 
 ## 1. Stack tecnológico y herramientas utilizadas
 
@@ -36,27 +36,27 @@ todavía son esqueletos. Las secciones de pendientes lo indican expresamente.
 | DMN 2019 | Regla de viabilidad | `proceso/src/main/resources/procesos/viabilidad.dmn` |
 | Spring Boot 4.1.2 | Sitio web | `web/pom.xml` |
 | Spring MVC/Web, Thymeleaf | HTTP y vistas HTML renderizadas en servidor | `web/pom.xml`, `web/src/main/resources/templates/` |
-| Spring Security 6 / Thymeleaf extras | Login del personal y autorización por grupos | `web/pom.xml`, `web/.../seguridad/`, `templates/fragmentos.html` |
+| Spring Security / Thymeleaf extras | Login del personal y de las empresas, y autorización por rol | `web/pom.xml`, `web/.../seguridad/`, `templates/fragmentos.html` |
 | Spring `RestClient` | Cliente REST de Flowable desde la web | `web/pom.xml`, `web/.../flowable/ClienteFlowable.java` |
 | Spring JDBC `JdbcClient` | Acceso SQL a la BD `institucion` | `web/pom.xml`, arquitectura documentada en `docs/02-arquitectura.md` |
 | Flyway | Migración del esquema propio de la institución | `web/pom.xml`, `web/src/main/resources/db/migration/V1__esquema_inicial.sql` |
 | PostgreSQL 15 | BD `flowable` y BD `institucion` | `docker-compose.yml`, `db/init/01-crear-bd-institucion.sql` |
 | Docker Compose | Orquestación de PostgreSQL, Flowable y pgAdmin opcional | `docker-compose.yml` |
+| OpenPDF 1.3.39 | PDF de cada versión de la propuesta | `web/pom.xml`, `web/.../propuestas/GeneradorPdfPropuesta.java` |
 | Swing | Interfaces de las apps auxiliares | `app-materiales/...`, `app-comunicaciones/...` |
 | FlatLaf 3.5.4 | Apariencia moderna de Swing | `app-materiales/pom.xml`, `app-comunicaciones/pom.xml` |
 | JDK `java.net.http.HttpClient` | Cliente HTTP de la app de comunicaciones | `app-comunicaciones/pom.xml`, `FlowableRest.java` |
 | Jackson Databind 2.22.4 | JSON de la app de comunicaciones | `app-comunicaciones/pom.xml` |
 | PostgreSQL JDBC 42.7.14 | Conexión del motor embebido de materiales | `app-materiales/pom.xml` |
 | JUnit 5.14.4 | Tests unitarios/integración | `pom.xml` y los tres POM de módulos |
-| H2 2.1.214 | Motor Flowable en memoria para tests del módulo proceso | `proceso/pom.xml`, `proceso/src/test/resources/flowable.cfg.xml` |
-| Python, PM4Py, pandas, requests | Exportación y minería de historial | Enunciado PDF y `docs/04-entorno-desarrollo.md`; actualmente solo existe `mineria/README.md` |
+| H2 2.1.214 | Motor Flowable y bases en memoria para los tests de `proceso` y `app-materiales` | `proceso/pom.xml`, `app-materiales/pom.xml`, `proceso/src/test/resources/flowable.cfg.xml` |
+| Python, PM4Py, pandas, requests | Exportación y minería de historial | Enunciado PDF y `docs/04-entorno-desarrollo.md`; scripts en `mineria/` |
 | Graphviz | Render de gráficos de minería | Enunciado PDF y `docs/04-entorno-desarrollo.md` |
 | GitHub Actions / Temurin | CI con Java 21 y `./mvnw verify` | `.github/workflows/ci.yml` |
 | `curl`, `jar`, Bash | Healthcheck, configuración de identidades y despliegue `.bar` | `README.md`, `scripts/*.sh` |
 
-**No se encontró** `requirements.txt`, código Python, Postman collection ni dependencia
-OpenPDF. OpenPDF aparece como elección futura en `docs/02-arquitectura.md`, pero no está
-declarado en `web/pom.xml`.
+No hay `requirements.txt`: las dependencias de Python se instalan con
+`pip install pm4py pandas requests` (`docs/04-entorno-desarrollo.md`).
 
 ## 2. Arquitectura y estructura de directorios
 
@@ -66,13 +66,16 @@ declarado en `web/pom.xml`.
   `proceso/target/proceso.jar` se monta en `/app/WEB-INF/lib/proceso.jar` del contenedor
   Flowable.
 - **`web/`**: aplicación Spring Boot en el puerto 8081. Incluye vistas Thymeleaf, seguridad,
-  bandeja de tareas, cliente REST y migración Flyway.
+  portal de empresas, bandeja y pantallas de tareas, PDF de propuestas, cliente REST y
+  migración Flyway.
 - **`app-materiales/`**: Swing local para preparación de materiales. Levanta un motor
   Flowable embebido conectado directamente a la BD `flowable`.
 - **`app-comunicaciones/`**: Swing que simula a la empresa y usa HTTP REST contra Flowable.
 - **`db/`**: inicialización de la base `institucion`; las tablas se crean realmente por Flyway.
-- **`scripts/`**: crea usuarios/grupos/privilegios y empaqueta/despliega BPMN+DMN.
-- **`mineria/`**: reservado a exportación/análisis PM4Py; actualmente solo contiene README.
+- **`scripts/`**: crea usuarios/grupos/privilegios, empaqueta/despliega BPMN+DMN y deja listos
+  los escenarios de la defensa (`scripts/escenarios/`).
+- **`mineria/`**: exportación y análisis PM4Py de la etapa de negociación: scripts, CSV,
+  gráficos y conclusión.
 - **`docs/`**: requisitos, arquitectura, guía Flowable, entorno, decisiones, modelo, BD y
   guías de las aplicaciones.
 - **`docs/referencia/`** y **`docs/diagramas/`**: modelo de referencia de la cátedra y
@@ -91,13 +94,14 @@ declarado en `web/pom.xml`.
    ejecución que espera cada mensaje y lo entrega con `messageEventReceived`.
 4. `scripts/setup-identidades.sh` usa REST de identidad; `scripts/desplegar-proceso.sh`
    usa el endpoint de deployments.
-5. Los scripts de minería previstos leen historial mediante REST.
+5. Los scripts de minería leen el historial mediante REST (`exportar_history.py`), y
+   `generar_ejecuciones.py` recorre el proceso con la web y la API REST para generarlo.
 
 **API Java nativa:**
 
 `app-materiales` usa `ProcessEngine`, `IdentityService.checkPassword`,
 `TaskService` para consultas/claim/complete y `RuntimeService` para recuperar el
-`businessKey`. `ConsultasHistoricas` está diseñada para usar `HistoryService`.
+`businessKey`. `ConsultasHistoricas` usa `HistoryService` para las consultas del §4.3.
 El motor embebido desactiva actualización de esquema y async executor para no competir con
 el servidor (`MotorFlowable.java`).
 
@@ -106,7 +110,7 @@ el servidor (`MotorFlowable.java`).
 - Flowable Server escribe la BD `flowable`.
 - El motor embebido de materiales comparte esa BD.
 - La web escribe/lee `institucion` mediante JDBC/Flyway.
-- Listeners/delegates del proceso deben escribir `institucion` usando `INSTITUCION_DB_*`.
+- Listeners/delegates del proceso escriben `institucion` usando `INSTITUCION_DB_*` (`ConexionInstitucion`).
 
 ## 3. Base de datos y modelo BPMN
 
@@ -129,7 +133,7 @@ El vínculo es doble:
 2. inicia Flowable con `businessKey = curso.id`;
 3. guarda el ID retornado en `curso.process_instance_id`;
 4. las apps muestran la solicitud mediante ese `businessKey`;
-5. el listener final actualiza el curso usando el `processInstanceId`.
+5. el listener final actualiza el curso usando el `businessKey` (el `curso.id`).
 
 El estado `EN_CURSO` se deriva de la instancia mientras está activa; al cerrar se espera uno
 de `FINALIZADO`, `CANCELADO`, `RECHAZADO`, `SIN_RESPUESTA` o `NO_VIABLE`. Personal,
@@ -181,12 +185,14 @@ ejecuta `Notificar cierre` (`docs/05-decisiones.md`, limitación 2).
 *Habilitar acceso a la empresa* ya persiste la cuenta: `HabilitarAccesoEmpresaDelegate` consulta y crea
 `cuenta_empresa` por JDBC con `INSTITUCION_DB_*` y guarda la clave con BCrypt (issue #17). La reserva y la
 liberación de aulas ya pasan por `ServicioAulas` / `ServicioAulasVirtuales`, con implementación simulada
-(issue #19). Quedan simulados el envío de notificaciones y el registro del resultado final.
+(issue #19). El registro del resultado final también persiste (issue #25). Queda simulado el envío de
+notificaciones, que solo escribe en el log.
 
 ### Listeners y expresiones
 
 - **Execution listener de fin de proceso**:
-  `RegistrarResultadoDelCursoListener`; actualmente solo registra un log.
+  `RegistrarResultadoDelCursoListener`; guarda en el curso el `resultado` como estado y, si los
+  tiene, programa, presupuesto, fecha de inicio e informe.
 - **Execution listener de inicio de viabilidad**:
   `ContarCursosEnEjecucionListener`; cuenta las instancias abiertas con `accesoHabilitado = true`
   y escribe `cursosEnEjecucion` para la DMN.
@@ -278,13 +284,14 @@ python exportar_history.py
 python analizar.py
 ```
 
-Sin embargo, `mineria/` actualmente **no contiene** `exportar_history.py`, `analizar.py`,
-CSV, capturas ni conclusión. Por tanto los dos últimos comandos no son ejecutables hasta
-incorporar esos entregables. La exportación debe tomar actividades históricas de la etapa
-desde `solicitudRecibida` hasta la preparación o un fin temprano; el análisis debe producir
-gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
+`mineria/` contiene los dos scripts adaptados al proceso, `generar_ejecuciones.py` (recorre el
+proceso para tener historial), `eventos.csv`, los gráficos (`recorridos.png`,
+`modelo_descubierto.png`), `resultados.txt` con los tres recorridos más frecuentes y
+`conclusion.md`. La exportación toma las actividades de la etapa de negociación, desde
+`solicitudRecibida` hasta *Habilitar acceso a la empresa* o un fin temprano. Cómo reproducirlo:
+`mineria/README.md`.
 
-## 5. Próximos milestones y tareas pendientes
+## 5. Estado y tareas pendientes
 
 ### Lista de tareas y pendientes
 
@@ -303,8 +310,10 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   curso (`businessKey`), crea la `cuenta_empresa` con usuario y clave BCrypt la primera vez y
   la reutiliza después; deja `accesoHabilitado = true`. Lo cubren
   `HabilitarAccesoEmpresaDelegateTest` y `CuentasDeEmpresaJdbcTest`.
-- [ ] **#25 · Persistencia final:** hacer que `RegistrarResultadoDelCursoListener`
-  actualice estado, programa, presupuesto, fecha e informe.
+- [x] **#25 · Persistencia final:** `RegistrarResultadoDelCursoListener` actualiza estado,
+  programa, presupuesto, fecha e informe del curso por su `businessKey`, con `COALESCE` para no
+  borrar lo ya registrado; lo cubren `RegistrarResultadoDelCursoListenerTest` y
+  `CursoRepositoryJdbcTest`.
 - [x] **#19 · Reserva/liberación:** `ReservarAulaDelegate` simula el web service de aulas
   (`ServicioAulasSimulado`), guarda `aulaAsignada` y `LiberarAulaDelegate` se la devuelve al
   liberar; la virtual usa `ServicioAulasVirtuales`. La excepción `AULA_NO_DISPONIBLE` queda
@@ -327,8 +336,8 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
 - [x] **#29 · Portal de empresas:** `PortalEmpresaController` lista solo los cursos de la
   empresa logueada, deriva el estado de las actividades en curso de Flowable y muestra las
   ramas paralelas durante la preparación; lo cubre `PortalEmpresaControllerTest`.
-- [-] **#24 · App de materiales:** agregar botones y lógica de reclamar/completar, junto
-  con sus tests. La ventana solo lista y actualiza tareas; las reglas están en
+- [x] **#24 · App de materiales:** *Reclamar* y *Completar* con la validación de asignación
+  (`ServicioDeTareas`); lo cubre `ServicioDeTareasTest`. Las reglas están en
   [09-app-materiales.md](09-app-materiales.md) §7.
 - [x] **#30 · Resultados de las solicitudes:** `ConsultasHistoricas.resultadosDeLasSolicitudes()`
   agrupa las instancias terminadas por la variable `resultado` y calcula cantidad y
@@ -348,14 +357,25 @@ gráfico y los tres recorridos más frecuentes con cantidad y porcentaje.
   modelo, detección de la ejecución que espera cada mensaje y envío con sus variables
   (fecha acordada en ISO, observaciones, rechazo sin datos). Los caminos de aceptación,
   rechazo y modificaciones los cubre `NegociacionTest`.
-- [ ] **#23 · App de comunicaciones (preparación):** nómina y cancelación, con el mismo
-  mecanismo: una constante más en `Comunicacion`.
-- [ ] **M-01–M-03 · Minería de procesos:** agregar `exportar_history.py`, `analizar.py`,
-  CSV, gráfico, recorridos, porcentajes y conclusión.
-- [ ] **Escenario 7 de defensa:** acordar con el profesor qué sucede cuando no hay aula;
+- [x] **#23 · App de comunicaciones (preparación):** nómina y cancelación, con el mismo
+  mecanismo: una constante más en `Comunicacion`; lo cubre `ComunicacionesDeLaEmpresaTest`.
+- [x] **M-01–M-03 · Minería de procesos:** `exportar_history.py`, `analizar.py`,
+  `eventos.csv`, gráfico, tres recorridos más frecuentes con porcentajes y `conclusion.md`
+  en `mineria/`.
+- [x] **#44 · Cancelación con compensaciones:** compensaciones encadenadas con `activityRef`
+  dentro del subproceso de evento y la tarea *Confirmar compensaciones*, que retiene el cierre
+  hasta liberar el equipamiento (`docs/05-decisiones.md`, limitaciones 1 y 2); la web no ofrece
+  completarla antes; lo cubre `CancelacionYCompensacionesTest`.
+- [x] **#43 · Escenarios de la defensa:** `scripts/escenarios/` deja listos los escenarios 1, 4, 5
+  y 6 (`docs/12-escenarios-defensa.md`).
+- [x] **#46–#56 · Mejoras de calidad:** guardar la propuesta y completar la tarea en una
+  transacción, lo común de las pantallas de tarea en `PantallasDeTareas`, el plazo de respuesta
+  por defecto en el modelo, las cinco filas de la consulta §4.3.1, conexión compartida a la BD de
+  la institución y limpieza de código muerto.
+- [ ] **Escenario 7 de defensa (#36):** acordar con el profesor qué sucede cuando no hay aula;
   el modelo todavía no lanza `BpmnError`.
-- [ ] **Entrega y defensa:** completar informe, capturas de minería, datos de prueba y
-  validar los 11 escenarios en una instalación limpia.
+- [ ] **Entrega y defensa:** informe breve (#38), instrucciones finales (#37) y ensayo de los 11
+  escenarios en una instalación limpia (#39).
 
 ### Puntos de prueba para la defensa
 
