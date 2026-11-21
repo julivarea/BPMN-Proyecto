@@ -112,6 +112,11 @@ Con el entorno levantado y la web corriendo, desde la raíz del repo:
 mineria/.venv/bin/python scripts/escenarios/preparar_escenario_5.py
 ```
 
+Si el entorno no está en los puertos del README, los scripts (y los de `mineria/`) leen las mismas variables que la web
+y las apps: `FLOWABLE_URL` (la base de Flowable, sin `/process-api`), `WEB_URL` (por defecto `http://localhost:8081`) y
+`INSTITUCION_DB_URL`, o `POSTGRES_PORT`, para la base de la institución (`limpiar.py`; antes de borrar muestra a qué
+Flowable y a qué base apunta).
+
 El límite de la regla de viabilidad es de 5 cursos en ejecución: el 6 y el 1 avisan si no hay lugar. `limpiar.py`
 pide confirmación y no toca usuarios, grupos ni el proceso desplegado; también borra el historial que usa la minería
 (`generar_ejecuciones.py` lo vuelve a generar). Cómo recorrer cada escenario: `docs/12-escenarios-defensa.md`.

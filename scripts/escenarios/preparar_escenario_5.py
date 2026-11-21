@@ -16,7 +16,7 @@ def main():
     for numero in range(PRIMER_NUMERO, PRIMER_NUMERO + faltan):
         _, curso = ejecuciones.llevar_a_preparacion(numero)
         print(f"  curso {curso}: en preparación")
-    print("\nListo. Registrá una solicitud nueva en http://localhost:8081/solicitar: tiene que terminar como no viable.")
+    print(f"\nListo. Registrá una solicitud nueva en {ejecuciones.WEB}/solicitar: tiene que terminar como no viable.")
 
 
 if __name__ == "__main__":

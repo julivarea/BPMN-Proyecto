@@ -6,6 +6,7 @@ para tener historial con todos los resultados posibles (enunciado §4.3 y §4.4)
 Requiere el entorno levantado, el proceso desplegado y la web corriendo con un plazo de respuesta corto:
     PLAZO_RESPUESTA=PT15S ./mvnw -pl web spring-boot:run
 """
+import os
 import re
 import sys
 import time
@@ -14,8 +15,10 @@ from datetime import datetime
 
 import requests
 
-WEB = "http://localhost:8081"
-FLOWABLE = "http://localhost:8080/flowable-ui/process-api"
+# Por defecto, el entorno local del README. Se cambian con WEB_URL y FLOWABLE_URL (la base de Flowable, sin /process-api,
+# como en los scripts y las apps).
+WEB = os.environ.get("WEB_URL", "http://localhost:8081").rstrip("/")
+FLOWABLE = os.environ.get("FLOWABLE_URL", "http://localhost:8080/flowable-ui").rstrip("/") + "/process-api"
 PROCESO = "organizarCurso"
 RESULTADOS_POSIBLES = {"FINALIZADO", "CANCELADO", "RECHAZADO", "NO_VIABLE", "SIN_RESPUESTA"}
 

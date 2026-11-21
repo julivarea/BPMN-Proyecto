@@ -17,7 +17,8 @@ Preparación del entorno de Python: ver [docs/04-entorno-desarrollo.md](../docs/
 Crea solicitudes con el formulario de la web (así quedan la empresa y el curso en la base de la institución) y las
 lleva por distintos caminos con la API REST de Flowable. Al final verifica que estén los cinco resultados.
 
-1. Entorno levantado y proceso desplegado (README principal).
+1. Entorno levantado y proceso desplegado (README principal). Si Flowable o la web no están en los puertos por defecto,
+   se indican con `FLOWABLE_URL` (sin `/process-api`) y `WEB_URL`; `exportar_history.py` también lee `FLOWABLE_URL`.
 2. La web, con un plazo de respuesta corto para que los recordatorios venzan en segundos (desde la raíz del repo):
    ```bash
    PLAZO_RESPUESTA=PT15S ./mvnw -pl web spring-boot:run

@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime
 from getpass import getpass
 from collections import Counter
@@ -7,7 +8,7 @@ import requests
 
 
 # ConfiguraciÃ³n
-BASE_URL = "http://localhost:8080/flowable-ui/process-api"
+BASE_URL = os.environ.get("FLOWABLE_URL", "http://localhost:8080/flowable-ui").rstrip("/") + "/process-api"
 
 # ID del elemento <process id="..."> del BPMN.
 PROCESS_KEY = "organizarCurso"

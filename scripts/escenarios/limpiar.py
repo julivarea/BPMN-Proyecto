@@ -5,6 +5,7 @@ Borra todas las instancias del proceso organizarCurso, con su historial, y los d
 Para un reinicio total sigue estando `docker compose down -v`.
 """
 import os
+import re
 import sys
 
 import psycopg
@@ -30,16 +31,32 @@ def borrar_instancias(ruta):
             borradas += 1
 
 
+def base_de_la_institucion():
+    """Servidor, puerto y base que se vacían: los de INSTITUCION_DB_URL (la misma que usa la web) o, si no está, la
+    base `institucion` de localhost en el puerto POSTGRES_PORT (5432 por defecto)."""
+    jdbc = os.environ.get("INSTITUCION_DB_URL")
+    if not jdbc:
+        return "localhost", os.environ.get("POSTGRES_PORT", "5432"), "institucion"
+    partes = re.fullmatch(r"jdbc:postgresql://([^:/]+)(?::(\d+))?/(\w+)", jdbc)
+    if not partes:
+        sys.exit(f"INSTITUCION_DB_URL no tiene la forma jdbc:postgresql://servidor:puerto/base: {jdbc}")
+    return partes.group(1), partes.group(2) or "5432", partes.group(3)
+
+
 def vaciar_base_de_la_institucion():
     usuario = os.environ.get("INSTITUCION_DB_USER", "flowable")
     clave = os.environ.get("INSTITUCION_DB_PASSWORD", "flowable")
-    with psycopg.connect(f"postgresql://{usuario}:{clave}@localhost:5432/institucion") as base:
+    servidor, puerto, base_de_datos = base_de_la_institucion()
+    with psycopg.connect(f"postgresql://{usuario}:{clave}@{servidor}:{puerto}/{base_de_datos}") as base:
         base.execute(f"TRUNCATE {TABLAS} RESTART IDENTITY")
 
 
 def main():
     print("Esto borra TODAS las solicitudes: instancias e historial en Flowable, y empresas, cuentas, cursos y")
     print("propuestas en la base de la institución. Los usuarios, los grupos y el proceso no se tocan.")
+    servidor, puerto, base_de_datos = base_de_la_institucion()
+    print(f"Flowable: {ejecuciones.FLOWABLE}")
+    print(f"Base de la institución: {servidor}:{puerto}/{base_de_datos}")
     if input("Escribí «si» para continuar: ").strip().lower() != "si":
         sys.exit("No se borró nada.")
 
