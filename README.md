@@ -91,6 +91,25 @@ la web; vale para las solicitudes nuevas (detalle en [docs/04](docs/04-entorno-d
 
 Usuarios de prueba, pgAdmin, puertos y más comandos: [docs/04-entorno-desarrollo.md](docs/04-entorno-desarrollo.md).
 
+## Dónde está cada entregable
+
+Lo que pide el §5 del enunciado, con su ubicación en el repo:
+
+| Entregable | Dónde está |
+|------------|------------|
+| Modelo BPMN ejecutable | [`proceso/src/main/resources/procesos/organizarCurso.bpmn20.xml`](proceso/src/main/resources/procesos/organizarCurso.bpmn20.xml); diagrama en [`docs/diagramas/`](docs/diagramas) |
+| Reglas de negocio (viabilidad, §3.1) | [`proceso/src/main/resources/procesos/viabilidad.dmn`](proceso/src/main/resources/procesos/viabilidad.dmn) |
+| Código de los componentes incorporados al motor (listeners y delegates, §3.4) | [`proceso/src/main/java`](proceso/src/main/java) |
+| Código del sitio web, que usa la API REST de Flowable (§4.1) | [`web/`](web) |
+| Código de las dos apps de escritorio (§4.2) | [`app-materiales/`](app-materiales) (API Java) y [`app-comunicaciones/`](app-comunicaciones) (API REST) |
+| Base de datos de la institución (§3.2) | Creación en [`db/init/`](db/init) y tablas en [`web/src/main/resources/db/migration/`](web/src/main/resources/db/migration); explicada en [docs/07](docs/07-base-de-datos.md) |
+| Instrucciones para configurar usuarios y grupos y ejecutar la solución | "Inicio rápido" de este README y [docs/04](docs/04-entorno-desarrollo.md); los usuarios y grupos los crea [`scripts/setup-identidades.sh`](scripts/setup-identidades.sh) |
+| Instrucciones de las tres aplicaciones externas | "Aplicaciones" de este README, [docs/08](docs/08-web.md) (web), [docs/09](docs/09-app-materiales.md) (materiales) y [docs/10](docs/10-app-comunicaciones.md) (comunicaciones) |
+| Variables, listeners y decisiones de implementación (el informe) | [docs/06](docs/06-guia-implementacion-modelo.md) (variables, listeners y delegates), [docs/05](docs/05-decisiones.md) (decisiones) y [docs/11](docs/11-informe-tecnico.md) (informe técnico) |
+| Consultas sobre el historial (§4.3) | En la app de materiales: [`ConsultasHistoricas`](app-materiales/src/main/java/ar/edu/unrc/gtpn/materiales/historial/ConsultasHistoricas.java) y sus pestañas; explicadas en [docs/09](docs/09-app-materiales.md) §8 |
+| Minería de procesos (§4.4): CSV, código, captura y conclusión | [`mineria/`](mineria): `eventos.csv`, los scripts, `recorridos.png` y `modelo_descubierto.png`, `resultados.txt` y [`conclusion.md`](mineria/conclusion.md); cómo reproducirlo en [`mineria/README.md`](mineria/README.md) |
+| Escenarios de la demostración (§5) | [docs/12](docs/12-escenarios-defensa.md) y los scripts de [`scripts/escenarios/`](scripts/escenarios) |
+
 ## Documentación
 
 | Documento | Contenido |

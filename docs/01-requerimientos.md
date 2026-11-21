@@ -1,8 +1,9 @@
 # 01 · Requerimientos
 
 > **Fuente de verdad:** [`enunciado/ProyectoCursos_V3.pdf`](enunciado/ProyectoCursos_V3.pdf). Este documento lo
-> resume y lo numera para poder referenciarlo; si algo de acá contradice al PDF, manda el PDF. Todo desvío del
-> enunciado se documenta y se justifica.
+> resume y lo numera para poder referenciarlo; si algo de acá contradice al PDF, manda el PDF, salvo las aclaraciones
+> posteriores del profesor, que se anotan en §4 y en [05-decisiones.md](05-decisiones.md). Todo desvío del enunciado se
+> documenta y se justifica.
 
 ## 1. Qué hay que construir
 
@@ -65,7 +66,7 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 | ID | Requisito | § |
 |----|-----------|---|
 | I-01 | La evaluación de viabilidad se implementa con una **decision task** de Flowable. | 3.1 |
-| I-02 | Entrada: cantidad de **otras** instancias del proceso que no finalizaron (incluidas las que están en acuerdo o preparación), considerando **todas las versiones** desplegadas, obtenida **del motor** y nunca ingresada a mano. | 3.1 |
+| I-02 | Entrada: cantidad de **otras** instancias del proceso que no finalizaron **y ya pasaron por *Habilitar acceso a la empresa*** (aclaración del profesor: el §3.1 habla de todas las que no finalizaron), considerando **todas las versiones** desplegadas, obtenida **del motor** y nunca ingresada a mano. | 3.1 |
 | I-03 | Resultado de la regla: continuar si la cantidad es menor que 5; comunicar la imposibilidad y finalizar si es 5 o más. | 3.1 |
 | I-04 | Task Listener en la creación de *Confeccionar lista definitiva*: asigna al integrante de Administración con menos tareas de usuario pendientes **asignadas** en el motor (no cuentan las que solo tienen al grupo como candidato); empate con criterio a elección. | 3.4 |
 | I-05 | Execution Listener al finalizar la instancia: actualiza el estado del curso en la BD según el resultado: finalizado, cancelado, rechazado, cerrado por falta de respuesta o no viable. | 3.4 |
@@ -108,7 +109,7 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 |----|-----------|---|
 | X-01 | App de materiales con interfaz gráfica, local a la intranet y con acceso a la BD del motor, usando la **API Java**: identificarse, consultar las tareas *Preparar materiales* asignadas o reclamables, reclamar una disponible para su grupo y completarla. | 4.2.1 |
 | X-02 | La app puede ser completamente Java; si otras funciones usan otro lenguaje, esta interacción con el motor se hace con un componente Java. | 4.2.1 |
-| X-03 | App de comunicaciones con interfaz gráfica: elegir una solicitud y simular, por **API REST** y sobre la instancia correspondiente, la aceptación (con fecha acordada), el rechazo, la solicitud de modificaciones (con observaciones), el envío de la nómina y la cancelación durante la preparación. | 4.2.2 |
+| X-03 | App de comunicaciones (con interfaz gráfica: ver §4, punto 9): elegir una solicitud y simular, por **API REST** y sobre la instancia correspondiente, la aceptación (con fecha acordada), el rechazo, la solicitud de modificaciones (con observaciones), el envío de la nómina y la cancelación durante la preparación. | 4.2.2 |
 | X-04 | Mostrar solo las comunicaciones habilitadas en el estado actual. La negociación y el envío de la nómina se simulan solo desde esta app (no en el sitio). | 4.2.2 |
 
 ### Análisis de las ejecuciones del proceso (§4.3)
@@ -165,8 +166,9 @@ Análisis breve, con PM4Py u otra herramienta, de la **etapa de negociación** (
 1. **"Aplicación móvil" (§1.4)** para *Definir docente*: el §4 enumera un sitio web y dos apps de escritorio, y el
    §4.1.4 pone esa función en el sitio.
 2. **Escenario 7 (falta de aulas):** no aparece en el §1; no se especifica qué ocurre después de la excepción.
-3. **"Cinco o más cursos en ejecución" (§1.1):** el §3.1 lo precisa: cuentan todas las instancias sin finalizar,
-   incluidas las que están en acuerdo o preparación, excluyendo la propia.
+3. **"Cinco o más cursos en ejecución" (§1.1, §3.1):** el §3.1 dice que cuentan todas las instancias sin finalizar,
+   incluidas las que están en acuerdo, excluyendo la propia. Por aclaración del profesor, cuentan los cursos que ya
+   pasaron por *Habilitar acceso a la empresa* y siguen sin finalizar (05-decisiones, "Cursos en ejecución").
 4. **Informe de resultados:** el jefe administrativo debe poder consultarlo (§4.1.3), aunque *Elaborar informe* se haga
    desde la UI de Flowable.
 5. **Comunicaciones a la empresa** (notificar la decisión, enviar propuesta, recordatorio, confirmación, cierre,
@@ -176,3 +178,9 @@ Análisis breve, con PM4Py u otra herramienta, de la **etapa de negociación** (
    (05-decisiones, limitación 2).
 7. **Estados visibles para la empresa (§4.1.2):** no incluyen rechazado, no viable ni sin respuesta. Es coherente,
    porque la cuenta se crea recién después de aceptar la propuesta.
+8. **Lo tachado en el enunciado V3 no se exige:** la entrega de los scripts para crear la base de datos y cargar datos
+   de prueba (§3.2) y que el informe de resultados se genere o adjunte en PDF (§4.1.3). El repo igual trae la creación
+   de la base (`db/init` y la migración de Flyway) y los scripts de los escenarios; el informe de resultados es un texto
+   (`informeResultados`). Los PDF que sí se piden son los de la propuesta y sus revisiones (W-07).
+9. **Interfaz de la app de comunicaciones (§4.2.2):** los grupos de hasta 3 personas pueden resolverla por línea de
+   comando, sin interfaz gráfica. Este grupo tiene 5 integrantes, así que la app tiene interfaz gráfica.
