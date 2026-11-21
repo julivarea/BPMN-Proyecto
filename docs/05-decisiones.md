@@ -106,6 +106,13 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   - *Desarrollar curso* queda habilitado cuando se cumplen las tres condiciones: terminó *Preparar curso*, se definió el
     docente y llegó la fecha. No alcanza con que llegue la fecha.
 
+- **Detalle de errores en las pantallas de tarea (§4.1.3, §4.1.4).** En los controladores de tareas de la web, los
+  errores inesperados incluyen `e.getMessage()` en el aviso que ve el usuario (por ejemplo, `"Curso no encontrado: 99"`
+  si se abre una instancia iniciada desde la UI de Flowable sin fila en la base de la institución). Es una decisión
+  deliberada por tratarse de un sistema didáctico y de demostración: permite diagnosticar fallos durante las pruebas y
+  la defensa sin tener que revisar los logs de la consola. En una implementación de producción correspondería registrar
+  la excepción únicamente en el log del servidor y mostrar al usuario un mensaje genérico sin detalles técnicos.
+
 ## Pendientes
 
 - **Falta de aulas físicas (escenario 7 de la defensa).** No se modela por ahora: el enunciado no dice qué pasa

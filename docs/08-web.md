@@ -197,7 +197,11 @@ Las tareas que no cargan datos (*Archivar solicitud*, *Desarrollar curso*) no ne
 *Completar* de la bandeja. *Solicitar aula virtual*, *Contratar equipamiento* y *Liberar equipamiento* pueden hacerse
 desde la UI de Flowable (§4.1.3); sus pantallas son opcionales (#40, #41, #42).
 
-**Errores.** Cualquier error no manejado (404, 500…) muestra `error.html` con el diseño del sitio.
+**Errores.** Cualquier error no manejado (404, 500…) muestra `error.html` con el diseño del sitio. En las pantallas de
+tarea, además de los mensajes de negocio de `AccionNoPermitida`, los fallos inesperados incluyen `e.getMessage()` en el
+aviso para facilitar las pruebas y el diagnóstico en vivo durante la demostración sin depender de revisar los logs de la
+consola; en un sistema en producción correspondería registrar el detalle técnico solo en el log del servidor y mostrar
+un mensaje genérico al usuario (ver [05-decisiones.md](05-decisiones.md)).
 
 **Estilos.** Todo está en `estilos.css`. Los colores son variables al principio del archivo (`--encabezado`,
 `--texto`, `--fondo`), y en pantallas chicas la navegación pasa a una grilla de 2 × 2.
