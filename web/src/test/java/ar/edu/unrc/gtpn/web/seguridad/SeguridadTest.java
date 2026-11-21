@@ -35,6 +35,7 @@ import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesDeCapacitacion;
 import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 import ar.edu.unrc.gtpn.web.tareas.BandejaDeTareas;
 import ar.edu.unrc.gtpn.web.tareas.PantallasDeTareas;
+import ar.edu.unrc.gtpn.web.tareas.RegistroDePropuestas;
 
 /** Reglas de acceso de las secciones del sitio, sin Flowable ni base: son dobles. */
 @WebMvcTest
@@ -66,6 +67,9 @@ class SeguridadTest {
 
     @MockitoBean
     private GeneradorPdfPropuesta generadorPdf;
+
+    @MockitoBean
+    private RegistroDePropuestas registroDePropuestas;
 
     @MockitoBean
     private CursosDeLaEmpresaRepository cursosDeLaEmpresa;

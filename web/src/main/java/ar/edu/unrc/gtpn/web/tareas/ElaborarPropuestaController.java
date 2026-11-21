@@ -30,19 +30,19 @@ public class ElaborarPropuestaController {
 
     private static final String QUE_ES = "elaborar propuesta";
 
-    private final BandejaDeTareas bandeja;
+    private final RegistroDePropuestas registro;
     private final PantallasDeTareas pantallas;
     private final SolicitudesRepository solicitudesRepository;
     private final PropuestasRepository propuestasRepository;
     private final GeneradorPdfPropuesta generadorPdf;
 
     public ElaborarPropuestaController(
-            BandejaDeTareas bandeja,
+            RegistroDePropuestas registro,
             PantallasDeTareas pantallas,
             SolicitudesRepository solicitudesRepository,
             PropuestasRepository propuestasRepository,
             GeneradorPdfPropuesta generadorPdf) {
-        this.bandeja = bandeja;
+        this.registro = registro;
         this.pantallas = pantallas;
         this.solicitudesRepository = solicitudesRepository;
         this.propuestasRepository = propuestasRepository;
@@ -88,16 +88,12 @@ public class ElaborarPropuestaController {
             long cursoId = pantallas.cursoIdDe(tarea);
             int nuevaVersion = propuestasRepository.ultimaVersionDe(cursoId) + 1;
 
-            // 1. Completar en Flowable (valida asignado y permisos antes de guardar)
-            bandeja.completar(usuario.getName(), id, Map.of(
+            Propuesta propuesta = new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles, null);
+            registro.registrarYCompletar(usuario.getName(), id, propuesta, Map.of(
                     "presupuesto", presupuesto,
                     "programa", programa,
                     "fechasPosibles", fechasPosibles
             ));
-
-            // 2. Persistir en BD institucional
-            Propuesta propuesta = new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles, null);
-            propuestasRepository.guardar(propuesta);
 
             redirect.addFlashAttribute("mensaje", "Propuesta v" + nuevaVersion + " registrada y tarea completada.");
         } catch (AccionNoPermitida e) {

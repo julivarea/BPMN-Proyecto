@@ -41,7 +41,7 @@ class RevisarPropuestaControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private BandejaDeTareas bandeja;
+    private RegistroDePropuestas registro;
 
     @MockitoBean
     private ClienteFlowable flowable;
@@ -107,11 +107,11 @@ class RevisarPropuestaControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/administracion"));
 
-        verify(bandeja).completar("jefe_admin", "t2", Map.of(
-                "programa", "Programa corregido",
-                "presupuesto", new BigDecimal("160000"),
-                "fechasPosibles", "Segunda semana de diciembre"));
-        verify(propuestasRepository).guardar(new Propuesta(10L, 2, "Programa corregido", new BigDecimal("160000"),
-                "Segunda semana de diciembre", "Cambiar la fecha"));
+        verify(registro).registrarYCompletar("jefe_admin", "t2",
+                new Propuesta(10L, 2, "Programa corregido", new BigDecimal("160000"),
+                        "Segunda semana de diciembre", "Cambiar la fecha"),
+                Map.of("programa", "Programa corregido",
+                        "presupuesto", new BigDecimal("160000"),
+                        "fechasPosibles", "Segunda semana de diciembre"));
     }
 }

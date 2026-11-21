@@ -25,7 +25,6 @@ import ar.edu.unrc.gtpn.web.solicitudes.SolicitudesRepository;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -33,6 +32,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,7 +45,7 @@ class ElaborarPropuestaControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private BandejaDeTareas bandeja;
+    private RegistroDePropuestas registro;
 
     @MockitoBean
     private ClienteFlowable flowable;
@@ -104,17 +104,16 @@ class ElaborarPropuestaControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/administracion"));
 
-        verify(bandeja).completar(eq("jefe_admin"), eq("t1"), any());
-        verify(propuestasRepository).guardar(any(Propuesta.class));
+        verify(registro).registrarYCompletar(eq("jefe_admin"), eq("t1"), any(Propuesta.class), any());
     }
 
     @Test
-    void noGuardaLaPropuestaSiNoSePuedeCompletarLaTarea() throws Exception {
+    void siNoSePuedeRegistrarLaPropuestaSeMuestraElMotivo() throws Exception {
         Tarea tarea = new Tarea("t1", "Elaborar propuesta", "registrarYElaborarPropuesta", "proc1", "jefe_admin", OffsetDateTime.now(), "10");
         when(flowable.tarea("t1")).thenReturn(tarea);
         when(propuestasRepository.ultimaVersionDe(10L)).thenReturn(0);
         doThrow(new AccionNoPermitida("Solo el usuario asignado puede completar la tarea."))
-                .when(bandeja).completar(any(), any(), any());
+                .when(registro).registrarYCompletar(any(), any(), any(), any());
 
         mockMvc.perform(post("/tareas/t1/elaborar-propuesta")
                         .with(user("jefe_admin").roles("ADMINISTRACION"))
@@ -124,9 +123,8 @@ class ElaborarPropuestaControllerTest {
                         .param("presupuesto", "150000")
                         .param("fechasPosibles", "Junio 2026"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/administracion"));
-
-        verify(propuestasRepository, never()).guardar(any());
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("error", "Solo el usuario asignado puede completar la tarea."));
     }
 
     @Test

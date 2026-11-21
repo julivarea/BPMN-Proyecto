@@ -63,6 +63,7 @@ web/
     │   │       ├── ArchivarSolicitudController.java  pantalla /tareas/{id}/archivar-solicitud: motivo y confirmación
     │   │       ├── BandejaDeTareas.java       reglas para reclamar y completar: toda pantalla de tareas pasa por acá
     │   │       ├── PantallasDeTareas.java     lo común de las pantallas: sección de retorno, tarea verificada y curso
+    │   │       ├── RegistroDePropuestas.java  guarda la versión de la propuesta y completa la tarea como una sola operación
     │   │       ├── BandejaController.java     páginas de Administración y Docentes, y botones Reclamar y Completar
     │   │       ├── ConfeccionarListaDefinitivaController.java  pantalla /tareas/{id}/confeccionar-lista-definitiva: la nómina editable
     │   │       ├── ElaborarPropuestaController.java  pantalla /tareas/{id}/elaborar-propuesta: formulario, guardado y PDF
@@ -114,6 +115,7 @@ web/
             ├── ArchivarSolicitudControllerTest.java   la pantalla de archivo: formulario y confirmación
             ├── BandejaDeTareasTest.java               reglas para reclamar y completar
             ├── PantallasDeTareasTest.java             sección de retorno, verificación de la tarea y curso de la solicitud
+            ├── RegistroDePropuestasTest.java          guardar y completar en una transacción: commit, rollback y orden
             ├── BandejaControllerTest.java             la bandeja desde el navegador
             ├── ConfeccionarListaDefinitivaControllerTest.java  la lista definitiva: nómina inicial, lista vacía y guardado
             ├── ElaborarPropuestaControllerTest.java   la pantalla de propuesta: formulario, guardado, PDF y permisos
@@ -397,8 +399,9 @@ un formulario sin `th:action` es rechazado con un 403.
 | `PortalEmpresaControllerTest` | El portal de empresas: una empresa recibe 404 al abrir el curso de otra (escenario 10), el detalle en preparación muestra las actividades de las ramas paralelas y el estado se deriva de Flowable o del persistido (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, *Confirmar compensaciones* queda bloqueada mientras haya liberaciones pendientes, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
-| `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si Flowable rechaza no se guarda nada, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si el registro se rechaza se muestra el motivo, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `RegistroDePropuestasTest` | Que guardar la versión y completar la tarea sea una sola operación: se guarda primero y se completa después, con commit; si Flowable no completa la tarea, la versión se descarta (rollback); si el guardado falla, la tarea no se completa | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `ConfeccionarListaDefinitivaControllerTest` | La pantalla de la lista definitiva desde el navegador: el asignado ve el formulario con la nómina que envió la empresa, una lista vacía vuelve con el error y no completa la tarea, y una lista con participantes completa pasando `listaDefinitiva` (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `DefinirDocenteControllerTest` | La pantalla del jefe docente: consulta los miembros del grupo, permite elegir un docente válido y completa `definirDocente` con `docenteAsignado` (`@WebMvcTest`) | `./mvnw -pl web verify` |

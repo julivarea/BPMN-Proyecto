@@ -26,17 +26,17 @@ public class RevisarPropuestaController {
 
     private static final String QUE_ES = "revisar propuesta";
 
-    private final BandejaDeTareas bandeja;
+    private final RegistroDePropuestas registro;
     private final ClienteFlowable flowable;
     private final PantallasDeTareas pantallas;
     private final PropuestasRepository propuestasRepository;
 
     public RevisarPropuestaController(
-            BandejaDeTareas bandeja,
+            RegistroDePropuestas registro,
             ClienteFlowable flowable,
             PantallasDeTareas pantallas,
             PropuestasRepository propuestasRepository) {
-        this.bandeja = bandeja;
+        this.registro = registro;
         this.flowable = flowable;
         this.pantallas = pantallas;
         this.propuestasRepository = propuestasRepository;
@@ -90,16 +90,14 @@ public class RevisarPropuestaController {
             int nuevaVersion = propuestasRepository.ultimaVersionDe(cursoId) + 1;
             String observaciones = observacionesDeLaEmpresa(tarea);
 
-            // 1. Completar en Flowable (valida asignado y permisos antes de guardar)
-            bandeja.completar(usuario.getName(), id, Map.of(
+            // La nueva versión guarda las observaciones de la empresa que la motivaron.
+            Propuesta propuesta = new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles,
+                    observaciones);
+            registro.registrarYCompletar(usuario.getName(), id, propuesta, Map.of(
                     "programa", programa,
                     "presupuesto", presupuesto,
                     "fechasPosibles", fechasPosibles
             ));
-
-            // 2. Persistir la nueva versión, con las observaciones de la empresa que la motivaron
-            propuestasRepository.guardar(new Propuesta(cursoId, nuevaVersion, programa, presupuesto, fechasPosibles,
-                    observaciones));
 
             redirect.addFlashAttribute("mensaje", "Propuesta v" + nuevaVersion + " registrada y tarea completada.");
         } catch (AccionNoPermitida e) {
