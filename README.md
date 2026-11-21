@@ -51,6 +51,10 @@ bash scripts/desplegar-proceso.sh   # 5. despliega el BPMN y el DMN de proceso/s
 
 Listo: la UI de Flowable está en <http://localhost:8080/flowable-ui>.
 
+> **Ojo con el paso 4:** `setup-identidades.sh` usa `docker compose exec`, así que se corre desde una terminal donde
+> funcione el comando `docker` (con Docker Desktop, Git Bash sirve; si Docker está instalado solo en WSL, hay que
+> correrlo desde WSL).
+
 ### Cuentas del personal
 
 Son cuentas locales de desarrollo; las crea `scripts/setup-identidades.sh`.
@@ -66,7 +70,8 @@ Son cuentas locales de desarrollo; las crea `scripts/setup-identidades.sh`.
 
 ### Aplicaciones
 
-Con el entorno levantado:
+Con el entorno levantado, cada comando en su propia terminal (la web y las apps quedan corriendo; se cortan con
+Ctrl+C o cerrando la ventana):
 
 ```bash
 ./mvnw -pl web spring-boot:run                 # sitio web en http://localhost:8081
@@ -74,8 +79,50 @@ Con el entorno levantado:
 ./mvnw -pl app-comunicaciones compile exec:java # app de escritorio de comunicaciones de la empresa
 ```
 
-Para una demo se acorta el plazo de respuesta de la propuesta (por defecto 5 días) con `PLAZO_RESPUESTA=PT1M` al lanzar
-la web; vale para las solicitudes nuevas (detalle en [docs/04](docs/04-entorno-desarrollo.md)).
+**Web con el plazo de respuesta en 1 minuto (para demos).** El proceso espera 5 días la respuesta de la empresa antes de
+cada recordatorio. Para acortarlo, se lanza la web con la variable `PLAZO_RESPUESTA` (duración ISO 8601) **en lugar
+del comando de la web de arriba**:
+
+```bash
+PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run                  # bash / WSL / Git Bash
+```
+
+```powershell
+$env:PLAZO_RESPUESTA = 'PT1M'; .\mvnw.cmd -pl web spring-boot:run     # PowerShell
+```
+
+Vale para las solicitudes que se creen después; las que ya existen conservan su plazo. Con `PT1M`, una solicitud sin
+respuesta se cierra en unos 3 minutos (dos recordatorios y el tercer vencimiento). Más detalle en
+[docs/04](docs/04-entorno-desarrollo.md).
+
+### Minería de procesos (§4.4)
+
+Necesita Python 3 y Graphviz (`sudo apt install python3-venv graphviz`; en Windows, los instaladores de Python y de
+Graphviz). El entorno se prepara una sola vez, dentro de `mineria/`:
+
+```bash
+cd mineria
+python3 -m venv .venv
+source .venv/bin/activate        # PowerShell: .venv\Scripts\Activate.ps1
+pip install pm4py pandas requests
+```
+
+Para tener historial que analizar, con el entorno levantado y la web corriendo **con `PLAZO_RESPUESTA=PT15S`** (mismo
+comando que arriba, cambiando `PT1M` por `PT15S`; si ya hay cursos en ejecución, mejor empezar de cero con
+`docker compose down -v`), desde `mineria/` y con el entorno de Python activo:
+
+```bash
+python generar_ejecuciones.py          # crea solicitudes y las lleva por todos los caminos (1 o 2 minutos)
+python exportar_history.py             # genera eventos.csv; pide usuario y clave de Flowable (admin / test)
+python analizar.py                     # imprime los resultados y los guarda en resultados.txt
+```
+
+En Windows, si `pip install` falla con "No such file or directory", suele ser por el límite de rutas largas: conviene
+tener el repo en una carpeta de ruta corta (por ejemplo `C:\proyecto`).
+
+Genera `eventos.csv`, `resultados.txt` (los tres recorridos más frecuentes), `recorridos.png`, `modelo_descubierto.png` y
+`modelo_descubierto.bpmn`. La comparación con el modelo está en [`mineria/conclusion.md`](mineria/conclusion.md) y el
+detalle de cada script en [`mineria/README.md`](mineria/README.md).
 
 ### Día a día
 

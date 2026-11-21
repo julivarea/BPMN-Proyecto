@@ -51,4 +51,4 @@ respuesta.
 5. **Pocas instancias (15):** los caminos no observados no aparecen en el modelo descubierto.
 
 ## Reproducir
-Ver `README.md` de esta carpeta: generar ejecuciones, exportar el historial y `python analizar.py | tee resultados.txt`.
+Ver `README.md` de esta carpeta: generar ejecuciones, exportar el historial y `python analizar.py`.

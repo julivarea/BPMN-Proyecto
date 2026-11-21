@@ -12,7 +12,7 @@
 docker compose up -d                 # 2. Postgres + Flowable (la primera vez tarda 1-2 minutos)
 # 3. esperar a que Flowable responda antes de seguir
 until curl -sf -u admin:test http://localhost:8080/flowable-ui/process-api/repository/deployments >/dev/null; do sleep 5; done
-bash scripts/setup-identidades.sh    # 4. usuarios, grupos y privilegios (se puede repetir)
+bash scripts/setup-identidades.sh    # 4. usuarios, grupos y privilegios (se puede repetir; usa `docker compose exec`)
 bash scripts/desplegar-proceso.sh    # 5. despliega los BPMN y DMN de proceso/src/main/resources/procesos
 ```
 
@@ -75,7 +75,8 @@ Los puertos y las credenciales de Postgres se cambian en `.env` (ver `.env.examp
 ## Minería de procesos (§4.4)
 
 Los scripts de la cátedra (`exportar_history.py`, `analizar.py`) usan Python con PM4Py. El entorno se prepara una
-sola vez, dentro de `mineria/`:
+sola vez, dentro de `mineria/` (en Windows, si `pip install` falla con "No such file or directory", suele ser por el límite
+de rutas largas: conviene tener el repo en una carpeta de ruta corta):
 
 ```bash
 sudo apt install python3-venv graphviz     # en Windows: Python 3 y Graphviz desde sus instaladores
@@ -85,8 +86,19 @@ source .venv/bin/activate                  # en Windows: .venv\Scripts\activate
 pip install pm4py pandas requests
 ```
 
-Con el entorno levantado y algunas instancias ejecutadas, se exporta el historial a CSV y se analiza con esos
-scripts. La carpeta `.venv/` no se commitea.
+La carpeta `.venv/` no se commitea. Con el entorno levantado y la web corriendo con `PLAZO_RESPUESTA=PT15S` (para que los
+recordatorios venzan en segundos; ver arriba cómo lanzarla), desde `mineria/` y con el entorno de Python activo:
+
+```bash
+python generar_ejecuciones.py              # crea solicitudes y las lleva por todos los caminos (1 o 2 minutos)
+python exportar_history.py                 # genera eventos.csv; pide usuario y clave de Flowable (admin / test)
+python analizar.py                         # imprime los resultados y los guarda en resultados.txt
+```
+
+`generar_ejecuciones.py` abre cinco cursos en preparación a la vez para probar el límite de viabilidad: si al empezar ya hay
+alguno en ejecución, las solicitudes que quiere aceptar salen no viables. Para empezar de cero, `docker compose down -v` y
+repetir "Levantar el entorno" (o correr `scripts/escenarios/limpiar.py`). Qué hace cada script y qué archivos genera:
+[`mineria/README.md`](../mineria/README.md).
 
 ## Escenarios de la defensa
 

@@ -1,5 +1,29 @@
+import sys
+
 import pandas as pd
 import pm4py
+
+
+class SalidaConArchivo:
+    """Imprime en la consola y guarda lo mismo en resultados.txt (UTF-8), sin depender de redirigir la salida."""
+
+    def __init__(self, consola, archivo):
+        self.consola = consola
+        self.archivo = archivo
+
+    def write(self, texto):
+        self.consola.write(texto)
+        self.archivo.write(texto)
+
+    def flush(self):
+        self.consola.flush()
+        self.archivo.flush()
+
+
+# En Windows, con la salida redirigida, Python usa cp1252 y no puede escribir "→": se fuerza UTF-8.
+sys.stdout.reconfigure(encoding="utf-8")
+resultados = open("resultados.txt", "w", encoding="utf-8")
+sys.stdout = SalidaConArchivo(sys.stdout, resultados)
 
 # Leer el CSV. Mantener los identificadores como texto.
 df = pd.read_csv("eventos.csv", dtype=str)
@@ -51,7 +75,10 @@ pm4py.save_vis_bpmn(modelo, "modelo_descubierto.png")
 pm4py.write_bpmn(modelo, "modelo_descubierto.bpmn")
 
 print("\nArchivos generados:")
+print("- resultados.txt")
 print("- recorridos.png")
 print("- modelo_descubierto.png")
 print("- modelo_descubierto.bpmn")
 
+sys.stdout = sys.stdout.consola
+resultados.close()

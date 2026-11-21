@@ -21,12 +21,15 @@ lleva por distintos caminos con la API REST de Flowable. Al final verifica que e
    se indican con `FLOWABLE_URL` (sin `/process-api`) y `WEB_URL`; `exportar_history.py` también lee `FLOWABLE_URL`.
 2. La web, con un plazo de respuesta corto para que los recordatorios venzan en segundos (desde la raíz del repo):
    ```bash
-   PLAZO_RESPUESTA=PT15S ./mvnw -pl web spring-boot:run
+   PLAZO_RESPUESTA=PT15S ./mvnw -pl web spring-boot:run                     # bash / WSL / Git Bash
+   ```
+   ```powershell
+   $env:PLAZO_RESPUESTA = 'PT15S'; .\mvnw.cmd -pl web spring-boot:run        # PowerShell
    ```
 3. En otra terminal:
    ```bash
    cd mineria
-   source .venv/bin/activate
+   source .venv/bin/activate      # PowerShell: .venv\Scripts\Activate.ps1
    python generar_ejecuciones.py
    ```
 
@@ -43,9 +46,10 @@ Tarda uno o dos minutos. Genera diez instancias:
 Las tareas de grupo se reclaman antes de completarlas, alternando administrativos y docentes, para que las consultas
 del §4.3.3 tengan tareas de distintas personas.
 
-**Ojo:** el conteo de viabilidad incluye los cursos en ejecución que ya hubiera. Si al empezar hay cinco o más, las
-solicitudes que el script quiere aceptar salen `NO_VIABLE` y el script se detiene esperando *Registrar y elaborar
-propuesta*. Para empezar de cero: `docker compose down -v` y repetir la "Primera vez" del README principal.
+**Ojo:** el script abre cinco cursos en preparación a la vez para alcanzar el límite de viabilidad. Si al empezar ya hay
+alguno en ejecución, las solicitudes que quiere aceptar salen `NO_VIABLE` y el script se detiene esperando *Registrar y
+elaborar propuesta*. Para empezar de cero: `docker compose down -v` y repetir la "Primera vez" del README principal (o
+correr `scripts/escenarios/limpiar.py`).
 
 ## Exportar el historial de la negociación
 
@@ -73,10 +77,12 @@ script de la cátedra con tres adaptaciones:
 Desde `mineria/`, con el entorno de Python activo y `eventos.csv` ya generado:
 
 ```bash
-python analizar.py | tee resultados.txt
+python analizar.py
 ```
 
-Es el script de la cátedra. Genera:
+Es el script de la cátedra, con un agregado: además de imprimir los resultados, los guarda en `resultados.txt` en UTF-8
+(en Windows, redirigir la salida con `| tee` falla porque Python no puede escribir la flecha `→` en la codificación de la
+consola). Genera:
 
 - `resultados.txt`: cantidad de instancias, recorridos distintos y los tres más frecuentes con cantidad y porcentaje.
 - `recorridos.png`: grafo de sucesión directa (cuántas veces una actividad siguió a otra).
@@ -89,4 +95,4 @@ La comparación con el modelo y las limitaciones del análisis están en [conclu
 1. Entorno levantado y web con plazo corto (ver "Generar ejecuciones de prueba").
 2. `python generar_ejecuciones.py`
 3. `python exportar_history.py` (usuario `admin`, contraseña `test`)
-4. `python analizar.py | tee resultados.txt`
+4. `python analizar.py`
