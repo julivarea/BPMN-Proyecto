@@ -29,7 +29,9 @@ crear_usuario() { # crear_usuario <id> <nombre> <apellido> <grupo>
   publicar "groups/$4/members" "{\"userId\":\"$1\"}"
 }
 
-crear_grupo administracion "Administración"
+# El nombre va con la o con tilde escapada (\u00f3): en Git Bash de Windows curl recibe los argumentos en otra
+# codificación y Flowable rechaza el JSON con un 400.
+crear_grupo administracion 'Administraci\u00f3n'
 crear_grupo docentes "Docentes"
 
 crear_usuario jefe_admin     Jefe Administrativo administracion
