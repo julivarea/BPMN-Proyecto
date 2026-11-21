@@ -24,7 +24,8 @@ import org.springframework.web.client.RestClient;
 /** Verifica las llamadas que arma el cliente contra un servidor HTTP simulado, sin Flowable ni Docker. */
 class ClienteFlowableTest {
 
-    private static final String URL = "http://flowable/process-api";
+    private static final String BASE = "http://flowable";
+    private static final String URL = BASE + "/process-api";
 
     private MockRestServiceServer servidor;
     private ClienteFlowable cliente;
@@ -33,7 +34,21 @@ class ClienteFlowableTest {
     void crearCliente() {
         RestClient.Builder builder = RestClient.builder();
         servidor = MockRestServiceServer.bindTo(builder).build();
-        cliente = new ClienteFlowable(builder, new FlowableProperties(URL, "admin", "test"));
+        cliente = new ClienteFlowable(builder, new FlowableProperties(BASE, "admin", "test"));
+    }
+
+    @Test
+    void laUrlBaseDeFlowableSeCompletaConLaRutaDeLaApiRestAunqueTermineEnBarra() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer otro = MockRestServiceServer.bindTo(builder).build();
+        ClienteFlowable conBarra = new ClienteFlowable(builder, new FlowableProperties(BASE + "/flowable-ui/", "admin", "test"));
+        otro.expect(requestTo(BASE + "/flowable-ui/process-api/runtime/tasks?assignee=jefe_admin&size=500"))
+                .andRespond(withSuccess("""
+                        {"data": []}""", MediaType.APPLICATION_JSON));
+
+        assertEquals(List.of(), conBarra.tareasAsignadas("jefe_admin"));
+
+        otro.verify();
     }
 
     @Test

@@ -17,7 +17,7 @@ class ClienteFlowableContraDockerTest {
 
     @Test
     void listaLasTareasAsignadasAJefeAdmin() {
-        var propiedades = new FlowableProperties("http://localhost:8080/flowable-ui/process-api", "admin", "test");
+        var propiedades = new FlowableProperties("http://localhost:8080/flowable-ui", "admin", "test");
         var cliente = new ClienteFlowable(RestClient.builder(), propiedades);
 
         List<Tarea> tareas = cliente.tareasAsignadas("jefe_admin");

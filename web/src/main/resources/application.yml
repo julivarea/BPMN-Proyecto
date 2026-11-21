@@ -10,8 +10,9 @@ spring:
     password: ${INSTITUCION_DB_PASSWORD:flowable}
 
 # API REST de Flowable. Las credenciales son de la cuenta técnica con la que la web habla con el motor.
+# La URL es la base de Flowable (sin /process-api, que agrega el cliente): es la misma que usan los scripts y las apps.
 flowable:
-  url: ${FLOWABLE_URL:http://localhost:8080/flowable-ui}/process-api
+  url: ${FLOWABLE_URL:http://localhost:8080/flowable-ui}
   usuario: ${FLOWABLE_USUARIO:admin}
   clave: ${FLOWABLE_CLAVE:test}
 

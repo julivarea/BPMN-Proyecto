@@ -43,9 +43,13 @@ public class ClienteFlowable {
 
     private final RestClient http;
 
+    /** Ruta de la API REST de procesos, a continuación de la URL base de Flowable (propiedad {@code flowable.url}). */
+    private static final String API_REST = "/process-api";
+
     public ClienteFlowable(RestClient.Builder builder, FlowableProperties propiedades) {
+        String urlBase = propiedades.url().replaceAll("/+$", "");
         this.http = builder
-                .baseUrl(propiedades.url())
+                .baseUrl(urlBase + API_REST)
                 .defaultHeaders(cabeceras -> cabeceras.setBasicAuth(propiedades.usuario(), propiedades.clave()))
                 .build();
     }
