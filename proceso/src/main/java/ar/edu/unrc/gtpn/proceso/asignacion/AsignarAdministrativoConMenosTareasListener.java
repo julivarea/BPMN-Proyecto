@@ -7,8 +7,10 @@ import org.flowable.engine.IdentityService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.delegate.TaskListener;
 import org.flowable.engine.impl.util.CommandContextUtil;
+import org.flowable.engine.impl.util.TaskHelper;
 import org.flowable.idm.api.User;
 import org.flowable.task.service.delegate.DelegateTask;
+import org.flowable.task.service.impl.persistence.entity.TaskEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,9 @@ public class AsignarAdministrativoConMenosTareasListener implements TaskListener
                 .orElseThrow();
 
         // 3. Asignar la tarea al administrativo seleccionado
-        tarea.setAssignee(seleccionado.getId());
+        // Con tarea.setAssignee la tarea queda asignada pero el historial no se entera (su registro ya se creó sin
+        // asignado) y la consulta de tareas completadas por persona (§4.3.3) la dejaría afuera: se asigna por el motor.
+        TaskHelper.changeTaskAssignee((TaskEntity) tarea, seleccionado.getId());
     }
 
     /**

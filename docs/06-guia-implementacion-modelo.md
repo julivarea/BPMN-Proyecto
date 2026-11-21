@@ -163,7 +163,7 @@ antes de `<definitions>`: Flowable 6.8 deja de reconocer la versión de DMN.
 | `recursos.ReservarAulaDelegate` | Delegate | *Reservar aula* | Simula el web service de aulas (§4.1.3) y guarda `aulaAsignada` |
 | `recursos.LiberarAulaDelegate` | Delegate | *Liberar aula* | Simula la liberación del aula física |
 | `recursos.LiberarAulaVirtualDelegate` | Delegate | *Liberar aula virtual* | Simula la liberación del aula virtual |
-| `asignacion.AsignarAdministrativoConMenosTareasListener` | Task listener `create` | *Confeccionar lista definitiva* | Asigna la tarea al integrante de `administracion` con menos tareas **asignadas** pendientes (§3.4) |
+| `asignacion.AsignarAdministrativoConMenosTareasListener` | Task listener `create` | *Confeccionar lista definitiva* | Asigna la tarea al integrante de `administracion` con menos tareas **asignadas** pendientes (§3.4); cuentan las de todos los cursos, y las que solo tienen al grupo como candidato, no. Ante un empate, el criterio es el orden alfabético del ID (con `administrativo` y `jefe_admin` sin tareas, gana `administrativo`). Asigna por el motor (`TaskHelper.changeTaskAssignee`) y no con `tarea.setAssignee`, para que la persona también quede en el historial y la consulta de tareas por persona (§4.3.3) la cuente |
 | `estado.RegistrarResultadoDelCursoListener` | Execution listener `end` | Proceso | Guarda en el curso de la BD de la institución el `resultado` como estado (§3.4), y lo acordado: programa, presupuesto, fecha de inicio e informe (ver [07-base-de-datos.md](07-base-de-datos.md)) |
 
 Reglas para estas clases:
