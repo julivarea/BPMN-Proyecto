@@ -3,8 +3,8 @@ package ar.edu.unrc.gtpn.web.solicitudes;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -109,17 +109,17 @@ public class SolicitudesRepository {
                 WHERE c.id = :id
                 """)
                 .param("id", id)
-                .query((rs, rowNum) -> new Curso(
-                        rs.getLong("id"),
-                        rs.getLong("empresa_id"),
-                        rs.getString("razon_social"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getInt("participantes_estimados"),
-                        rs.getString("fechas_preferidas"),
-                        rs.getString("contacto_nombre"),
-                        rs.getString("contacto_email"),
-                        rs.getString("contacto_telefono")))
+                .query((fila, numero) -> new Curso(
+                        fila.getLong("id"),
+                        fila.getLong("empresa_id"),
+                        fila.getString("razon_social"),
+                        fila.getString("nombre"),
+                        fila.getString("descripcion"),
+                        fila.getInt("participantes_estimados"),
+                        fila.getString("fechas_preferidas"),
+                        fila.getString("contacto_nombre"),
+                        fila.getString("contacto_email"),
+                        fila.getString("contacto_telefono")))
                 .optional();
     }
 }

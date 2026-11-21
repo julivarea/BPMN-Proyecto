@@ -11,17 +11,17 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PropuestasRepository {
 
-    private final JdbcClient jdbcClient;
+    private final JdbcClient jdbc;
 
-    public PropuestasRepository(JdbcClient jdbcClient) {
-        this.jdbcClient = jdbcClient;
+    public PropuestasRepository(JdbcClient jdbc) {
+        this.jdbc = jdbc;
     }
 
     /**
      * Devuelve el número de la última versión registrada para un curso, o 0 si aún no tiene propuestas.
      */
     public int ultimaVersionDe(Long cursoId) {
-        return jdbcClient.sql("SELECT COALESCE(MAX(version), 0) FROM propuesta WHERE curso_id = ?")
+        return jdbc.sql("SELECT COALESCE(MAX(version), 0) FROM propuesta WHERE curso_id = ?")
                 .param(cursoId)
                 .query(Integer.class)
                 .single();
@@ -31,7 +31,7 @@ public class PropuestasRepository {
      * Guarda una nueva versión de la propuesta en la base de datos.
      */
     public void guardar(Propuesta propuesta) {
-        jdbcClient.sql("""
+        jdbc.sql("""
                 INSERT INTO propuesta (curso_id, version, programa, presupuesto, fechas_posibles, observaciones_empresa)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """)
@@ -48,7 +48,7 @@ public class PropuestasRepository {
      * Busca una versión específica de la propuesta de un curso.
      */
     public Optional<Propuesta> buscarPorCursoYVersion(Long cursoId, int version) {
-        return jdbcClient.sql("""
+        return jdbc.sql("""
                 SELECT id, curso_id, version, programa, presupuesto, fechas_posibles, observaciones_empresa, creada_en
                 FROM propuesta
                 WHERE curso_id = ? AND version = ?
@@ -63,7 +63,7 @@ public class PropuestasRepository {
      * Recupera todas las versiones registradas para un curso ordenadas por versión.
      */
     public List<Propuesta> buscarPorCurso(Long cursoId) {
-        return jdbcClient.sql("""
+        return jdbc.sql("""
                 SELECT id, curso_id, version, programa, presupuesto, fechas_posibles, observaciones_empresa, creada_en
                 FROM propuesta
                 WHERE curso_id = ?
@@ -74,16 +74,16 @@ public class PropuestasRepository {
                 .list();
     }
 
-    private Propuesta mapearPropuesta(ResultSet rs, int rowNum) throws SQLException {
+    private Propuesta mapearPropuesta(ResultSet fila, int numero) throws SQLException {
         return new Propuesta(
-                rs.getLong("id"),
-                rs.getLong("curso_id"),
-                rs.getInt("version"),
-                rs.getString("programa"),
-                rs.getBigDecimal("presupuesto"),
-                rs.getString("fechas_posibles"),
-                rs.getString("observaciones_empresa"),
-                rs.getTimestamp("creada_en").toLocalDateTime()
+                fila.getLong("id"),
+                fila.getLong("curso_id"),
+                fila.getInt("version"),
+                fila.getString("programa"),
+                fila.getBigDecimal("presupuesto"),
+                fila.getString("fechas_posibles"),
+                fila.getString("observaciones_empresa"),
+                fila.getTimestamp("creada_en").toLocalDateTime()
         );
     }
 }

@@ -6,12 +6,13 @@ import java.util.List;
 import org.flowable.engine.IdentityService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.delegate.TaskListener;
-import org.flowable.engine.impl.context.Context;
+import org.flowable.engine.impl.util.CommandContextUtil;
 import org.flowable.idm.api.User;
 import org.flowable.task.service.delegate.DelegateTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-/** 
+
+/**
  * Asigna la tarea al administrativo con menos tareas pendientes asignadas (enunciado 3.4).
  * En caso de empate, aplica como criterio fijo el orden alfabético del ID del usuario.
  */
@@ -23,8 +24,8 @@ public class AsignarAdministrativoConMenosTareasListener implements TaskListener
     @Override
     public void notify(DelegateTask tarea) {
         // Obtenemos los servicios desde el Contexto global de Flowable
-        TaskService taskService = Context.getProcessEngineConfiguration().getTaskService();
-        IdentityService identityService = Context.getProcessEngineConfiguration().getIdentityService();
+        TaskService taskService = CommandContextUtil.getProcessEngineConfiguration().getTaskService();
+        IdentityService identityService = CommandContextUtil.getProcessEngineConfiguration().getIdentityService();
 
         // 1. Obtener los miembros del grupo "administracion"
         List<User> administrativos = identityService.createUserQuery()

@@ -1,7 +1,9 @@
 package ar.edu.unrc.gtpn.web.seguridad;
 
-import org.springframework.security.authentication.BadCredentialsException;
+import java.util.List;
+
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -40,6 +42,6 @@ public class AutenticacionEmpresa implements AuthenticationProvider {
             throw new BadCredentialsException("Usuario o contraseña incorrectos");
         }
         return UsernamePasswordAuthenticationToken.authenticated(
-                cuenta.usuario(), null, java.util.List.of(new SimpleGrantedAuthority("ROLE_EMPRESA")));
+                cuenta.usuario(), null, List.of(new SimpleGrantedAuthority("ROLE_EMPRESA")));
     }
 }

@@ -1,15 +1,15 @@
 package ar.edu.unrc.gtpn.web.solicitudes;
 
-import java.util.Map;
-import java.util.Optional;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.web.client.RestClientException;
-import org.springframework.security.core.Authentication;
 
 import ar.edu.unrc.gtpn.web.flowable.ClienteFlowable;
 import ar.edu.unrc.gtpn.web.flowable.InstanciaIniciada;
@@ -70,7 +70,7 @@ public class SolicitudesDeCapacitacion {
         });
 
         InstanciaIniciada instancia;
-        
+
         try {
             instancia = iniciarProceso(cursoId, solicitud.nombre().strip());
         } catch (SolicitudNoRegistrada error) {
@@ -118,7 +118,7 @@ public class SolicitudesDeCapacitacion {
         return cuit.replace("-", "");
     }
 
-        /**
+    /**
      * Descripción "Razón social · Curso" de cada solicitud, por su businessKey. Las instancias sin curso en la base (por
      * ejemplo, iniciadas desde la UI de Flowable) no aparecen: la bandeja muestra su businessKey.
      */
