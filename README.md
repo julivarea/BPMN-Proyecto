@@ -105,7 +105,7 @@ Lo que pide el §5 del enunciado, con su ubicación en el repo:
 | Base de datos de la institución (§3.2) | Creación en [`db/init/`](db/init) y tablas en [`web/src/main/resources/db/migration/`](web/src/main/resources/db/migration); explicada en [docs/07](docs/07-base-de-datos.md) |
 | Instrucciones para configurar usuarios y grupos y ejecutar la solución | "Inicio rápido" de este README y [docs/04](docs/04-entorno-desarrollo.md); los usuarios y grupos los crea [`scripts/setup-identidades.sh`](scripts/setup-identidades.sh) |
 | Instrucciones de las tres aplicaciones externas | "Aplicaciones" de este README, [docs/08](docs/08-web.md) (web), [docs/09](docs/09-app-materiales.md) (materiales) y [docs/10](docs/10-app-comunicaciones.md) (comunicaciones) |
-| Variables, listeners y decisiones de implementación (el informe) | [docs/06](docs/06-guia-implementacion-modelo.md) (variables, listeners y delegates), [docs/05](docs/05-decisiones.md) (decisiones) y [docs/11](docs/11-informe-tecnico.md) (informe técnico) |
+| Informe breve: variables, listeners y decisiones de implementación | [docs/11](docs/11-informe-implementacion.md); el detalle, en [docs/06](docs/06-guia-implementacion-modelo.md) (variables, listeners y delegates) y [docs/05](docs/05-decisiones.md) (decisiones) |
 | Consultas sobre el historial (§4.3) | En la app de materiales: [`ConsultasHistoricas`](app-materiales/src/main/java/ar/edu/unrc/gtpn/materiales/historial/ConsultasHistoricas.java) y sus pestañas; explicadas en [docs/09](docs/09-app-materiales.md) §8 |
 | Minería de procesos (§4.4): CSV, código, captura y conclusión | [`mineria/`](mineria): `eventos.csv`, los scripts, `recorridos.png` y `modelo_descubierto.png`, `resultados.txt` y [`conclusion.md`](mineria/conclusion.md); cómo reproducirlo en [`mineria/README.md`](mineria/README.md) |
 | Escenarios de la demostración (§5) | [docs/12](docs/12-escenarios-defensa.md) y los scripts de [`scripts/escenarios/`](scripts/escenarios) |
@@ -126,6 +126,6 @@ Lo que pide el §5 del enunciado, con su ubicación en el repo:
 | [Sitio web](docs/08-web.md) | Cómo está armada la web, conexión con Flowable, reglas para reclamar y completar tareas, tests |
 | [App de materiales](docs/09-app-materiales.md) | Motor embebido y su configuración, login, tareas *Preparar materiales*, consultas del §4.3 |
 | [App de comunicaciones](docs/10-app-comunicaciones.md) | Cliente REST, solicitudes en curso y cómo se habilitan y envían las comunicaciones de la empresa |
-| [Informe técnico](docs/11-informe-tecnico.md) | Análisis consolidado del stack, arquitectura, modelo BPMN, base de datos, ejecución y pendientes |
+| [Informe breve de implementación](docs/11-informe-implementacion.md) | Las variables, los listeners y las decisiones de implementación, en un resumen (con la falta de aulas pendiente) |
 | [Escenarios de la defensa](docs/12-escenarios-defensa.md) | Cómo preparar y recorrer los 11 escenarios del §5, con los scripts de `scripts/escenarios/` |
 | [Cómo trabajamos](CONTRIBUTING.md) | Issues, ramas, commits y convenciones de código |
