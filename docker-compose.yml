@@ -38,6 +38,9 @@ services:
       INSTITUCION_DB_URL: jdbc:postgresql://postgres:5432/institucion
       INSTITUCION_DB_USER: ${POSTGRES_USER:-flowable}
       INSTITUCION_DB_PASSWORD: ${POSTGRES_PASSWORD:-flowable}
+      # Aulas del web service de aulas simulado (Aula 101, 102, …). Con 10 no se agotan en el uso normal; para el
+      # escenario 7 (falta de aulas) se levanta con 3: AULAS_DISPONIBLES=3 docker compose up -d flowable
+      AULAS_DISPONIBLES: ${AULAS_DISPONIBLES:-10}
     ports:
       - "127.0.0.1:${FLOWABLE_PORT:-8080}:8080"
     volumes:

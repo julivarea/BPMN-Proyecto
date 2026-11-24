@@ -31,7 +31,7 @@ public enum EstadoDelCurso {
     /** Actividades de *Preparar curso*, incluidas las ramas paralelas (docs/06 §2). */
     private static final Set<String> PREPARACION = Set.of(
             "prepararCurso", "inicioPrepararCurso", "iniciarPreparacion", "nominaRecibida",
-            "confeccionarListaDefinitiva", "evaluarRecursos", "seleccionarRecursos", "reservarAula",
+            "confeccionarListaDefinitiva", "evaluarRecursos", "seleccionarRecursos", "reservarAula", "confirmarAulaDisponible",
             "solicitarAulaVirtual", "contratarEquipamiento", "recursosListos", "prepararMateriales",
             "preparacionCompleta", "finPrepararCurso", "habilitarAccesoEmpresa");
 

@@ -118,6 +118,7 @@ Con el entorno levantado y la web corriendo, desde la raíz del repo:
 | `preparar_escenario_4.py` | 1 solicitud con la propuesta enviada y un plazo de 1 minuto: se archiva sola en unos 3 minutos |
 | `preparar_escenario_5.py` | 5 cursos en preparación: una solicitud nueva termina como no viable |
 | `preparar_escenario_6.py` | 1 curso en preparación con el aula reservada y el equipamiento contratado, para cancelarlo |
+| `preparar_escenario_7.py` | 3 cursos en preparación con las 3 aulas reservadas (Flowable levantado con 3 aulas): la solicitud siguiente se queda sin aula |
 | `limpiar.py` | Borra todas las solicitudes (Flowable y base de la institución) para otro ensayo |
 
 ```bash
@@ -131,4 +132,18 @@ Flowable y a qué base apunta).
 
 El límite de la regla de viabilidad es de 5 cursos en ejecución: el 6 y el 1 avisan si no hay lugar. `limpiar.py`
 pide confirmación y no toca usuarios, grupos ni el proceso desplegado; también borra el historial que usa la minería
-(`generar_ejecuciones.py` lo vuelve a generar). Cómo recorrer cada escenario: `docs/12-escenarios-defensa.md`.
+(`generar_ejecuciones.py` lo vuelve a generar). Las aulas que tenían reservadas esas instancias siguen ocupadas en el
+servicio de aulas simulado (10 por defecto, `AULAS_DISPONIBLES` en `docker-compose.yml`): para tener todas libres
+hay que reiniciar Flowable con `docker compose restart flowable`.
+
+**Cantidad de aulas.** La define el servidor Flowable al arrancar con la variable `AULAS_DISPONIBLES` (no la web ni
+las apps). Por defecto son 10, para que el uso normal no se quede sin aulas. El escenario 7 necesita 3; se levanta
+Flowable así (en la terminal de WSL, donde corre Docker) y se vuelve a lo normal sin la variable:
+
+```bash
+AULAS_DISPONIBLES=3 docker compose up -d flowable   # para el escenario 7
+docker compose up -d flowable                       # vuelve a 10 aulas
+```
+
+`restart` no alcanza para cambiar la cantidad: hay que recrear el contenedor con `up -d`. Al recrearlo, las aulas
+vuelven a estar todas libres. Cómo recorrer cada escenario: `docs/12-escenarios-defensa.md`.

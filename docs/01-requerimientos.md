@@ -74,7 +74,7 @@ Cada requisito tiene un ID para referenciarlo desde issues, commits y tests.
 | I-07 | Variables para propuestas, respuestas de la empresa, recordatorios, fecha del curso, recursos requeridos, aula asignada, participantes e informe. | 3.5 |
 | I-08 | La fecha de inicio se fija al acordar la propuesta y se guarda en una variable; el timer de espera la usa (sin fecha fija en el modelo) y debe estar definida antes de alcanzar el evento. | 3.5 |
 | I-09 | Para las pruebas se pueden usar fechas cercanas y reducir los plazos de los recordatorios. | 3.5 |
-| I-10 | La reserva y la liberación del aula física son automáticas y simulan una conexión con un web service. | 4.1.3 |
+| I-10 | La reserva y la liberación del aula física son automáticas y simulan una conexión con un web service. Si no hay aulas disponibles se genera la excepción correspondiente (escenario 7). | 4.1.3 |
 
 ### Base de datos de la institución (§3.2)
 
@@ -165,7 +165,7 @@ Análisis breve, con PM4Py u otra herramienta, de la **etapa de negociación** (
 
 1. **"Aplicación móvil" (§1.4)** para *Definir docente*: el §4 enumera un sitio web y dos apps de escritorio, y el
    §4.1.4 pone esa función en el sitio.
-2. **Escenario 7 (falta de aulas):** no aparece en el §1; no se especifica qué ocurre después de la excepción.
+2. **Escenario 7 (falta de aulas):** no aparece en el §1 y no se especifica qué ocurre después de la excepción. El modelo la atrapa y espera a que un administrativo confirme que hay un aula (05-decisiones, "Falta de aulas").
 3. **"Cinco o más cursos en ejecución" (§1.1, §3.1):** el §3.1 dice que cuentan todas las instancias sin finalizar,
    incluidas las que están en acuerdo, excluyendo la propia. Por aclaración del profesor, cuentan los cursos que ya
    pasaron por *Habilitar acceso a la empresa* y siguen sin finalizar (05-decisiones, "Cursos en ejecución").

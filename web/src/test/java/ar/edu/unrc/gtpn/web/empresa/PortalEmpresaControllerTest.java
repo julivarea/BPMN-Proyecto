@@ -84,6 +84,7 @@ class PortalEmpresaControllerTest {
                 new Actividad("prepararCurso", "Preparar curso", "subProcess"),
                 new Actividad("nominaRecibida", "recibir nómina de inscripciones", "intermediateCatchEvent"),
                 new Actividad("reservarAula", "Reservar aula", "serviceTask"),
+                new Actividad("confirmarAulaDisponible", "Confirmar aula disponible", "userTask"),
                 new Actividad("prepararMateriales", "Preparar materiales", "userTask")));
 
         mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
@@ -91,6 +92,7 @@ class PortalEmpresaControllerTest {
                 .andExpect(content().string(Matchers.containsString("En preparación")))
                 .andExpect(content().string(Matchers.containsString("recibir nómina de inscripciones")))
                 .andExpect(content().string(Matchers.containsString("Reservar aula")))
+                .andExpect(content().string(Matchers.containsString("Confirmar aula disponible")))
                 .andExpect(content().string(Matchers.containsString("Preparar materiales")))
                 // El subproceso contenedor no es una actividad de una rama.
                 .andExpect(content().string(Matchers.not(Matchers.containsString(">Preparar curso<"))));

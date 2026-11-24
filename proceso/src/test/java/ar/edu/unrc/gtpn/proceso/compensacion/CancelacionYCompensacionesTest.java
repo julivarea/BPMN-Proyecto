@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import ar.edu.unrc.gtpn.proceso.acceso.CuentasDeEmpresa;
 import ar.edu.unrc.gtpn.proceso.acceso.EmpresaDelCurso;
 import ar.edu.unrc.gtpn.proceso.acceso.HabilitarAccesoEmpresaDelegate;
+import ar.edu.unrc.gtpn.proceso.recursos.ServicioAulasSimulado;
 
 /**
  * Escenario 6 de la defensa (enunciado 1.3 y 1.4): la cancelación compensa solo los recursos ya gestionados, espera a
@@ -57,6 +58,7 @@ class CancelacionYCompensacionesTest {
         tareas = motor.getTaskService();
         historial = motor.getHistoryService();
         gestion = motor.getManagementService();
+        ServicioAulasSimulado.reiniciar(3); // cada test parte con todas las aulas libres
         // *Habilitar acceso* escribe en la BD de la institución, que acá no existe: se usa un doble.
         HabilitarAccesoEmpresaDelegate.usarRepositorio(new CuentasDeEmpresa() {
             @Override

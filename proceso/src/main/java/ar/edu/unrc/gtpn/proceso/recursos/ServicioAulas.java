@@ -12,6 +12,7 @@ public interface ServicioAulas {
      *
      * @param solicitud {@code businessKey} de la instancia, para poder rastrear la reserva
      * @return nombre o código del aula asignada (por ejemplo, {@code "Aula 101"})
+     * @throws AulaNoDisponible si no queda ningún aula libre
      */
     String reservar(String solicitud);
 

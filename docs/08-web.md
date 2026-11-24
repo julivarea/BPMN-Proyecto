@@ -205,8 +205,9 @@ bandeja). Todas siguen la misma convención:
    la sección de origen con el mensaje, como en el ejemplo anterior.
 
 *Desarrollar curso*, que no carga datos, no necesita pantalla: alcanza el *Completar* de la bandeja (*Archivar
-solicitud* sí tiene la suya, de confirmación, porque muestra el motivo del archivo). *Solicitar aula virtual*,
-*Contratar equipamiento* y *Liberar equipamiento* no tienen pantalla en el sitio: se completan con el *Completar* de la
+solicitud* sí tiene la suya, de confirmación, porque muestra el motivo del archivo). *Confirmar aula disponible*
+(falta de aulas, escenario 7) tampoco la necesita. *Solicitar aula virtual*, *Contratar equipamiento* y *Liberar
+equipamiento* no tienen pantalla en el sitio: se completan con el *Completar* de la
 bandeja, o desde la UI de Flowable (§4.1.3; ver la decisión en [05-decisiones.md](05-decisiones.md)).
 
 **Errores.** Cualquier error no manejado (404, 500…) muestra `error.html` con el diseño del sitio. En las pantallas de
@@ -441,5 +442,3 @@ portal de las empresas con sus cursos, el estado y el aula, y las pantallas de l
 elaborar la propuesta, revisarla con su PDF, archivar la solicitud, evaluar los recursos, confeccionar la lista
 definitiva, definir el docente y elaborar y enviar el informe (todas en §3 y §7). Las consultas históricas del §4.3 están en
 la app de materiales ([09-app-materiales.md](09-app-materiales.md)).
-
-Pendiente: lo que dependa de cómo se resuelva la falta de aulas (escenario 7, [05-decisiones.md](05-decisiones.md)).

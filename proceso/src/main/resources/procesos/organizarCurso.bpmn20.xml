@@ -9,6 +9,7 @@
   <message id="modificacionesPropuesta" name="modificacionesPropuesta"></message>
   <message id="nominaParticipantes" name="nominaParticipantes"></message>
   <message id="cancelacionCurso" name="cancelacionCurso"></message>
+  <error id="errorAulaNoDisponible" name="AULA_NO_DISPONIBLE" errorCode="AULA_NO_DISPONIBLE"></error>
   <process id="organizarCurso" name="Institución" isExecutable="true">
     <extensionElements>
       <flowable:executionListener event="end" class="ar.edu.unrc.gtpn.proceso.estado.RegistrarResultadoDelCursoListener"></flowable:executionListener>
@@ -254,6 +255,17 @@
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
         </extensionElements>
       </userTask>
+      <exclusiveGateway id="unirReservaAula"></exclusiveGateway>
+      <boundaryEvent id="aulaNoDisponible" name="sin aulas disponibles" attachedToRef="reservarAula">
+        <errorEventDefinition errorRef="errorAulaNoDisponible"></errorEventDefinition>
+      </boundaryEvent>
+      <userTask id="confirmarAulaDisponible" name="Confirmar aula disponible" flowable:candidateGroups="administracion" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-administracion xmlns:modeler="http://flowable.org/modeler"><![CDATA[Administración]]></modeler:group-info-name-administracion>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <boundaryEvent id="compensarReservaAula" attachedToRef="reservarAula" cancelActivity="false">
         <compensateEventDefinition></compensateEventDefinition>
       </boundaryEvent>
@@ -326,7 +338,10 @@
       <sequenceFlow id="flujo_iniciarPreparacion_prepararMateriales" name="MATERIALES" sourceRef="iniciarPreparacion" targetRef="prepararMateriales"></sequenceFlow>
       <sequenceFlow id="flujo_recursosListos_preparacionCompleta" name="Todos los recursos seleccionados disponibles" sourceRef="recursosListos" targetRef="preparacionCompleta"></sequenceFlow>
       <sequenceFlow id="flujo_evaluarRecursos_seleccionarRecursos" sourceRef="evaluarRecursos" targetRef="seleccionarRecursos"></sequenceFlow>
-      <sequenceFlow id="flujo_seleccionarRecursos_reservarAula" name="Aula física" sourceRef="seleccionarRecursos" targetRef="reservarAula">
+      <sequenceFlow id="flujo_unirReservaAula_reservarAula" sourceRef="unirReservaAula" targetRef="reservarAula"></sequenceFlow>
+      <sequenceFlow id="flujo_aulaNoDisponible_confirmarAulaDisponible" sourceRef="aulaNoDisponible" targetRef="confirmarAulaDisponible"></sequenceFlow>
+      <sequenceFlow id="flujo_confirmarAulaDisponible_unirReservaAula" sourceRef="confirmarAulaDisponible" targetRef="unirReservaAula"></sequenceFlow>
+      <sequenceFlow id="flujo_seleccionarRecursos_unirReservaAula" name="Aula física" sourceRef="seleccionarRecursos" targetRef="unirReservaAula">
         <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAula}]]></conditionExpression>
       </sequenceFlow>
       <sequenceFlow id="flujo_seleccionarRecursos_solicitarAulaVirtual" name="Aula virtual" sourceRef="seleccionarRecursos" targetRef="solicitarAulaVirtual">
@@ -501,7 +516,7 @@
         <omgdc:Bounds height="40.0" width="40.0" x="1495.0" y="580.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="prepararCurso" id="BPMNShape_prepararCurso">
-        <omgdc:Bounds height="1200.0" width="2395.0" x="2440.0" y="160.0"></omgdc:Bounds>
+        <omgdc:Bounds height="1260.0" width="2395.0" x="2440.0" y="160.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="inicioPrepararCurso" id="BPMNShape_inicioPrepararCurso">
         <omgdc:Bounds height="30.0" width="30.0" x="2472.0" y="362.0"></omgdc:Bounds>
@@ -519,37 +534,49 @@
         <omgdc:Bounds height="80.0" width="100.0" x="2790.0" y="540.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="evaluarRecursos" id="BPMNShape_evaluarRecursos">
-        <omgdc:Bounds height="80.0" width="100.0" x="2790.0" y="880.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="2790.0" y="960.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="seleccionarRecursos" id="BPMNShape_seleccionarRecursos">
-        <omgdc:Bounds height="40.0" width="40.0" x="3055.0" y="900.0"></omgdc:Bounds>
+        <omgdc:Bounds height="40.0" width="40.0" x="3055.0" y="980.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="reservarAula" id="BPMNShape_reservarAula">
-        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="660.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="740.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="unirReservaAula" id="BPMNShape_unirReservaAula" isMarkerVisible="true">
+        <omgdc:Bounds height="40.0" width="40.0" x="3125.0" y="760.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="aulaNoDisponible" id="BPMNShape_aulaNoDisponible">
+        <omgdc:Bounds height="30.0" width="30.0" x="3235.0" y="725.0"></omgdc:Bounds>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="110.0" x="3258.0" y="703.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="confirmarAulaDisponible" id="BPMNShape_confirmarAulaDisponible">
+        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="615.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="solicitarAulaVirtual" id="BPMNShape_solicitarAulaVirtual">
-        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="880.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="960.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="compensarReservaAula" id="BPMNShape_compensarReservaAula">
-        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="726.0"></omgdc:Bounds>
+        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="806.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="liberarAula" id="BPMNShape_liberarAula">
-        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="760.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="840.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="liberarAulaVirtual" id="BPMNShape_liberarAulaVirtual">
-        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="980.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="1060.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="contratarEquipamiento" id="BPMNShape_contratarEquipamiento">
-        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="1110.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3200.0" y="1190.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="compensarEquipamiento" id="BPMNShape_compensarEquipamiento">
-        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="1176.0"></omgdc:Bounds>
+        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="1256.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="liberarEquipamiento" id="BPMNShape_liberarEquipamiento">
-        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="1220.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="3350.0" y="1300.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="recursosListos" id="BPMNShape_recursosListos">
-        <omgdc:Bounds height="40.0" width="40.0" x="3630.0" y="895.0"></omgdc:Bounds>
+        <omgdc:Bounds height="40.0" width="40.0" x="3630.0" y="975.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="preparacionCompleta" id="BPMNShape_preparacionCompleta">
         <omgdc:Bounds height="40.0" width="40.0" x="3750.0" y="355.0"></omgdc:Bounds>
@@ -561,7 +588,7 @@
         <omgdc:Bounds height="199.0" width="775.0" x="4005.0" y="280.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="compensarAulaVirtual" id="BPMNShape_compensarAulaVirtual">
-        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="946.0"></omgdc:Bounds>
+        <omgdc:Bounds height="30.0" width="30.0" x="3286.0" y="1026.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="gatewayPreparacionCancelada" id="BPMNShape_gatewayPreparacionCancelada">
         <omgdc:Bounds height="40.0" width="40.0" x="4885.0" y="360.0"></omgdc:Bounds>
@@ -583,8 +610,8 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge bpmnElement="flujo_iniciarPreparacion_evaluarRecursos" id="BPMNEdge_flujo_iniciarPreparacion_evaluarRecursos" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="2605.0" y="396.94816332167187"></omgdi:waypoint>
-        <omgdi:waypoint x="2605.0" y="920.0"></omgdi:waypoint>
-        <omgdi:waypoint x="2790.0" y="920.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2605.0" y="1000.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2790.0" y="1000.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_plazoRespuestaVencido_gatewayRecordatorios" id="BPMNEdge_flujo_plazoRespuestaVencido_gatewayRecordatorios" flowable:sourceDockerX="15.5" flowable:sourceDockerY="15.5" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1772.9499992385158" y="775.0"></omgdi:waypoint>
@@ -636,8 +663,8 @@
         <omgdi:waypoint x="1330.0" y="600.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_seleccionarRecursos_solicitarAulaVirtual" id="BPMNEdge_flujo_seleccionarRecursos_solicitarAulaVirtual" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3094.9443032548306" y="920.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3200.0" y="920.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3094.9443032548306" y="1000.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3200.0" y="1000.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_registrarYElaborarPropuesta_unirPropuestas" id="BPMNEdge_flujo_registrarYElaborarPropuesta_unirPropuestas" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1129.9499999999327" y="600.0"></omgdi:waypoint>
@@ -651,10 +678,10 @@
         <omgdi:waypoint x="1076.0" y="396.95000000000005"></omgdi:waypoint>
         <omgdi:waypoint x="1076.0" y="442.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flujo_reservarAula_recursosListos" id="BPMNEdge_flujo_reservarAula_recursosListos" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="3299.9500000000003" y="700.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3650.0" y="700.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3650.0" y="895.0"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="flujo_reservarAula_recursosListos" id="BPMNEdge_flujo_reservarAula_recursosListos" flowable:sourceDockerX="100.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+        <omgdi:waypoint x="3300.0" y="780.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3650.0" y="780.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3650.0" y="975.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_enviarRecordatorio_unirEspera" id="BPMNEdge_flujo_enviarRecordatorio_unirEspera" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="2210.0" y="814.9499999999999"></omgdi:waypoint>
@@ -687,9 +714,9 @@
         <omgdi:waypoint x="2159.999999999974" y="775.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="asociacion_compensarAulaVirtual_liberarAulaVirtual" id="BPMNEdge_asociacion_compensarAulaVirtual_liberarAulaVirtual" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="0.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3301.0" y="975.9499947555448"></omgdi:waypoint>
-        <omgdi:waypoint x="3301.0" y="1020.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3350.0" y="1020.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="1055.9499947555448"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="1100.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3350.0" y="1100.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_gatewayRecordatorios_unirArchivo" id="BPMNEdge_flujo_gatewayRecordatorios_unirArchivo" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1915.0" y="755.0"></omgdi:waypoint>
@@ -704,24 +731,37 @@
         <omgdi:waypoint x="2259.9499999999894" y="600.0"></omgdi:waypoint>
         <omgdi:waypoint x="2342.0" y="600.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flujo_seleccionarRecursos_reservarAula" id="BPMNEdge_flujo_seleccionarRecursos_reservarAula" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3075.0" y="900.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3075.0" y="700.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3200.0" y="700.0"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="flujo_seleccionarRecursos_unirReservaAula" id="BPMNEdge_flujo_seleccionarRecursos_unirReservaAula" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+        <omgdi:waypoint x="3075.0" y="980.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3075.0" y="780.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3125.0" y="780.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_unirReservaAula_reservarAula" id="BPMNEdge_flujo_unirReservaAula_reservarAula" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="0.0" flowable:targetDockerY="40.0">
+        <omgdi:waypoint x="3165.0" y="780.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3200.0" y="780.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_aulaNoDisponible_confirmarAulaDisponible" id="BPMNEdge_flujo_aulaNoDisponible_confirmarAulaDisponible" flowable:sourceDockerX="15.0" flowable:sourceDockerY="0.0" flowable:targetDockerX="50.0" flowable:targetDockerY="80.0">
+        <omgdi:waypoint x="3250.0" y="725.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3250.0" y="695.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flujo_confirmarAulaDisponible_unirReservaAula" id="BPMNEdge_flujo_confirmarAulaDisponible_unirReservaAula" flowable:sourceDockerX="0.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="0.0">
+        <omgdi:waypoint x="3200.0" y="655.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3145.0" y="655.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3145.0" y="760.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="asociacion_compensarEquipamiento_liberarEquipamiento" id="BPMNEdge_asociacion_compensarEquipamiento_liberarEquipamiento" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="0.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3301.0" y="1205.9499961646493"></omgdi:waypoint>
-        <omgdi:waypoint x="3301.0" y="1260.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3350.0" y="1260.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="1285.9499961646493"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="1340.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3350.0" y="1340.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_fechaProgramada_desarrollarCurso" id="BPMNEdge_flujo_fechaProgramada_desarrollarCurso" flowable:sourceDockerX="15.5" flowable:sourceDockerY="15.5" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="5587.9" y="1670.0"></omgdi:waypoint>
         <omgdi:waypoint x="5755.0" y="1670.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="asociacion_compensarReservaAula_liberarAula" id="BPMNEdge_asociacion_compensarReservaAula_liberarAula" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="0.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3301.0" y="755.9499947555448"></omgdi:waypoint>
-        <omgdi:waypoint x="3301.0" y="800.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3350.0" y="800.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="835.9499947555448"></omgdi:waypoint>
+        <omgdi:waypoint x="3301.0" y="880.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3350.0" y="880.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_esperarRespuesta_aceptacionRecibida" id="BPMNEdge_flujo_esperarRespuesta_aceptacionRecibida" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">
         <omgdi:waypoint x="1615.0" y="580.0"></omgdi:waypoint>
@@ -737,8 +777,8 @@
         <omgdi:waypoint x="489.99999999978877" y="357.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_evaluarRecursos_seleccionarRecursos" id="BPMNEdge_flujo_evaluarRecursos_seleccionarRecursos" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="2889.9500000000003" y="920.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3055.0" y="920.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2889.9500000000003" y="1000.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3055.0" y="1000.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_modificacionesRecibidas_revisarPropuesta" id="BPMNEdge_flujo_modificacionesRecibidas_revisarPropuesta" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1935.0" y="232.0"></omgdi:waypoint>
@@ -751,14 +791,14 @@
         <omgdi:waypoint x="1030.0" y="600.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_contratarEquipamiento_recursosListos" id="BPMNEdge_flujo_contratarEquipamiento_recursosListos" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="3299.9500000000003" y="1150.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3650.0" y="1150.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3650.0" y="934.9042252022138"></omgdi:waypoint>
+        <omgdi:waypoint x="3299.9500000000003" y="1230.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3650.0" y="1230.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3650.0" y="1014.9042252022138"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_solicitarAulaVirtual_recursosListos" id="BPMNEdge_flujo_solicitarAulaVirtual_recursosListos" flowable:sourceDockerX="100.0" flowable:sourceDockerY="35.0" flowable:targetDockerX="0.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="3300.0" y="915.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3465.0" y="915.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3630.0" y="915.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3300.0" y="995.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3465.0" y="995.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3630.0" y="995.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_esperarRespuesta_rechazoRecibido" id="BPMNEdge_flujo_esperarRespuesta_rechazoRecibido" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">
         <omgdi:waypoint x="1634.9429802954392" y="600.0"></omgdi:waypoint>
@@ -769,13 +809,13 @@
         <omgdi:waypoint x="5145.0" y="380.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_seleccionarRecursos_contratarEquipamiento" id="BPMNEdge_flujo_seleccionarRecursos_contratarEquipamiento" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="3075.0" y="939.9456649282918"></omgdi:waypoint>
-        <omgdi:waypoint x="3075.0" y="1150.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3199.999999999881" y="1150.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3075.0" y="1019.9456649282918"></omgdi:waypoint>
+        <omgdi:waypoint x="3075.0" y="1230.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3199.999999999881" y="1230.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_recursosListos_preparacionCompleta" id="BPMNEdge_flujo_recursosListos_preparacionCompleta" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="3669.9416944211944" y="915.0"></omgdi:waypoint>
-        <omgdi:waypoint x="3770.0" y="915.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3669.9416944211944" y="995.0"></omgdi:waypoint>
+        <omgdi:waypoint x="3770.0" y="995.0"></omgdi:waypoint>
         <omgdi:waypoint x="3770.0" y="394.9018383033893"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="flujo_enviarInformeYArchivarExpediente_liberarRecursos" id="BPMNEdge_flujo_enviarInformeYArchivarExpediente_liberarRecursos" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">

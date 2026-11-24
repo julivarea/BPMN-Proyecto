@@ -95,8 +95,9 @@ procesos (§4.4), que usa los scripts Python que provee la cátedra.
   en `docker-compose.yml`). Cada clase recibe sus dependencias por constructor, con un constructor sin argumentos que
   arma las reales (Flowable instancia `flowable:class` con ese). Así en los tests se pasan dobles.
 - **Reserva y liberación de recursos (I-10):** `ReservarAulaDelegate` y `LiberarAulaDelegate` hablan con
-  `ServicioAulas`, cuya implementación por defecto es `ServicioAulasSimulado` (devuelve "Aula 101", "Aula 102", … y
-  deja las llamadas en el log). El aula queda en la variable `aulaAsignada`, que la compensación lee para liberarla.
+  `ServicioAulas`, cuya implementación por defecto es `ServicioAulasSimulado` (maneja un conjunto fijo de aulas,
+  "Aula 101", "Aula 102", …, 10 por defecto o las de `AULAS_DISPONIBLES`; sin aulas libres lanza `AulaNoDisponible`,
+  y deja las llamadas en el log). El aula queda en la variable `aulaAsignada`, que la compensación lee para liberarla.
   La virtual usa `ServicioAulasVirtuales`. Cambiar la simulación por un web service real no toca el modelo ni los
   delegates.
 

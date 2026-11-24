@@ -1,14 +1,17 @@
 package ar.edu.unrc.gtpn.proceso.recursos;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Verifica *Reservar aula* (issue #19): se llama al web service y el aula queda en {@code aulaAsignada}. */
+/** Verifica *Reservar aula* (issues #19 y #36): el aula queda en {@code aulaAsignada} o, si no hay, se lanza el error. */
 class ReservarAulaDelegateTest {
 
     private final ServicioAulas aulas = mock(ServicioAulas.class);
@@ -28,5 +31,14 @@ class ReservarAulaDelegateTest {
 
         verify(aulas).reservar("7");
         verify(ejecucion).setVariable("aulaAsignada", "Aula 101");
+    }
+
+    @Test
+    void sinAulasLibresLanzaElErrorDeNegocio() {
+        when(aulas.reservar("7")).thenThrow(new AulaNoDisponible("sin aulas"));
+
+        BpmnError error = assertThrows(BpmnError.class, () -> delegate.execute(ejecucion));
+
+        assertEquals("AULA_NO_DISPONIBLE", error.getErrorCode());
     }
 }

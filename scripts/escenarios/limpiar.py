@@ -64,6 +64,8 @@ def main():
     terminadas = borrar_instancias("/history/historic-process-instances")
     vaciar_base_de_la_institucion()
     print(f"Listo: {en_curso} instancias en curso y {terminadas} del historial borradas, y la base vaciada.")
+    print("Las aulas reservadas por esas instancias siguen ocupadas en el servicio simulado (10 por defecto): si se "
+          "agotan, reiniciá Flowable (docker compose restart flowable) para volver a tener todas libres.")
 
 
 if __name__ == "__main__":

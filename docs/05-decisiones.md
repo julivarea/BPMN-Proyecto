@@ -4,9 +4,10 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
 
 ## Cambios respecto del diagrama del enunciado
 
-1. **Gateways XOR de unión explícitos.** Se agregaron tres XOR para juntar caminos antes de seguir: antes de
+1. **Gateways XOR de unión explícitos.** Se agregaron cuatro XOR para juntar caminos antes de seguir: antes de
    *Enviar propuesta* (llegan *Registrar* y *Revisar propuesta*), antes del gateway de eventos (llegan *Enviar
-   propuesta* y *Enviar recordatorio*) y antes de *Archivar solicitud* (llegan el rechazo y la falta de respuesta).
+   propuesta* y *Enviar recordatorio*), antes de *Archivar solicitud* (llegan el rechazo y la falta de respuesta) y
+   antes de *Reservar aula* (llegan la rama de recursos y el reintento de *Confirmar aula disponible*).
    En el diagrama original esos caminos entraban directo a la tarea o al gateway (uniones implícitas). Así el modelo
    queda más estructurado y legible (7PMG, guía G4).
 
@@ -122,17 +123,32 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   asignación, y las pantallas de tarea) en lugar de dejar esas tareas fuera del sitio. No reemplaza a la UI de
   Flowable: las mismas tareas se siguen pudiendo completar desde ahí, como permite el enunciado.
 
+- **Falta de aulas: reintento tras una confirmación manual (escenario 7, I-10).** El enunciado pide generar la
+  excepción, pero no dice qué hace el proceso después. Se decidió:
+  - El web service simulado (`ServicioAulasSimulado`) maneja un conjunto fijo de aulas, "Aula 101" en adelante: 10 por
+    defecto (no se agotan en el uso normal; el escenario 7 usa 3), o las de la variable `AULAS_DISPONIBLES` del servidor Flowable. *Reservar aula* toma una libre y *Liberar
+    aula* la devuelve, así que un aula liberada puede asignarse a otro curso. Si no queda ninguna, `ReservarAulaDelegate`
+    lanza `BpmnError("AULA_NO_DISPONIBLE")`. El estado de las aulas es del servicio y no del proceso, y vive en memoria: reiniciar
+    Flowable lo deja todo libre aunque haya cursos con aula asignada (dos cursos podrían compartirla, y el aula que uno
+    libere después se suma al cupo aunque ya estuviera libre), y el aula de una instancia borrada sin compensar (por
+    ejemplo, con `limpiar.py`) queda ocupada hasta reiniciar. Se aceptó así para no acoplar el servicio simulado al motor;
+    por eso el escenario 7 arranca recreando Flowable (docs/12, escenario 7).
+  - Un evento de error de borde en *Reservar aula* lleva a la tarea de usuario ***Confirmar aula disponible***
+    (grupo `administracion`). Una persona la completa cuando hay un aula (porque terminó o se canceló otro curso) y
+    el proceso vuelve a *Reservar aula* por un XOR de unión. Si sigue sin haber, el error se repite y la tarea
+    vuelve a quedar pendiente.
+  - Mientras tanto las demás ramas de la preparación siguen, y *Preparar curso* no termina hasta que se reserve el
+    aula. Si la empresa cancela durante la espera, se interrumpe la tarea y no hay aula que liberar.
+  - No se agregó un resultado nuevo: los de §4.3.1 son cinco y ninguno corresponde a "sin aulas", porque el curso
+    no termina por esto. Si se prefiriera otro destino (por ejemplo, terminar la solicitud), habría que acordar con
+    qué resultado se cuenta.
+
 - **Detalle de errores en las pantallas de tarea (§4.1.3, §4.1.4).** En los controladores de tareas de la web, los
   errores inesperados incluyen `e.getMessage()` en el aviso que ve el usuario (por ejemplo, `"Curso no encontrado: 99"`
   si se abre una instancia iniciada desde la UI de Flowable sin fila en la base de la institución). Es una decisión
   deliberada por tratarse de un sistema didáctico y de demostración: permite diagnosticar fallos durante las pruebas y
   la defensa sin tener que revisar los logs de la consola. En una implementación de producción correspondería registrar
   la excepción únicamente en el log del servidor y mostrar al usuario un mensaje genérico sin detalles técnicos.
-
-## Pendientes
-
-- **Falta de aulas físicas (escenario 7 de la defensa).** No se modela por ahora: el enunciado no dice qué pasa
-  después de la excepción. Se consulta al profesor.
 
 ## Limitaciones de Flowable 6.8 y soluciones
 
@@ -224,3 +240,6 @@ Comportamientos del motor (y de su editor) que se probaron en el entorno del pro
    desde esa app, lo que sigue en el proceso se ejecuta dentro de la app. Si llega a una clase Java nuestra (por
    ejemplo, *Enviar confirmación* cuando es la última rama en terminar), falla. **Solución:** marcar *Enviar
    confirmación* como asíncrona, para que la ejecute el servidor.
+9. **El orden de los bordes de *Reservar aula* importa.** Si en el XML el borde de compensación `compensarReservaAula` se declara
+   antes que el de error `aulaNoDisponible`, el proceso falla al ejecutarse (comprobado con los tests de cancelación y de
+   falta de aulas). **Solución:** el de error va primero en el archivo; al editar el modelo hay que conservar ese orden.

@@ -12,7 +12,7 @@ cero se dejan listos con los scripts de `scripts/escenarios/` (cómo correrlos: 
 | 4 | Cierre por falta de respuesta | `preparar_escenario_4.py` | Web |
 | 5 | Límite de cursos en ejecución | `preparar_escenario_5.py` | Web |
 | 6 | Cancelación con compensaciones | `preparar_escenario_6.py` | Comunicaciones, web |
-| 7 | Falta de aulas | **Pendiente** (#36) | — |
+| 7 | Falta de aulas | `preparar_escenario_7.py` | Web, comunicaciones |
 | 8 | Asignación, reclamo y finalización de tareas | Durante el 1, el 6 o el 9 | Web, materiales |
 | 9 | Solicitud desde el sitio e inicio de su instancia | Nada | Web |
 | 10 | Acceso de la empresa y consulta de sus cursos | Un curso aceptado (el 1 o el 6) | Web |
@@ -37,7 +37,13 @@ cero se dejan listos con los scripts de `scripts/escenarios/` (cómo correrlos: 
   proceso espera en ese momento. El estado final de un curso se ve en el portal de la empresa.
 - **Fecha de inicio:** al aceptar, usar la de hoy y sin hora (no se admiten fechas anteriores): el curso empieza dentro
   de 1 minuto, el timer "fecha programada" dispara enseguida y *Desarrollar curso* aparece sin esperar.
-- **Entre ensayos:** `mineria/.venv/bin/python scripts/escenarios/limpiar.py`.
+- **Aulas:** Flowable arranca con 10 aulas, para que el uso normal no se quede sin ellas. Solo el escenario 7 necesita
+  3: `AULAS_DISPONIBLES=3 docker compose up -d flowable` antes de prepararlo y `docker compose up -d flowable` después
+  para volver a 10 (docs/04, "Cantidad de aulas").
+- **Entre ensayos:** `mineria/.venv/bin/python scripts/escenarios/limpiar.py`. Flowable solo se reinicia para el escenario 7
+  (cambia la cantidad de aulas) y para volver después a 10; con 10 aulas, las que dejan ocupadas las instancias que
+  borra `limpiar.py` alcanzan para varios ensayos, y si llegaran a agotarse se liberan con `docker compose restart flowable`.
+  Antes del escenario 7 siempre se recrea Flowable (ver su sección: las aulas no se recuperan solas).
 
 ## 1. Aceptación y finalización normal, con liberación de recursos
 
@@ -113,8 +119,49 @@ de verse al cancelar.
 
 ## 7. Falta de aulas
 
-**Pendiente:** el enunciado no dice qué pasa después de la excepción y se consultó al profesor (#36,
-`05-decisiones.md`, "Pendientes").
+**Muestra:** que reservar un aula cuando no hay ninguna libre genera la excepción, que el modelo la maneja sin
+detener el resto de la preparación y que, al liberarse un aula, la reserva se reintenta (I-10).
+**Preparación:** son dos pasos, en este orden. El script no cambia nada en Flowable: si el servidor sigue con 10 aulas,
+las tres reservas no las agotan.
+
+1. En la terminal de WSL, desde la raíz del repo, recrear Flowable con 3 aulas (las deja todas libres) y esperar a que
+   termine de levantar:
+
+   ```bash
+   AULAS_DISPONIBLES=3 docker compose up -d flowable
+   ```
+
+2. Con la web corriendo, `preparar_escenario_7.py`: tres cursos en preparación con las tres aulas reservadas.
+
+Al terminar el escenario, `docker compose up -d flowable` vuelve a 10 aulas.
+
+**Limitación: hay que arrancar siempre de cero.** Las aulas viven en la memoria del servidor Flowable, no en la base ni en
+las instancias, así que su estado puede no coincidir con el de los cursos:
+
+- Borrar instancias sin que pasen por *Liberar aula* (con `limpiar.py` o desde la UI de Flowable) deja sus aulas
+  ocupadas hasta reiniciar Flowable.
+- Reiniciar Flowable deja todas las aulas libres aunque haya cursos en curso con aula asignada: dos cursos podrían
+  compartir la misma, y el aula que un curso libere después se suma al cupo aunque ya estuviera libre.
+
+Si esto pasa, con menos de 3 aulas libres la tercera reserva del script falla y aparece un *Confirmar aula disponible* de
+más en la bandeja. Por eso el paso 1 va siempre antes del script, y conviene no usar cursos de ensayos anteriores. Si en
+la bandeja de Administración hay algún *Confirmar aula disponible* antes de registrar la solicitud de la demo, se repite
+desde el paso 1 (después de `limpiar.py`). Es una decisión de diseño aceptada, no un error: ver
+[05-decisiones.md](05-decisiones.md), "Falta de aulas".
+
+**Se recorre así:**
+
+1. Registrar una solicitud nueva en la web, llevarla a preparación (propuesta y aceptación) y, como administrativo,
+   completar *Evaluar recursos* con aula física.
+2. Mostrar que no hay aula: *Confirmar aula disponible* aparece para Administración, el portal de la empresa la
+   lista entre las actividades del curso y las demás ramas (*Preparar materiales*, lista definitiva) siguen
+   disponibles. Completarla ahora repite el error y la tarea vuelve a quedar pendiente.
+3. App de comunicaciones: cancelar uno de los tres cursos del script y, en la web, completar *Confirmar
+   compensaciones*: el aula se libera.
+4. Completar *Confirmar aula disponible*: *Reservar aula* se reintenta y el curso recibe el aula liberada.
+
+**Mirar:** en el log (`docker compose logs flowable 2>&1 | grep -i aula`), el aviso "no hay aulas libres", la
+liberación y la nueva reserva; en *Mis cursos* de la empresa, el aula asignada recién después del paso 4.
 
 ## 8. Asignación, reclamo y finalización de tareas
 
@@ -158,10 +205,12 @@ por persona.
 
 ## Orden sugerido para un ensayo
 
-1. `limpiar.py`.
+1. `limpiar.py`. Si el ensayo anterior terminó con 3 aulas (escenario 7), `docker compose up -d flowable` para volver a 10.
 2. `preparar_escenario_4.py` Escenario 4 (en 3 min aparece archivar solicitud).
 3. 9 → 2 → 10 → 11, con la misma solicitud.
 4. `preparar_escenario_6.py` → escenario 6.
 5. `preparar_escenario_1.py` → escenario 1 (y el 8 a lo largo de todo).
 6. Volver al escenario 4: completar *Archivar solicitud*.
-7. `preparar_escenario_5.py` → escenario 5, al final, porque deja el cupo lleno.
+7. Flowable con 3 aulas, `preparar_escenario_7.py` → escenario 7, con el 6 y el 1 ya terminados. Al terminar,
+   volver a 10 aulas.
+8. `preparar_escenario_5.py` → escenario 5, al final, porque deja el cupo lleno.

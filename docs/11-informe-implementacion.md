@@ -3,9 +3,9 @@
 Explica las variables del proceso, los listeners y las decisiones de implementación (enunciado §5). Es un resumen: el
 detalle de cada punto está en los documentos que se citan.
 
-**Estado.** Está implementado y probado todo lo que pide el enunciado, salvo la **falta de aulas (escenario 7), que
-está PENDIENTE** (§5). Se probó con los tests automáticos (`./mvnw verify`) y con un ensayo de los escenarios 1 a 6 y 8 a
-11 sobre una instalación limpia.
+**Estado.** Está implementado y probado todo lo que pide el enunciado. Se probó con los tests automáticos
+(`./mvnw verify`, que incluyen el escenario 7) y con un ensayo de los escenarios 1 a 6 y 8 a 11 sobre una instalación
+limpia.
 
 ## 1. Qué se hizo
 
@@ -55,7 +55,7 @@ Detalle: [06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §
 | Expresiones de una línea en el XML | Inicio y caminos de cierre | Fijan `resultado`, versión, recordatorios y plazo por defecto |
 | `NotificarEmpresaDelegate` | Cinco *service tasks* de envío | Simula la comunicación a la empresa (log); una sola clase, con el asunto como campo |
 | `HabilitarAccesoEmpresaDelegate` | *Habilitar acceso a la empresa* | Crea la cuenta de la empresa o reutiliza la que tiene, y fija `accesoHabilitado` |
-| `ReservarAulaDelegate`, `LiberarAulaDelegate`, `LiberarAulaVirtualDelegate` | *Reservar aula* y las compensaciones | Simulan el web service de aulas; el aula queda en `aulaAsignada` |
+| `ReservarAulaDelegate`, `LiberarAulaDelegate`, `LiberarAulaVirtualDelegate` | *Reservar aula* y las compensaciones | Simulan el web service de aulas; el aula queda en `aulaAsignada`. Sin aulas libres, *Reservar aula* lanza el error `AULA_NO_DISPONIBLE` (§5) |
 
 Los listeners no guardan estado y reciben sus dependencias por constructor, para probarlos con dobles. Detalle:
 [06-guia-implementacion-modelo.md](06-guia-implementacion-modelo.md) §7.
@@ -95,14 +95,21 @@ Todas están justificadas en [05-decisiones.md](05-decisiones.md); estas son las
     este grupo tiene 5.
 13. **Errores completos en las pantallas de tarea.** Se muestra el mensaje de la excepción para facilitar las pruebas y
     la demo; en producción correspondería un mensaje genérico y el detalle en el log.
+14. **Falta de aulas con reintento.** Ver §5.
 
-## 5. Pendiente: falta de aulas (escenario 7)
+## 5. Falta de aulas (escenario 7)
 
-**PENDIENTE.** El enunciado pide mostrar la falta de aulas y generar la excepción correspondiente, pero no dice qué hace
-el proceso después. Hoy el web service de aulas simulado siempre reserva y numera las aulas sin límite, así que el
-escenario no se puede mostrar. Está en definición con el profesor (issue #36). Cuando se resuelva, se completa acá: cómo
-se determina que no hay aulas, el error de negocio que se lanza, cómo lo maneja el modelo y cómo se recorre el escenario
-en la defensa.
+El enunciado pide mostrar la falta de aulas y generar la excepción correspondiente, pero no dice qué hace el proceso
+después; la decisión está en [05-decisiones.md](05-decisiones.md), "Falta de aulas".
+
+- **Cómo se determina.** El web service simulado tiene un conjunto fijo de aulas (10 por defecto, `AULAS_DISPONIBLES`).
+  *Reservar aula* toma una libre y *Liberar aula* la devuelve; sin ninguna libre, el servicio lanza `AulaNoDisponible`.
+- **El error de negocio.** `ReservarAulaDelegate` la convierte en `BpmnError("AULA_NO_DISPONIBLE")`.
+- **Cómo lo maneja el modelo.** Un evento de error de borde en *Reservar aula* lleva a la tarea *Confirmar aula
+  disponible* (grupo `administracion`). Cuando una persona la completa, el proceso vuelve a *Reservar aula* a través de
+  un XOR de unión y reintenta; mientras tanto las otras ramas de la preparación siguen y *Preparar curso* espera el aula.
+- **En la defensa.** con el servidor levantado con 3 aulas, `preparar_escenario_7.py` las reserva; una solicitud nueva falla al reservar, y al
+  cancelar otro curso se libera un aula para el reintento ([12-escenarios-defensa.md](12-escenarios-defensa.md), §7).
 
 ## 6. Dónde ampliar
 

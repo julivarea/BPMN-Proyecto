@@ -173,6 +173,6 @@ Lo que pide el §5 del enunciado, con su ubicación en el repo:
 | [Sitio web](docs/08-web.md) | Cómo está armada la web, conexión con Flowable, reglas para reclamar y completar tareas, tests |
 | [App de materiales](docs/09-app-materiales.md) | Motor embebido y su configuración, login, tareas *Preparar materiales*, consultas del §4.3 |
 | [App de comunicaciones](docs/10-app-comunicaciones.md) | Cliente REST, solicitudes en curso y cómo se habilitan y envían las comunicaciones de la empresa |
-| [Informe breve de implementación](docs/11-informe-implementacion.md) | Las variables, los listeners y las decisiones de implementación, en un resumen (con la falta de aulas pendiente) |
+| [Informe breve de implementación](docs/11-informe-implementacion.md) | Las variables, los listeners y las decisiones de implementación, en un resumen |
 | [Escenarios de la defensa](docs/12-escenarios-defensa.md) | Cómo preparar y recorrer los 11 escenarios del §5, con los scripts de `scripts/escenarios/` |
 | [Cómo trabajamos](CONTRIBUTING.md) | Issues, ramas, commits y convenciones de código |

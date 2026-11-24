@@ -93,7 +93,10 @@ Los envía la app de comunicaciones por REST (`messageEventReceived`), excepto e
 | Preparar materiales | `prepararMateriales` | `candidateGroups = administracion` (la completa la app de materiales) |
 | Evaluar recursos | `evaluarRecursos` | `candidateGroups = administracion`. Formulario: `requiereAula`, `requiereAulaVirtual`, `requiereEquipamiento` |
 | Inclusivo de recursos | `seleccionarRecursos` | **Aula física** → `${requiereAula}`, **Aula virtual** → `${requiereAulaVirtual}`, **Equipamiento** → `${requiereEquipamiento}`. Sin flujo por defecto: la web exige al menos una opción y, si no hubiera ninguna, Flowable corta con error |
+| XOR de unión | `unirReservaAula` | Llegan *Aula física* y el reintento de *Confirmar aula disponible* |
 | Reservar aula | `reservarAula` | Service task → `ReservarAulaDelegate` |
+| Borde de error de Reservar aula | `aulaNoDisponible` | Evento de error de borde (interrumpe), `errorRef` → `errorAulaNoDisponible` (código `AULA_NO_DISPONIBLE`) |
+| Confirmar aula disponible | `confirmarAulaDisponible` | User task, `candidateGroups = administracion`. Su flecha vuelve a `unirReservaAula` |
 | Borde de compensación de Reservar aula | `compensarReservaAula` | — |
 | Liberar aula (compensación) | `liberarAula` | Service task → `LiberarAulaDelegate` |
 | Solicitar aula virtual | `solicitarAulaVirtual` | `candidateGroups = administracion` |
@@ -160,7 +163,7 @@ antes de `<definitions>`: Flowable 6.8 deja de reconocer la versión de DMN.
 | `viabilidad.ContarCursosEnEjecucionListener` | Execution listener `start` | *Evaluar viabilidad* | Cuenta las instancias de `organizarCurso` (todas las versiones) que siguen abiertas y tienen `accesoHabilitado = true`, y guarda `cursosEnEjecucion` (§3.1 y aclaración del profesor) |
 | `notificacion.NotificarEmpresaDelegate` | Delegate | *Comunicar imposibilidad*, *Enviar propuesta*, *Enviar recordatorio*, *Enviar confirmación*, *Notificar cierre* | Simula el envío a la empresa. Una sola clase; cada tarea la configura con el campo `asunto` |
 | `acceso.HabilitarAccesoEmpresaDelegate` | Delegate | *Habilitar acceso a la empresa* | Crea la cuenta de la empresa (usuario = razón social, clave `clave123`) o reutiliza la existente, vincula el curso (§4.1.2) y fija `accesoHabilitado = true` |
-| `recursos.ReservarAulaDelegate` | Delegate | *Reservar aula* | Simula el web service de aulas (§4.1.3) y guarda `aulaAsignada` |
+| `recursos.ReservarAulaDelegate` | Delegate | *Reservar aula* | Simula el web service de aulas (§4.1.3) y guarda `aulaAsignada`; sin aulas libres lanza `BpmnError("AULA_NO_DISPONIBLE")` |
 | `recursos.LiberarAulaDelegate` | Delegate | *Liberar aula* | Simula la liberación del aula física |
 | `recursos.LiberarAulaVirtualDelegate` | Delegate | *Liberar aula virtual* | Simula la liberación del aula virtual |
 | `asignacion.AsignarAdministrativoConMenosTareasListener` | Task listener `create` | *Confeccionar lista definitiva* | Asigna la tarea al integrante de `administracion` con menos tareas **asignadas** pendientes (§3.4); cuentan las de todos los cursos, y las que solo tienen al grupo como candidato, no. Ante un empate, el criterio es el orden alfabético del ID (con `administrativo` y `jefe_admin` sin tareas, gana `administrativo`). Asigna por el motor (`TaskHelper.changeTaskAssignee`) y no con `tarea.setAssignee`, para que la persona también quede en el historial y la consulta de tareas por persona (§4.3.3) la cuente |
@@ -195,10 +198,14 @@ Los mensajes de la empresa no se pueden enviar desde la Task app: los envía la 
 pueden disparar desde la app Admin (ver [03-guia-flowable.md](03-guia-flowable.md), §2, "Probar desde la UI de
 Flowable").
 
-## 9. Pendiente
+## 9. Falta de aulas (escenario 7)
 
-- **Falta de aulas (escenario 7):** cuando el profesor defina qué pasa, *Reservar aula* lanzará un error de negocio
-  (`BpmnError`) y se agregará su manejo en el modelo.
+`ServicioAulasSimulado` maneja un conjunto fijo de aulas (10 por defecto; `AULAS_DISPONIBLES` en el servidor). Si
+*Reservar aula* no encuentra ninguna libre, `ReservarAulaDelegate` lanza `BpmnError("AULA_NO_DISPONIBLE")` y el evento
+de error de borde `aulaNoDisponible` pasa el token a la tarea de usuario *Confirmar aula disponible*, del grupo
+`administracion`. Al completarla, el XOR `unirReservaAula` devuelve el token a *Reservar aula*, que reintenta. Las demás
+ramas siguen mientras tanto y la cancelación interrumpe la espera sin nada que liberar. La decisión y sus razones están
+en [05-decisiones.md](05-decisiones.md), "Falta de aulas".
 
 ## 10. Lo que necesita el análisis del historial (§4.3, §4.4)
 
