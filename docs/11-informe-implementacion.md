@@ -4,8 +4,7 @@ Explica las variables del proceso, los listeners y las decisiones de implementac
 detalle de cada punto está en los documentos que se citan.
 
 **Estado.** Está implementado y probado todo lo que pide el enunciado. Se probó con los tests automáticos
-(`./mvnw verify`, que incluyen el escenario 7) y con un ensayo de los escenarios 1 a 6 y 8 a 11 sobre una instalación
-limpia.
+(`./mvnw verify`) y recorriendo los escenarios de la defensa.
 
 ## 1. Qué se hizo
 

@@ -41,6 +41,7 @@ web/
     │   │   │   ├── ClienteFlowable.java       único lugar que llama a la API REST de Flowable
     │   │   │   ├── FlowableProperties.java    URL y cuenta técnica (propiedades flowable.* de application.yml)
     │   │   │   ├── Actividad.java             una actividad en curso: ID, nombre y tipo BPMN
+    │   │   │   ├── InstanciaIniciada.java     el resultado de iniciar una instancia: ID y si ya terminó
     │   │   │   └── Tarea.java                 una tarea pendiente: nombre, clave, asignado, fecha y solicitud
     │   │   ├── propuestas/                propuesta económica del curso y su PDF (§3, §6)
     │   │   │   ├── Propuesta.java             una versión de la propuesta: programa, presupuesto y fechas

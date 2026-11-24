@@ -122,7 +122,8 @@ mismas reglas que la web ([08-web.md](08-web.md) §4), en `ServicioDeTareas`:
 2. **Tarea asignada:** solo la completa su asignado. Antes de `taskService.complete(tareaId)` se verifica que
    `tarea.getAssignee()` sea el usuario logueado.
 
-Esta lógica se testea con un motor en memoria (`@FlowableTest` con H2), como los tests del módulo `proceso`.
+Esta lógica se testea con un motor en memoria (`@FlowableTest` con H2), como los tests del módulo `proceso`:
+`ServicioDeTareasTest` cubre el reclamo, la finalización (solo la del asignado) y la solicitud de la tarea.
 
 ## 8. Consultas históricas (#30–#32)
 

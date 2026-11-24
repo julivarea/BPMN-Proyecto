@@ -111,6 +111,7 @@ Para probar sin la app, las mismas acciones se pueden hacer desde la UI de Flowa
 |------|------------|---------------|
 | `FlowableRestTest` | Que el cliente arme bien las llamadas (ruta, método y autenticación), lea bien las respuestas, entregue los mensajes con sus variables e informe los errores, contra un servidor HTTP simulado (el del JDK) | `./mvnw -pl app-comunicaciones verify` (también en CI) |
 | `ComunicacionesDeLaEmpresaTest` | Las comunicaciones: solo queda habilitada la que la instancia espera, el envío lleva el mensaje y la variable correctos (fecha en ISO, observaciones, nómina JSON, rechazo y cancelación sin datos), no se envía lo no habilitado y la fecha se entiende en sus formatos | `./mvnw -pl app-comunicaciones verify` (también en CI) |
+| `SolicitudTest` | Cómo se presenta una solicitud: el curso y la versión de la propuesta, o solo la clave si no hay nombre ni propuesta enviada | `./mvnw -pl app-comunicaciones verify` |
 | `FlowableRestContraDockerTest` | Que el cliente funcione contra el Flowable real: lista las solicitudes en curso | `FLOWABLE_DOCKER=si ./mvnw -pl app-comunicaciones verify`, con el entorno levantado |
 
 ## 8. Estado

@@ -114,11 +114,11 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 │       │   │   ├── viabilidad/       ContarCursosEnEjecucionListener
 │       │   │   ├── notificacion/     NotificarEmpresaDelegate
 │       │   │   ├── acceso/           HabilitarAccesoEmpresaDelegate, CuentasDeEmpresa(Jdbc), CursoRepository(Jdbc), ConexionInstitucion
-│       │   │   ├── recursos/         Reservar/LiberarAula…Delegate, ServicioAulas(Simulado), ServicioAulasVirtuales
+│       │   │   ├── recursos/         Reservar/LiberarAula…Delegate, ServicioAulas(Simulado), AulaNoDisponible, ServicioAulasVirtuales
 │       │   │   ├── asignacion/       AsignarAdministrativoConMenosTareasListener
 │       │   │   └── estado/           RegistrarResultadoDelCursoListener
 │       │   └── resources/procesos/   organizarCurso.bpmn20.xml, viabilidad.dmn
-│       └── test/java/…/proceso/      tests del proceso (negociación, cancelación y compensaciones) y de cada clase
+│       └── test/java/…/proceso/      tests del proceso (negociación, lista definitiva, cancelación y compensaciones, falta de aulas) y de cada clase
 ├── web/
 │   └── src/main/
 │       ├── java/…/web/
@@ -138,7 +138,7 @@ Paquetes por **funcionalidad**, no por capa técnica. Los paquetes Java cuelgan 
 ├── app-comunicaciones/
 │   └── src/main/java/…/comunicaciones/
 │       └── ComunicacionesApp, FlowableRest, ComunicacionesDeLaEmpresa, enum Comunicacion (mensaje + datos), VentanaDeSolicitudes
-├── mineria/                          exportar_history.py y analizar.py adaptados, CSV, capturas y conclusión (§4.4)
+├── mineria/                          generar_ejecuciones.py, exportar_history.py y analizar.py, CSV, capturas y conclusión (§4.4)
 └── scripts/                          usuarios y despliegue (setup-identidades.sh, desplegar-proceso.sh) y escenarios/ de la defensa
 ```
 
