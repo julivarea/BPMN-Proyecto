@@ -3,7 +3,6 @@
 Deja cinco cursos aceptados y en preparación, para registrar la sexta solicitud en vivo desde la web y ver que
 termina como no viable.
 """
-from comun import cursos_en_ejecucion, ejecuciones
 from comun import LIMITE_DE_CURSOS as LIMITE, cursos_en_ejecucion, ejecuciones
 
 PRIMER_NUMERO = 501  # empresas de prueba propias de este escenario, separadas de las de la minería

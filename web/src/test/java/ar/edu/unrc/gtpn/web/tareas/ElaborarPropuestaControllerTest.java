@@ -102,7 +102,9 @@ class ElaborarPropuestaControllerTest {
                         .param("presupuesto", "150000")
                         .param("fechasPosibles", "Junio 2026"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/administracion"));
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("enlaceMensaje", "/tareas/propuestas/10/1/pdf"))
+                .andExpect(flash().attribute("enlaceMensajeTexto", "Ver PDF de la propuesta v1"));
 
         verify(registro).registrarYCompletar(eq("jefe_admin"), eq("t1"), any(Propuesta.class), any());
     }

@@ -29,10 +29,14 @@
 </header>
 
 <!-- Mensajes para el usuario: los controllers los pasan como atributos "mensaje" y "error"
-     (con RedirectAttributes.addFlashAttribute si la página viene de un redirect), y "aviso" para algo que el
+     (con RedirectAttributes.addFlashAttribute si la página viene de un redirect), "enlaceMensaje" y
+     "enlaceMensajeTexto" para un enlace que acompaña al mensaje de éxito, y "aviso" para algo que el
      usuario tiene que saber pero que no es un error suyo ni un éxito. -->
 <div th:fragment="mensajes">
     <p class="mensaje" th:if="${mensaje}" th:text="${mensaje}"></p>
+    <p class="mensaje" th:if="${enlaceMensaje}">
+        <a th:href="@{${enlaceMensaje}}" th:text="${enlaceMensajeTexto}" target="_blank" rel="noopener"></a>
+    </p>
     <p class="aviso" th:if="${aviso}" th:text="${aviso}"></p>
     <p class="error" th:if="${error}" th:text="${error}"></p>
 </div>

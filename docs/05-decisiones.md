@@ -84,10 +84,11 @@ Interpretaciones de lo ambiguo del enunciado y cambios respecto del diagrama pro
   `PLAZO_RESPUESTA=PT1M ./mvnw -pl web spring-boot:run`. Si una instancia se inicia sin la variable (por ejemplo, desde
   la Task app de Flowable), el evento de inicio del modelo la completa con `P5D`, así no falla al llegar al timer. El
   valor por defecto queda en dos lugares (la web y el modelo) con el mismo `P5D` del enunciado.
-- **Registro de la solicitud y su instancia (§4.1.1).** Guardar el curso, iniciar la instancia y guardar su id en el
-  curso van en una sola transacción: si Flowable falla, no queda el curso sin instancia. La transacción no puede
-  deshacer lo hecho en Flowable, así que si fallara el último `UPDATE` quedaría una instancia sin curso. Se acepta
-  porque es una actualización simple sobre una fila recién insertada.  
+- **Registro de la solicitud y su instancia (§4.1.1).** La web confirma el curso en la base **antes** de iniciar la
+  instancia: el listener de fin del proceso actualiza el curso, y una solicitud no viable termina al iniciarse, antes de
+  que la web pudiera completar nada después. El `businessKey` de la instancia es el id del curso. Si Flowable no inicia
+  la instancia, la web elimina el curso, para que no quede sin instancia. Lo que no se cubre es que la web se caiga
+  entre las dos operaciones (quedaría un curso sin instancia), un caso muy poco probable.
 
 - **Propuesta y tarea de Flowable en una sola operación (§4.1.3).** Al completar *Registrar y elaborar propuesta* o
   *Revisar propuesta*, la web inserta la versión en `propuesta` y recién después completa la tarea, dentro de una

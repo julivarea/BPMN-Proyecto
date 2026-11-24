@@ -63,6 +63,17 @@ class BandejaControllerTest {
     }
 
     @Test
+    void elMensajeDeExitoPuedeLlevarUnEnlace() throws Exception {
+        mvc.perform(get("/administracion").with(user("jefe_admin").roles("ADMINISTRACION"))
+                        .flashAttr("mensaje", "Propuesta v2 registrada y tarea completada.")
+                        .flashAttr("enlaceMensaje", "/tareas/propuestas/10/2/pdf")
+                        .flashAttr("enlaceMensajeTexto", "Ver PDF de la propuesta v2"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("href=\"/tareas/propuestas/10/2/pdf\"")))
+                .andExpect(content().string(Matchers.containsString("Ver PDF de la propuesta v2")));
+    }
+
+    @Test
     void unaTareaDeUnaSolicitudDelFormularioMuestraLaEmpresaYElCurso() throws Exception {
         when(flowable.tareasAsignadas("jefe_admin"))
                 .thenReturn(List.of(tarea("t1", "Registrar y elaborar propuesta", "registrarYElaborarPropuesta", "jefe_admin")));

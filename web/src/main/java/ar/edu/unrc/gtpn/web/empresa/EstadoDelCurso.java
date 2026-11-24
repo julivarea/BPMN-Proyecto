@@ -44,7 +44,7 @@ public enum EstadoDelCurso {
 
     /** Informe de resultados y cierre del expediente. */
     private static final Set<String> INFORME = Set.of(
-            "elaborarInformeResultados", "enviarInformeYArchivarExpediente", "liberarRecursos", "notificarCierre");
+            "elaborarInformeResultados", "enviarInformeYArchivarExpediente", "liberarRecursos");
 
     /**
      * Liberación de recursos al cerrar el curso con normalidad. Mientras *Liberar equipamiento* (tarea de usuario)
@@ -55,11 +55,12 @@ public enum EstadoDelCurso {
     /**
      * Subproceso de cancelación. Mientras está activo se lanzan las compensaciones y se espera a que terminen
      * (*Liberar equipamiento* y *Confirmar compensaciones*): el curso se está cancelando. Cuando termina, el proceso
-     * notifica el cierre y la instancia concluye con el estado persistido.
+     * notifica el cierre (*Notificar cierre*, que solo está en este camino) y la instancia concluye con el estado
+     * persistido.
      */
     private static final Set<String> CANCELACION = Set.of(
             "cancelacion", "cancelacionRecibida", "lanzarCompensacionAula", "lanzarCompensacionAulaVirtual",
-            "lanzarCompensacionEquipamiento", "confirmarCompensaciones", "preparacionCancelada");
+            "lanzarCompensacionEquipamiento", "confirmarCompensaciones", "preparacionCancelada", "notificarCierre");
 
     /** Tipos de actividad que se le muestran a la empresa: tareas y esperas, no compuertas ni subprocesos. */
     private static final Set<String> TIPOS_VISIBLES = Set.of(

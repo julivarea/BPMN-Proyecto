@@ -168,7 +168,7 @@ va `/login` si ya hay sesión. Una dirección con barra final (`/solicitar/`) se
 |-----------|----------|
 | `cabecera(titulo)` | `<head>`: título de la pestaña y hoja de estilos |
 | `encabezado(seccion)` | Barra superior con la navegación. `seccion` (`solicitar`, `empresas`, `administracion`, `docentes` o `''`) marca el enlace de la página actual. Enlaces: *Solicitar curso* (sin sesión o empresa), *Mis cursos* (empresa) y *Mis tareas* (personal) |
-| `mensajes` | Muestra los atributos `mensaje` (éxito) y `error` del modelo, si existen |
+| `mensajes` | Muestra los atributos `mensaje` (éxito), `aviso` y `error` del modelo, si existen, y un enlace junto al éxito si hay `enlaceMensaje` (con su `enlaceMensajeTexto`): *Elaborar* y *Revisar propuesta* lo usan para ofrecer el PDF de la versión recién registrada |
 
 **Mensajes al usuario.** Después de un formulario se hace *redirect* (para que recargar la página no lo reenvíe) y el
 resultado viaja como *flash attribute*:
@@ -280,7 +280,7 @@ activa se deriva de `actividadesActivas`:
 | *Elaborar informe de resultados* o el cierre | En elaboración del informe |
 | *Liberar aula*, *Liberar aula virtual* o *Liberar equipamiento* pendientes, ya cerrado el curso | Finalizando: liberando recursos |
 | Ninguna conocida | En negociación |
-| Subproceso de *Cancelación* (compensaciones, *Liberar equipamiento*, *Confirmar compensaciones*) | Cancelándose: liberando recursos |
+| Subproceso de *Cancelación* (compensaciones, *Liberar equipamiento*, *Confirmar compensaciones*) o *Notificar cierre* | Cancelándose: liberando recursos |
 
 *Liberar equipamiento* es una tarea de usuario: mientras esté pendiente la instancia sigue abierta, por eso el portal
 muestra el cierre en curso. En "Finalizando" el informe de resultados ya se puede consultar. Una cancelación se muestra
@@ -418,8 +418,8 @@ un formulario sin `th:action` es rechazado con un 403.
 | `PortalEmpresaControllerTest` | El portal de empresas: una empresa recibe 404 al abrir el curso de otra (escenario 10), el detalle en preparación muestra las actividades de las ramas paralelas y el estado se deriva de Flowable o del persistido (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `BandejaDeTareasTest` | Las reglas: nadie completa una tarea ajena ni una de grupo sin reclamar, no se reclama lo que no está disponible, *Preparar materiales* no se completa desde la web, *Confirmar compensaciones* queda bloqueada mientras haya liberaciones pendientes, y los conflictos y rechazos de Flowable se informan | `./mvnw -pl web verify` |
 | `BandejaControllerTest` | La bandeja desde el navegador: secciones de Administración y Docentes, empresa y curso de cada solicitud, completar una tarea ajena armando la URL, reclamar, vuelta a la sección, token CSRF y login (`@WebMvcTest`) | `./mvnw -pl web verify` |
-| `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si el registro se rechaza se muestra el motivo, enlace al PDF de la versión anterior y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
-| `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión y completa la tarea (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `ElaborarPropuestaControllerTest` | La pantalla de la propuesta desde el navegador: el asignado abre el formulario, guardar completa la tarea y registra la versión, si el registro se rechaza se muestra el motivo, enlace al PDF de la versión anterior, enlace al PDF de la versión recién registrada en el aviso de éxito y descarga del PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
+| `RevisarPropuestaControllerTest` | La pantalla de revisión desde el navegador: el asignado ve la última propuesta con su PDF y las observaciones de la empresa, y al enviar guarda la nueva versión, completa la tarea y ofrece el enlace a su PDF (`@WebMvcTest`) | `./mvnw -pl web verify` |
 | `PantallasDeTareasTest` | Lo común de las pantallas de tarea: la sección de retorno solo admite las del sitio, la tarea tiene que existir, ser la de la pantalla y estar asignada al usuario, y el curso sale de la solicitud de la tarea | `./mvnw -pl web verify` |
 | `RegistroDePropuestasTest` | Que guardar la versión y completar la tarea sea una sola operación: se guarda primero y se completa después, con commit; si Flowable no completa la tarea, la versión se descarta (rollback); si el guardado falla, la tarea no se completa | `./mvnw -pl web verify` |
 | `EvaluarRecursosControllerTest` | La pantalla de recursos desde el navegador: el asignado ve el formulario con las tres casillas, enviarlo sin ninguna marcada vuelve a la pantalla con el error y no completa la tarea, y con al menos una completa pasando los tres booleanos (`@WebMvcTest`) | `./mvnw -pl web verify` |

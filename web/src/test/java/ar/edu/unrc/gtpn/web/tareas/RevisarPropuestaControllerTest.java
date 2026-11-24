@@ -30,6 +30,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -105,7 +106,9 @@ class RevisarPropuestaControllerTest {
                 .param("presupuesto", "160000")
                 .param("fechasPosibles", "Segunda semana de diciembre"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/administracion"));
+                .andExpect(redirectedUrl("/administracion"))
+                .andExpect(flash().attribute("enlaceMensaje", "/tareas/propuestas/10/2/pdf"))
+                .andExpect(flash().attribute("enlaceMensajeTexto", "Ver PDF de la propuesta v2"));
 
         verify(registro).registrarYCompletar("jefe_admin", "t2",
                 new Propuesta(10L, 2, "Programa corregido", new BigDecimal("160000"),

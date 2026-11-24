@@ -14,6 +14,7 @@ Evaluar viabilidad → Registrar y elaborar propuesta → Enviar propuesta → H
 Evaluar viabilidad → Registrar y elaborar propuesta → Enviar propuesta → Archivar solicitud
 
 Archivos generados:
+- resultados.txt
 - recorridos.png
 - modelo_descubierto.png
 - modelo_descubierto.bpmn

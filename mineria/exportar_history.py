@@ -7,15 +7,15 @@ from collections import Counter
 import requests
 
 
-# ConfiguraciÃ³n
+# Configuración
 BASE_URL = os.environ.get("FLOWABLE_URL", "http://localhost:8080/flowable-ui").rstrip("/") + "/process-api"
 
 # ID del elemento <process id="..."> del BPMN.
 PROCESS_KEY = "organizarCurso"
 
-# Opcional: copiar aquÃ­ los IDs BPMN de las actividades y eventos
-# de negociaciÃ³n que se quieran analizar.
-# VacÃ­o = exportar todos los elementos histÃ³ricos finalizados.
+# Opcional: copiar aquí los IDs BPMN de las actividades y eventos
+# de negociación que se quieran analizar.
+# Vacío = exportar todos los elementos históricos finalizados.
 ACTIVIDADES = {
     "solicitudRecibida",
     "evaluarViabilidad",
@@ -40,7 +40,7 @@ ARCHIVO_SALIDA = "eventos.csv"
 
 
 def consultar_todos(session, recurso, filtros):
-    """Recupera todas las pÃ¡ginas de una consulta REST."""
+    """Recupera todas las páginas de una consulta REST."""
     inicio = 0
 
     while True:
@@ -101,6 +101,9 @@ def eventos_ocurridos(actividades):
 
 def resumir(eventos):
     """Muestra cuántas veces aparece cada actividad, para revisar el CSV de un vistazo."""
+    if not eventos:
+        print("No hay eventos para resumir.")
+        return
     conteo = Counter(evento["actividad"] for evento in eventos)
     ancho = max(len(actividad) for actividad in conteo)
     print(f"\n{'Actividad':<{ancho}}  Veces")
@@ -172,7 +175,7 @@ def main():
                     "recurso": actividad.get("assignee") or "",
                 })
 
-    # Ordenar por instancia y fecha de finalizaciÃ³n.
+    # Ordenar por instancia y fecha de finalización.
     # El ID da un orden estable si coinciden las marcas temporales.
     eventos.sort(
         key=lambda evento: (

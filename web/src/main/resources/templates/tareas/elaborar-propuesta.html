@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos :: cabecera('Elaborar Propuesta')}"></head>
 <body>
-<header th:replace="~{fragmentos :: encabezado(seccion)}"></header>
+<header th:replace="~{fragmentos :: encabezado(${seccion})}"></header>
 <main>
     <div th:replace="~{fragmentos :: mensajes}"></div>
 

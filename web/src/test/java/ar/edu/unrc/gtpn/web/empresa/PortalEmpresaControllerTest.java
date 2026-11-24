@@ -152,6 +152,19 @@ class PortalEmpresaControllerTest {
     }
 
     @Test
+    void alNotificarElCierreDeUnaCancelacionElCursoSigueCancelandose() throws Exception {
+        laEmpresaAEstaAutenticada();
+        when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));
+        when(flowable.actividadesActivas("instancia-10"))
+                .thenReturn(List.of(new Actividad("notificarCierre", "Notificar cierre", "serviceTask")));
+        when(flowable.variables("instancia-10")).thenReturn(Map.of());
+
+        mockMvc.perform(get("/empresas/cursos/10").with(user("empresa-a").roles("EMPRESA")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Cancelándose: liberando recursos")));
+    }
+
+    @Test
     void laFechaAcordadaConDesfaseSeMuestraConLaFechaLocal() throws Exception {
         laEmpresaAEstaAutenticada();
         when(cursos.buscar(EMPRESA_A, 10L)).thenReturn(Optional.of(curso(10, "EN_CURSO", "instancia-10")));

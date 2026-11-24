@@ -66,7 +66,8 @@ Para recorrerlo entero desde la solicitud, empezar por el 9 y seguir el 2 (acept
 **Preparación:** una solicitud desde la web (escenario 9) y *Registrar y elaborar propuesta* como `jefe_admin`.
 
 1. App de comunicaciones: elegir la solicitud y **Pedir modificaciones**, con observaciones.
-2. `jefe_admin` (web): *Revisar propuesta*. La pantalla muestra lo que pidió la empresa; se genera la versión 2 del PDF.
+2. `jefe_admin` (web): *Revisar propuesta*. La pantalla muestra lo que pidió la empresa; al completarla se genera la versión 2 del PDF y el aviso de éxito
+   ofrece el enlace para abrirlo.
 3. App de comunicaciones: **Aceptar** (sigue como el 1) o **Rechazar** (sigue como el 3).
 
 **Mirar:** las observaciones de la empresa en *Revisar propuesta* y el PDF de la versión 2.

@@ -17,7 +17,10 @@ public class ServicioAulasSimulado implements ServicioAulas {
 
     static final int CANTIDAD_POR_DEFECTO = 10;
 
-    /** Números de las aulas libres; es estático para que dos reservas no reciban la misma. */
+    /**
+     * Números de las aulas libres; es estático para que dos reservas no reciban la misma. Flowable usa una instancia de
+     * este servicio por delegate, así que el acceso se sincroniza sobre este conjunto y no sobre cada instancia.
+     */
     private static final TreeSet<Integer> LIBRES = new TreeSet<>();
 
     static {
@@ -25,10 +28,12 @@ public class ServicioAulasSimulado implements ServicioAulas {
     }
 
     /** Vuelve a dejar libres las aulas 101 a 100 + {@code cantidad}; lo usan los tests. */
-    public static synchronized void reiniciar(int cantidad) {
-        LIBRES.clear();
-        for (int numero = 101; numero < 101 + cantidad; numero++) {
-            LIBRES.add(numero);
+    public static void reiniciar(int cantidad) {
+        synchronized (LIBRES) {
+            LIBRES.clear();
+            for (int numero = 101; numero < 101 + cantidad; numero++) {
+                LIBRES.add(numero);
+            }
         }
     }
 
@@ -41,19 +46,24 @@ public class ServicioAulasSimulado implements ServicioAulas {
     }
 
     @Override
-    public synchronized String reservar(String solicitud) {
-        if (LIBRES.isEmpty()) {
-            log.warn("Web service de aulas: no hay aulas libres para la solicitud {}", solicitud);
-            throw new AulaNoDisponible("No hay aulas disponibles para la solicitud " + solicitud);
+    public String reservar(String solicitud) {
+        String aula;
+        synchronized (LIBRES) {
+            if (LIBRES.isEmpty()) {
+                log.warn("Web service de aulas: no hay aulas libres para la solicitud {}", solicitud);
+                throw new AulaNoDisponible("No hay aulas disponibles para la solicitud " + solicitud);
+            }
+            aula = "Aula " + LIBRES.pollFirst();
         }
-        String aula = "Aula " + LIBRES.pollFirst();
         log.info("Web service de aulas: reservada el {} para la solicitud {}", aula, solicitud);
         return aula;
     }
 
     @Override
-    public synchronized void liberar(String solicitud, String aula) {
-        LIBRES.add(Integer.parseInt(aula.substring("Aula ".length())));
+    public void liberar(String solicitud, String aula) {
+        synchronized (LIBRES) {
+            LIBRES.add(Integer.parseInt(aula.substring("Aula ".length())));
+        }
         log.info("Web service de aulas: liberada el {} de la solicitud {}", aula, solicitud);
     }
 }

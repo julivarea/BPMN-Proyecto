@@ -100,6 +100,8 @@ public class RevisarPropuestaController {
             ));
 
             redirect.addFlashAttribute("mensaje", "Propuesta v" + nuevaVersion + " registrada y tarea completada.");
+            redirect.addFlashAttribute("enlaceMensaje", "/tareas/propuestas/" + cursoId + "/" + nuevaVersion + "/pdf");
+            redirect.addFlashAttribute("enlaceMensajeTexto", "Ver PDF de la propuesta v" + nuevaVersion);
         } catch (AccionNoPermitida e) {
             redirect.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
