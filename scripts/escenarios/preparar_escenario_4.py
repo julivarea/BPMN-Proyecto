@@ -7,7 +7,7 @@ y pasa a Archivar solicitud.
 from comun import ejecuciones, exigir_lugar_para
 
 NUMERO = 401
-PLAZO_CORTO = "PT1M"
+PLAZO_CORTO = "PT30S"
 
 
 def acortar_plazo(instancia):
@@ -23,7 +23,7 @@ def main():
     acortar_plazo(instancia)
     ejecuciones.completar(instancia, "registrarYElaborarPropuesta", ejecuciones.PROPUESTA)
     print(f"Listo: curso {curso} con la propuesta enviada y un plazo de {PLAZO_CORTO}.")
-    print("No respondas: en unos 3 minutos aparece «Archivar solicitud» en la bandeja de jefe_admin.")
+    print("No respondas: en 1.5 minutos aparece «Archivar solicitud» en la bandeja de jefe_admin.")
 
 
 if __name__ == "__main__":
